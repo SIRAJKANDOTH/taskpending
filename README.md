@@ -1,4 +1,4 @@
-Gnosis Safe Contracts
+Fork of Gnosis Safe Contracts
 =====================
 
 [![npm version](https://badge.fury.io/js/%40gnosis.pm%2Fsafe-contracts.svg)](https://badge.fury.io/js/%40gnosis.pm%2Fsafe-contracts)
