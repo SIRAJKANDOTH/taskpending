@@ -10,6 +10,9 @@ import "./external/GnosisSafeMath.sol";
 import "./yrToken.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+import "./interfaces/IController.sol";
+
+
 /// @title Gnosis Safe - A multisignature wallet with support for confirmations using signed messages based on ERC191.
 /// @author Stefan George - <stefan@gnosis.io>
 /// @author Richard Meissner - <richard@gnosis.io>
