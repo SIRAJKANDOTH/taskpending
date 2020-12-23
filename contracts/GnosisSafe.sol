@@ -7,6 +7,8 @@ import "./common/SignatureDecoder.sol";
 import "./common/SecuredTokenTransfer.sol";
 import "./interfaces/ISignatureValidator.sol";
 import "./external/GnosisSafeMath.sol";
+import "./yrToken.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @title Gnosis Safe - A multisignature wallet with support for confirmations using signed messages based on ERC191.
 /// @author Stefan George - <stefan@gnosis.io>
@@ -19,6 +21,8 @@ contract GnosisSafe
 
     string public constant NAME = "Gnosis Safe";
     string public constant VERSION = "1.2.0";
+
+    IERC20 private token;
 
     //keccak256(
     //    "EIP712Domain(address verifyingContract)"
@@ -57,11 +61,12 @@ contract GnosisSafe
     mapping(address => mapping(bytes32 => uint256)) public approvedHashes;
 
     // This constructor ensures that this contract can only be used as a master copy for Proxy contracts
-    constructor() public {
+    constructor(address _token) public {
         // By setting the threshold it is not possible to call setup anymore,
         // so we create a Safe with 0 owners and threshold 1.
         // This is an unusable Safe, perfect for the mastercopy
         threshold = 1;
+        token = IERC(_token);
     }
 
     /// @dev Setup function sets initial storage of contract.
@@ -97,6 +102,42 @@ contract GnosisSafe
             // baseGas = 0, gasPrice = 1 and gas = payment => amount = (payment + 0) * 1 = payment
             handlePayment(payment, 0, 1, paymentToken, paymentReceiver);
         }
+    }
+
+    //Using OpenZeppelin function
+
+    function deposit(uint256 _amount) public {
+        uint256 _pool = balance();
+        uint256 _before = token.balanceOf(address(this));
+        token.transferFrom(msg.sender, address(this), _amount);
+        uint256 _after = token.balanceOf(address(this));
+        _amount = _after.sub(_before); // Additional check for deflationary tokens
+        uint256 shares = 0;
+        if (token.totalSupply() == 0) {
+            shares = _amount;
+        } else {
+            shares = (_amount.mul(token.totalSupply())).div(_pool);
+        }
+        _mint(msg.sender, shares);
+    }
+
+    function withdraw(uint256 _shares) public {
+        uint256 r = (balance().mul(_shares)).div(totalSupply());
+        _burn(msg.sender, _shares);
+
+        // Check balance
+        uint256 b = token.balanceOf(address(this));
+        if (b < r) {
+            uint256 _withdraw = r.sub(b);
+            IController(controller).withdraw(address(token), _withdraw);
+            uint256 _after = token.balanceOf(address(this));
+            uint256 _diff = _after.sub(b);
+            if (_diff < _withdraw) {
+                r = b.add(_diff);
+            }
+        }
+
+        token.transfer(msg.sender, r);
     }
 
     /// @dev Allows to execute a Safe transaction confirmed by required number of owners and then pays the account that submitted the transaction.
