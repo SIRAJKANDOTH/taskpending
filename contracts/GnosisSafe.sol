@@ -9,6 +9,13 @@ import "./interfaces/ISignatureValidator.sol";
 import "./external/GnosisSafeMath.sol";
 import "./yrToken.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
+import "@openzeppelin/contracts/ownership/Ownable.sol";
+
 
 import "./interfaces/IController.sol";
 
@@ -18,14 +25,19 @@ import "./interfaces/IController.sol";
 /// @author Richard Meissner - <richard@gnosis.io>
 /// @author Ricardo Guilherme Schmidt - (Status Research & Development GmbH) - Gas Token Payment
 contract GnosisSafe
-    is MasterCopy, ModuleManager, OwnerManager, SignatureDecoder, SecuredTokenTransfer, ISignatureValidatorConstants, FallbackManager {
+    is MasterCopy, ModuleManager, OwnerManager, SignatureDecoder, SecuredTokenTransfer, ISignatureValidatorConstants, FallbackManager, ERC20 {
 
-    using GnosisSafeMath for uint256;
+    // using GnosisSafeMath for uint256;
+    using SafeERC20 for IERC20;
+    using Address for address;
+    using SafeMath for uint256;
 
     string public constant NAME = "Gnosis Safe";
     string public constant VERSION = "1.2.0";
 
     IERC20 private token;
+    address public controller;
+ 
 
     //keccak256(
     //    "EIP712Domain(address verifyingContract)"
@@ -69,7 +81,11 @@ contract GnosisSafe
         // so we create a Safe with 0 owners and threshold 1.
         // This is an unusable Safe, perfect for the mastercopy
         threshold = 1;
-        token = IERC(_token);
+        token = IERC20(_token);
+    }
+
+    function balance() public view returns (uint256) {
+        return token.balanceOf(address(this)).add(IController(controller).balanceOf(address(token)));
     }
 
     /// @dev Setup function sets initial storage of contract.
@@ -186,7 +202,9 @@ contract GnosisSafe
         }
         // We require some gas to emit the events (at least 2500) after the execution and some to perform code until the execution (500)
         // We also include the 1/64 in the check that is not send along with a call to counteract potential shortings because of EIP-150
-        require(gasleft() >= (safeTxGas * 64 / 63).max(safeTxGas + 2500) + 500, "Not enough gas to execute safe transaction");
+        
+        // TODO - check this later, changed max
+        //require(gasleft() >= (safeTxGas * 64 / 63).max(safeTxGas + 2500) + 500, "Not enough gas to execute safe transaction");
         // Use scope here to limit variable lifetime and prevent `stack too deep` errors
         {
             uint256 gasUsed = gasleft();

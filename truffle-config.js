@@ -20,7 +20,7 @@ module.exports = {
     },
     goerli: {
       provider: () => {
-        return new HDWalletProvider(mnemonic, 'https://goerli.infura.io/v3/' + token)
+        return new HDWalletProvider("provide admit leaf net sun account error double end glue civil else", 'https://goerli.infura.io/v3/' + "22a5f30310ca4933b9301d28efac5236")
       },
       network_id: '5',
       gasPrice: 25000000000, // 25 Gwei
