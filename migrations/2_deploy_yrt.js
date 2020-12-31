@@ -1,14 +1,9 @@
 var yrToken = artifacts.require("./yrToken.sol");
 var GnosisSafe = artifacts.require("./GnosisSafe.sol");
 
-// module.exports =  async function(deployer) {
-//    let token = await deployer.deploy(yrToken,400000000000);
-//    await deployer.deploy(GnosisSafe,token);
-// };
-
-module.exports =  function(deployer) {
-   deployer.deploy(yrToken,400000000000)
-   .then(()=>{
-      return deployer.deploy(GnosisSafe,yrToken.address)
-   });
+// @NOTE: Deploy the token for test purpose (not required in production)
+module.exports = async (deployer) => {
+  deployer.deploy(yrToken, 10000000000000).then(async (token) => {
+    await deployer.deploy(GnosisSafe, token.address);
+  });
 };

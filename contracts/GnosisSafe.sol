@@ -14,7 +14,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
-import "@openzeppelin/contracts/ownership/Ownable.sol";
+// import "@openzeppelin/contracts/ownership/Ownable.sol";
 
 
 import "./interfaces/IController.sol";
@@ -25,7 +25,7 @@ import "./interfaces/IController.sol";
 /// @author Richard Meissner - <richard@gnosis.io>
 /// @author Ricardo Guilherme Schmidt - (Status Research & Development GmbH) - Gas Token Payment
 contract GnosisSafe
-    is MasterCopy, ModuleManager, OwnerManager, SignatureDecoder, SecuredTokenTransfer, ISignatureValidatorConstants, FallbackManager, ERC20 {
+    is MasterCopy, ModuleManager, OwnerManager, SignatureDecoder, SecuredTokenTransfer, ISignatureValidatorConstants, FallbackManager, ERC20,ERC20Detailed {
 
     // using GnosisSafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -37,7 +37,7 @@ contract GnosisSafe
 
     IERC20 private token;
     address public controller;
- 
+    address public owner;
 
     //keccak256(
     //    "EIP712Domain(address verifyingContract)"
@@ -76,72 +76,73 @@ contract GnosisSafe
     mapping(address => mapping(bytes32 => uint256)) public approvedHashes;
 
     // This constructor ensures that this contract can only be used as a master copy for Proxy contracts
-    constructor(address _token) public {
+    constructor(address _token) public ERC20Detailed("YieldsterToken","YLT",18){
         // By setting the threshold it is not possible to call setup anymore,
         // so we create a Safe with 0 owners and threshold 1.
         // This is an unusable Safe, perfect for the mastercopy
         threshold = 1;
         token = IERC20(_token);
+        owner=msg.sender;
     }
 
-    function balance() public view returns (uint256) {
+    function vaultBalance() public view returns (uint256) {
         return token.balanceOf(address(this)).add(IController(controller).balanceOf(address(token)));
     }
 
-    /// @dev Setup function sets initial storage of contract.
-    /// @param _owners List of Safe owners.
-    /// @param _threshold Number of required confirmations for a Safe transaction.
-    /// @param to Contract address for optional delegate call.
-    /// @param data Data payload for optional delegate call.
-    /// @param fallbackHandler Handler for fallback calls to this contract
-    /// @param paymentToken Token that should be used for the payment (0 is ETH)
-    /// @param payment Value that should be paid
-    /// @param paymentReceiver Adddress that should receive the payment (or 0 if tx.origin)
-    function setup(
-        address[] calldata _owners,
-        uint256 _threshold,
-        address to,
-        bytes calldata data,
-        address fallbackHandler,
-        address paymentToken,
-        uint256 payment,
-        address payable paymentReceiver
-    )
-        external
-    {
-        require(domainSeparator == 0, "Domain Separator already set!");
-        domainSeparator = keccak256(abi.encode(DOMAIN_SEPARATOR_TYPEHASH, this));
-        setupOwners(_owners, _threshold);
-        if (fallbackHandler != address(0)) internalSetFallbackHandler(fallbackHandler);
-        // As setupOwners can only be called if the contract has not been initialized we don't need a check for setupModules
-        setupModules(to, data);
+    // /// @dev Setup function sets initial storage of contract.
+    // /// @param _owners List of Safe owners.
+    // /// @param _threshold Number of required confirmations for a Safe transaction.
+    // /// @param to Contract address for optional delegate call.
+    // /// @param data Data payload for optional delegate call.
+    // /// @param fallbackHandler Handler for fallback calls to this contract
+    // /// @param paymentToken Token that should be used for the payment (0 is ETH)
+    // /// @param payment Value that should be paid
+    // /// @param paymentReceiver Adddress that should receive the payment (or 0 if tx.origin)
+    // function setup(
+    //     address[] calldata _owners,
+    //     uint256 _threshold,
+    //     address to,
+    //     bytes calldata data,
+    //     address fallbackHandler,
+    //     address paymentToken,
+    //     uint256 payment,
+    //     address payable paymentReceiver
+    // )
+    //     external
+    // {
+    //     require(domainSeparator == 0, "Domain Separator already set!");
+    //     domainSeparator = keccak256(abi.encode(DOMAIN_SEPARATOR_TYPEHASH, this));
+    //     setupOwners(_owners, _threshold);
+    //     if (fallbackHandler != address(0)) internalSetFallbackHandler(fallbackHandler);
+    //     // As setupOwners can only be called if the contract has not been initialized we don't need a check for setupModules
+    //     setupModules(to, data);
 
-        if (payment > 0) {
-            // To avoid running into issues with EIP-170 we reuse the handlePayment function (to avoid adjusting code of that has been verified we do not adjust the method itself)
-            // baseGas = 0, gasPrice = 1 and gas = payment => amount = (payment + 0) * 1 = payment
-            handlePayment(payment, 0, 1, paymentToken, paymentReceiver);
-        }
-    }
+    //     if (payment > 0) {
+    //         // To avoid running into issues with EIP-170 we reuse the handlePayment function (to avoid adjusting code of that has been verified we do not adjust the method itself)
+    //         // baseGas = 0, gasPrice = 1 and gas = payment => amount = (payment + 0) * 1 = payment
+    //         handlePayment(payment, 0, 1, paymentToken, paymentReceiver);
+    //     }
+    // }
 
     //Using OpenZeppelin function
 
     function deposit(uint256 _amount) public {
-        uint256 _pool = balance();
-        uint256 _before = token.balanceOf(address(this));
+        // uint256 _pool = vaultBalance();
+        // uint256 _before = token.balanceOf(address(this));
         token.transferFrom(msg.sender, address(this), _amount);
-        uint256 _after = token.balanceOf(address(this));
-        _amount = _after.sub(_before); // Additional check for deflationary tokens
-        uint256 shares = 0;
-        if (token.totalSupply() == 0) {
-            shares = _amount;
-        } else {
-            shares = (_amount.mul(token.totalSupply())).div(_pool);
-        }
-        _mint(msg.sender, shares);
+        // uint256 _after = token.balanceOf(address(this));
+        // _amount = _after.sub(_before); // Additional check for deflationary tokens
+        // uint256 shares = 0;
+        // if (token.totalSupply() == 0) {
+        //     shares = _amount;
+        // } else {
+        //     shares = (_amount.mul(token.totalSupply())).div(_pool);
+        // }
+        _mint(msg.sender, _amount);
     }
 
     function withdraw(uint256 _shares) public {
-        uint256 r = (balance().mul(_shares)).div(totalSupply());
+        uint256 r = (vaultBalance().mul(_shares)).div(totalSupply());
         _burn(msg.sender, _shares);
 
         // Check balance
@@ -222,28 +223,28 @@ contract GnosisSafe
     //     }
     // }
 
-    function handlePayment(
-        uint256 gasUsed,
-        uint256 baseGas,
-        uint256 gasPrice,
-        address gasToken,
-        address payable refundReceiver
-    )
-        private
-        returns (uint256 payment)
-    {
-        // solium-disable-next-line security/no-tx-origin
-        address payable receiver = refundReceiver == address(0) ? tx.origin : refundReceiver;
-        if (gasToken == address(0)) {
-            // For ETH we will only adjust the gas price to not be higher than the actual used gas price
-            payment = gasUsed.add(baseGas).mul(gasPrice < tx.gasprice ? gasPrice : tx.gasprice);
-            // solium-disable-next-line security/no-send
-            require(receiver.send(payment), "Could not pay gas costs with ether");
-        } else {
-            payment = gasUsed.add(baseGas).mul(gasPrice);
-            require(transferToken(gasToken, receiver, payment), "Could not pay gas costs with token");
-        }
-    }
+    // function handlePayment(
+    //     uint256 gasUsed,
+    //     uint256 baseGas,
+    //     uint256 gasPrice,
+    //     address gasToken,
+    //     address payable refundReceiver
+    // )
+    //     private
+    //     returns (uint256 payment)
+    // {
+    //     // solium-disable-next-line security/no-tx-origin
+    //     address payable receiver = refundReceiver == address(0) ? tx.origin : refundReceiver;
+    //     if (gasToken == address(0)) {
+    //         // For ETH we will only adjust the gas price to not be higher than the actual used gas price
+    //         payment = gasUsed.add(baseGas).mul(gasPrice < tx.gasprice ? gasPrice : tx.gasprice);
+    //         // solium-disable-next-line security/no-send
+    //         require(receiver.send(payment), "Could not pay gas costs with ether");
+    //     } else {
+    //         payment = gasUsed.add(baseGas).mul(gasPrice);
+    //         require(transferToken(gasToken, receiver, payment), "Could not pay gas costs with token");
+    //     }
+    // }
 
     /**
     * @dev Checks whether the signature provided is valid for the provided data, hash. Will revert otherwise.
