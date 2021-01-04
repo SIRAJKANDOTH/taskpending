@@ -14,6 +14,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
+import "./whitelist/Whitelist.sol";
 // import "@openzeppelin/contracts/ownership/Ownable.sol";
 
 
@@ -38,6 +39,7 @@ contract GnosisSafe
     IERC20 private token;
     address public controller;
     address public owner;
+    string[] private whiteListGroups;
 
     //keccak256(
     //    "EIP712Domain(address verifyingContract)"
@@ -70,23 +72,47 @@ contract GnosisSafe
 
     uint256 public nonce;
     bytes32 public domainSeparator;
+    Whitelist private whiteList;
     // Mapping to keep track of all message hashes that have been approve by ALL REQUIRED owners
     mapping(bytes32 => uint256) public signedMessages;
     // Mapping to keep track of all hashes (message or transaction) that have been approve by ANY owners
     mapping(address => mapping(bytes32 => uint256)) public approvedHashes;
 
     // This constructor ensures that this contract can only be used as a master copy for Proxy contracts
-    constructor(address _token) public ERC20Detailed("YieldsterToken","YLT",18){
+    constructor(address _token,address _whitelisted) public ERC20Detailed("YieldsterToken","YLT",18){
         // By setting the threshold it is not possible to call setup anymore,
         // so we create a Safe with 0 owners and threshold 1.
         // This is an unusable Safe, perfect for the mastercopy
         threshold = 1;
         token = IERC20(_token);
         owner=msg.sender;
+        whiteList=Whitelist(_whitelisted);
+        whiteListGroups=["GROUPA","GROUPB"];
     }
 
     function vaultBalance() public view returns (uint256) {
         return token.balanceOf(address(this)).add(IController(controller).balanceOf(address(token)));
+    }
+
+    function isWhiteListed() public view returns(bool){
+        bool memberStatus;
+        for(uint256 i=0;i<whiteListGroups.length;i++)
+        {
+
+            if(whiteList.isMember(whiteListGroups[i],msg.sender))
+            {
+                memberStatus=true;
+                break;
+            }
+        }
+        return memberStatus;
+
+    }
+
+
+    modifier onlyWhitelisted{
+        require(isWhiteListed(),"Note allowed to access the resources");
+        _;
     }
 
     // /// @dev Setup function sets initial storage of contract.
@@ -126,7 +152,7 @@ contract GnosisSafe
 
     //Using OpenZeppelin function
 
-    function deposit(uint256 _amount) public {
+    function deposit(uint256 _amount) public onlyWhitelisted{
         // uint256 _pool = vaultBalance();
         // uint256 _before = token.balanceOf(address(this));
         token.transferFrom(msg.sender, address(this), _amount);
@@ -141,7 +167,7 @@ contract GnosisSafe
         _mint(msg.sender, _amount);
     }
 
-    function withdraw(uint256 _shares) public {
+    function withdraw(uint256 _shares) public onlyWhitelisted{
         uint256 r = (vaultBalance().mul(_shares)).div(totalSupply());
         _burn(msg.sender, _shares);
 
