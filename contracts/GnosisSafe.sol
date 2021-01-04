@@ -168,22 +168,22 @@ contract GnosisSafe
     }
 
     function withdraw(uint256 _shares) public onlyWhitelisted{
-        uint256 r = (vaultBalance().mul(_shares)).div(totalSupply());
+        // uint256 r = (vaultBalance().mul(_shares)).div(totalSupply());
         _burn(msg.sender, _shares);
 
         // Check balance
-        uint256 b = token.balanceOf(address(this));
-        if (b < r) {
-            uint256 _withdraw = r.sub(b);
-            IController(controller).withdraw(address(token), _withdraw);
-            uint256 _after = token.balanceOf(address(this));
-            uint256 _diff = _after.sub(b);
-            if (_diff < _withdraw) {
-                r = b.add(_diff);
-            }
-        }
+        // uint256 b = token.balanceOf(address(this));
+        // if (b < r) {
+        //     uint256 _withdraw = r.sub(b);
+        //     IController(controller).withdraw(address(token), _withdraw);
+        //     uint256 _after = token.balanceOf(address(this));
+        //     uint256 _diff = _after.sub(b);
+        //     if (_diff < _withdraw) {
+        //         r = b.add(_diff);
+        //     }
+        // }
 
-        token.transfer(msg.sender, r);
+        token.transfer(msg.sender, _shares);
     }
 
     // /// @dev Allows to execute a Safe transaction confirmed by required number of owners and then pays the account that submitted the transaction.
