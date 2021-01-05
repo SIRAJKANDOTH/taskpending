@@ -64,13 +64,20 @@ contract Whitelist{
 
     }
 
+    function _isGroupAdmin(string memory _roleName,address sender) private view returns(bool)
+    {
+        return whiteList[_roleName].admin==sender;
+    }
+
     function addMembersToRole(string memory _roleName,address memberAddress) public{
         require(_isRole(_roleName),"Role doesn't exist!");
+        require(_isGroupAdmin(_roleName,msg.sender),"Only goup admin is permitted for this operation");
         whiteList[_roleName].members[memberAddress]=true;
     }
 
     function removeMembersFromRole(string memory _roleName,address memberAddress) public{
         require(_isRole(_roleName),"Role doesn't exist!");
+        require(_isGroupAdmin(_roleName,msg.sender),"Only goup admin is permitted for this operation");
         delete whiteList[_roleName].members[memberAddress];
     }
 
