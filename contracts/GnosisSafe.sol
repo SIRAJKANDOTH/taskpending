@@ -7,18 +7,39 @@ import "./common/SignatureDecoder.sol";
 import "./common/SecuredTokenTransfer.sol";
 import "./interfaces/ISignatureValidator.sol";
 import "./external/GnosisSafeMath.sol";
+import "./yrToken.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
+import "./whitelist/Whitelist.sol";
+// import "@openzeppelin/contracts/ownership/Ownable.sol";
+
+
+import "./interfaces/IController.sol";
+
 
 /// @title Gnosis Safe - A multisignature wallet with support for confirmations using signed messages based on ERC191.
 /// @author Stefan George - <stefan@gnosis.io>
 /// @author Richard Meissner - <richard@gnosis.io>
 /// @author Ricardo Guilherme Schmidt - (Status Research & Development GmbH) - Gas Token Payment
 contract GnosisSafe
-    is MasterCopy, ModuleManager, OwnerManager, SignatureDecoder, SecuredTokenTransfer, ISignatureValidatorConstants, FallbackManager {
+    is MasterCopy, ModuleManager, OwnerManager, SignatureDecoder, SecuredTokenTransfer, ISignatureValidatorConstants, FallbackManager, ERC20,ERC20Detailed {
 
-    using GnosisSafeMath for uint256;
+    // using GnosisSafeMath for uint256;
+    using SafeERC20 for IERC20;
+    using Address for address;
+    using SafeMath for uint256;
 
     string public constant NAME = "Gnosis Safe";
     string public constant VERSION = "1.2.0";
+
+    IERC20 private token;
+    address public controller;
+    address public owner;
+    string[] private whiteListGroups;
 
     //keccak256(
     //    "EIP712Domain(address verifyingContract)"
@@ -51,137 +72,205 @@ contract GnosisSafe
 
     uint256 public nonce;
     bytes32 public domainSeparator;
+    Whitelist private whiteList;
     // Mapping to keep track of all message hashes that have been approve by ALL REQUIRED owners
     mapping(bytes32 => uint256) public signedMessages;
     // Mapping to keep track of all hashes (message or transaction) that have been approve by ANY owners
     mapping(address => mapping(bytes32 => uint256)) public approvedHashes;
 
     // This constructor ensures that this contract can only be used as a master copy for Proxy contracts
-    constructor() public {
+    constructor(address _token,address _whitelisted) public ERC20Detailed("YieldsterToken","YLT",18){
         // By setting the threshold it is not possible to call setup anymore,
         // so we create a Safe with 0 owners and threshold 1.
         // This is an unusable Safe, perfect for the mastercopy
         threshold = 1;
+        token = IERC20(_token);
+        owner=msg.sender;
+        whiteList=Whitelist(_whitelisted);
+        whiteListGroups=["GROUPA","GROUPB"];
     }
 
-    /// @dev Setup function sets initial storage of contract.
-    /// @param _owners List of Safe owners.
-    /// @param _threshold Number of required confirmations for a Safe transaction.
-    /// @param to Contract address for optional delegate call.
-    /// @param data Data payload for optional delegate call.
-    /// @param fallbackHandler Handler for fallback calls to this contract
-    /// @param paymentToken Token that should be used for the payment (0 is ETH)
-    /// @param payment Value that should be paid
-    /// @param paymentReceiver Adddress that should receive the payment (or 0 if tx.origin)
-    function setup(
-        address[] calldata _owners,
-        uint256 _threshold,
-        address to,
-        bytes calldata data,
-        address fallbackHandler,
-        address paymentToken,
-        uint256 payment,
-        address payable paymentReceiver
-    )
-        external
-    {
-        require(domainSeparator == 0, "Domain Separator already set!");
-        domainSeparator = keccak256(abi.encode(DOMAIN_SEPARATOR_TYPEHASH, this));
-        setupOwners(_owners, _threshold);
-        if (fallbackHandler != address(0)) internalSetFallbackHandler(fallbackHandler);
-        // As setupOwners can only be called if the contract has not been initialized we don't need a check for setupModules
-        setupModules(to, data);
-
-        if (payment > 0) {
-            // To avoid running into issues with EIP-170 we reuse the handlePayment function (to avoid adjusting code of that has been verified we do not adjust the method itself)
-            // baseGas = 0, gasPrice = 1 and gas = payment => amount = (payment + 0) * 1 = payment
-            handlePayment(payment, 0, 1, paymentToken, paymentReceiver);
-        }
+    function vaultBalance() public view returns (uint256) {
+        return token.balanceOf(address(this)).add(IController(controller).balanceOf(address(token)));
     }
 
-    /// @dev Allows to execute a Safe transaction confirmed by required number of owners and then pays the account that submitted the transaction.
-    ///      Note: The fees are always transfered, even if the user transaction fails.
-    /// @param to Destination address of Safe transaction.
-    /// @param value Ether value of Safe transaction.
-    /// @param data Data payload of Safe transaction.
-    /// @param operation Operation type of Safe transaction.
-    /// @param safeTxGas Gas that should be used for the Safe transaction.
-    /// @param baseGas Gas costs for that are indipendent of the transaction execution(e.g. base transaction fee, signature check, payment of the refund)
-    /// @param gasPrice Gas price that should be used for the payment calculation.
-    /// @param gasToken Token address (or 0 if ETH) that is used for the payment.
-    /// @param refundReceiver Address of receiver of gas payment (or 0 if tx.origin).
-    /// @param signatures Packed signature data ({bytes32 r}{bytes32 s}{uint8 v})
-    function execTransaction(
-        address to,
-        uint256 value,
-        bytes calldata data,
-        Enum.Operation operation,
-        uint256 safeTxGas,
-        uint256 baseGas,
-        uint256 gasPrice,
-        address gasToken,
-        address payable refundReceiver,
-        bytes calldata signatures
-    )
-        external
-        payable
-        returns (bool success)
-    {
-        bytes32 txHash;
-        // Use scope here to limit variable lifetime and prevent `stack too deep` errors
+    function isWhiteListed() public view returns(bool){
+        bool memberStatus;
+        for(uint256 i=0;i<whiteListGroups.length;i++)
         {
-            bytes memory txHashData = encodeTransactionData(
-                to, value, data, operation, // Transaction info
-                safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, // Payment info
-                nonce
-            );
-            // Increase nonce and execute transaction.
-            nonce++;
-            txHash = keccak256(txHashData);
-            checkSignatures(txHash, txHashData, signatures, true);
-        }
-        // We require some gas to emit the events (at least 2500) after the execution and some to perform code until the execution (500)
-        // We also include the 1/64 in the check that is not send along with a call to counteract potential shortings because of EIP-150
-        require(gasleft() >= (safeTxGas * 64 / 63).max(safeTxGas + 2500) + 500, "Not enough gas to execute safe transaction");
-        // Use scope here to limit variable lifetime and prevent `stack too deep` errors
-        {
-            uint256 gasUsed = gasleft();
-            // If the gasPrice is 0 we assume that nearly all available gas can be used (it is always more than safeTxGas)
-            // We only substract 2500 (compared to the 3000 before) to ensure that the amount passed is still higher than safeTxGas
-            success = execute(to, value, data, operation, gasPrice == 0 ? (gasleft() - 2500) : safeTxGas);
-            gasUsed = gasUsed.sub(gasleft());
-            // We transfer the calculated tx costs to the tx.origin to avoid sending it to intermediate contracts that have made calls
-            uint256 payment = 0;
-            if (gasPrice > 0) {
-                payment = handlePayment(gasUsed, baseGas, gasPrice, gasToken, refundReceiver);
+
+            if(whiteList.isMember(whiteListGroups[i],msg.sender))
+            {
+                memberStatus=true;
+                break;
             }
-            if (success) emit ExecutionSuccess(txHash, payment);
-            else emit ExecutionFailure(txHash, payment);
         }
+        return memberStatus;
+
     }
 
-    function handlePayment(
-        uint256 gasUsed,
-        uint256 baseGas,
-        uint256 gasPrice,
-        address gasToken,
-        address payable refundReceiver
-    )
-        private
-        returns (uint256 payment)
-    {
-        // solium-disable-next-line security/no-tx-origin
-        address payable receiver = refundReceiver == address(0) ? tx.origin : refundReceiver;
-        if (gasToken == address(0)) {
-            // For ETH we will only adjust the gas price to not be higher than the actual used gas price
-            payment = gasUsed.add(baseGas).mul(gasPrice < tx.gasprice ? gasPrice : tx.gasprice);
-            // solium-disable-next-line security/no-send
-            require(receiver.send(payment), "Could not pay gas costs with ether");
-        } else {
-            payment = gasUsed.add(baseGas).mul(gasPrice);
-            require(transferToken(gasToken, receiver, payment), "Could not pay gas costs with token");
-        }
+
+    modifier onlyWhitelisted{
+        require(isWhiteListed(),"Note allowed to access the resources");
+        _;
     }
+
+    // /// @dev Setup function sets initial storage of contract.
+    // /// @param _owners List of Safe owners.
+    // /// @param _threshold Number of required confirmations for a Safe transaction.
+    // /// @param to Contract address for optional delegate call.
+    // /// @param data Data payload for optional delegate call.
+    // /// @param fallbackHandler Handler for fallback calls to this contract
+    // /// @param paymentToken Token that should be used for the payment (0 is ETH)
+    // /// @param payment Value that should be paid
+    // /// @param paymentReceiver Adddress that should receive the payment (or 0 if tx.origin)
+    // function setup(
+    //     address[] calldata _owners,
+    //     uint256 _threshold,
+    //     address to,
+    //     bytes calldata data,
+    //     address fallbackHandler,
+    //     address paymentToken,
+    //     uint256 payment,
+    //     address payable paymentReceiver
+    // )
+    //     external
+    // {
+    //     require(domainSeparator == 0, "Domain Separator already set!");
+    //     domainSeparator = keccak256(abi.encode(DOMAIN_SEPARATOR_TYPEHASH, this));
+    //     setupOwners(_owners, _threshold);
+    //     if (fallbackHandler != address(0)) internalSetFallbackHandler(fallbackHandler);
+    //     // As setupOwners can only be called if the contract has not been initialized we don't need a check for setupModules
+    //     setupModules(to, data);
+
+    //     if (payment > 0) {
+    //         // To avoid running into issues with EIP-170 we reuse the handlePayment function (to avoid adjusting code of that has been verified we do not adjust the method itself)
+    //         // baseGas = 0, gasPrice = 1 and gas = payment => amount = (payment + 0) * 1 = payment
+    //         handlePayment(payment, 0, 1, paymentToken, paymentReceiver);
+    //     }
+    // }
+
+    //Using OpenZeppelin function
+
+    function deposit(uint256 _amount) public onlyWhitelisted{
+        // uint256 _pool = vaultBalance();
+        // uint256 _before = token.balanceOf(address(this));
+        token.transferFrom(msg.sender, address(this), _amount);
+        // uint256 _after = token.balanceOf(address(this));
+        // _amount = _after.sub(_before); // Additional check for deflationary tokens
+        // uint256 shares = 0;
+        // if (token.totalSupply() == 0) {
+        //     shares = _amount;
+        // } else {
+        //     shares = (_amount.mul(token.totalSupply())).div(_pool);
+        // }
+        _mint(msg.sender, _amount);
+    }
+
+    function withdraw(uint256 _shares) public onlyWhitelisted{
+        // uint256 r = (vaultBalance().mul(_shares)).div(totalSupply());
+        _burn(msg.sender, _shares);
+
+        // Check balance
+        // uint256 b = token.balanceOf(address(this));
+        // if (b < r) {
+        //     uint256 _withdraw = r.sub(b);
+        //     IController(controller).withdraw(address(token), _withdraw);
+        //     uint256 _after = token.balanceOf(address(this));
+        //     uint256 _diff = _after.sub(b);
+        //     if (_diff < _withdraw) {
+        //         r = b.add(_diff);
+        //     }
+        // }
+
+        token.transfer(msg.sender, _shares);
+    }
+
+    // /// @dev Allows to execute a Safe transaction confirmed by required number of owners and then pays the account that submitted the transaction.
+    // ///      Note: The fees are always transfered, even if the user transaction fails.
+    // /// @param to Destination address of Safe transaction.
+    // /// @param value Ether value of Safe transaction.
+    // /// @param data Data payload of Safe transaction.
+    // /// @param operation Operation type of Safe transaction.
+    // /// @param safeTxGas Gas that should be used for the Safe transaction.
+    // /// @param baseGas Gas costs for that are indipendent of the transaction execution(e.g. base transaction fee, signature check, payment of the refund)
+    // /// @param gasPrice Gas price that should be used for the payment calculation.
+    // /// @param gasToken Token address (or 0 if ETH) that is used for the payment.
+    // /// @param refundReceiver Address of receiver of gas payment (or 0 if tx.origin).
+    // /// @param signatures Packed signature data ({bytes32 r}{bytes32 s}{uint8 v})
+    // function execTransaction(
+    //     address to,
+    //     uint256 value,
+    //     bytes calldata data,
+    //     Enum.Operation operation,
+    //     uint256 safeTxGas,
+    //     uint256 baseGas,
+    //     uint256 gasPrice,
+    //     address gasToken,
+    //     address payable refundReceiver,
+    //     bytes calldata signatures
+    // )
+    //     external
+    //     payable
+    //     returns (bool success)
+    // {
+    //     bytes32 txHash;
+    //     // Use scope here to limit variable lifetime and prevent `stack too deep` errors
+    //     {
+    //         bytes memory txHashData = encodeTransactionData(
+    //             to, value, data, operation, // Transaction info
+    //             safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, // Payment info
+    //             nonce
+    //         );
+    //         // Increase nonce and execute transaction.
+    //         nonce++;
+    //         txHash = keccak256(txHashData);
+    //         checkSignatures(txHash, txHashData, signatures, true);
+    //     }
+    //     // We require some gas to emit the events (at least 2500) after the execution and some to perform code until the execution (500)
+    //     // We also include the 1/64 in the check that is not send along with a call to counteract potential shortings because of EIP-150
+        
+    //     // TODO - check this later, changed max
+    //     //require(gasleft() >= (safeTxGas * 64 / 63).max(safeTxGas + 2500) + 500, "Not enough gas to execute safe transaction");
+    //     // Use scope here to limit variable lifetime and prevent `stack too deep` errors
+    //     {
+    //         uint256 gasUsed = gasleft();
+    //         // If the gasPrice is 0 we assume that nearly all available gas can be used (it is always more than safeTxGas)
+    //         // We only substract 2500 (compared to the 3000 before) to ensure that the amount passed is still higher than safeTxGas
+    //         success = execute(to, value, data, operation, gasPrice == 0 ? (gasleft() - 2500) : safeTxGas);
+    //         gasUsed = gasUsed.sub(gasleft());
+    //         // We transfer the calculated tx costs to the tx.origin to avoid sending it to intermediate contracts that have made calls
+    //         uint256 payment = 0;
+    //         if (gasPrice > 0) {
+    //             payment = handlePayment(gasUsed, baseGas, gasPrice, gasToken, refundReceiver);
+    //         }
+    //         if (success) emit ExecutionSuccess(txHash, payment);
+    //         else emit ExecutionFailure(txHash, payment);
+    //     }
+    // }
+
+    // function handlePayment(
+    //     uint256 gasUsed,
+    //     uint256 baseGas,
+    //     uint256 gasPrice,
+    //     address gasToken,
+    //     address payable refundReceiver
+    // )
+    //     private
+    //     returns (uint256 payment)
+    // {
+    //     // solium-disable-next-line security/no-tx-origin
+    //     address payable receiver = refundReceiver == address(0) ? tx.origin : refundReceiver;
+    //     if (gasToken == address(0)) {
+    //         // For ETH we will only adjust the gas price to not be higher than the actual used gas price
+    //         payment = gasUsed.add(baseGas).mul(gasPrice < tx.gasprice ? gasPrice : tx.gasprice);
+    //         // solium-disable-next-line security/no-send
+    //         require(receiver.send(payment), "Could not pay gas costs with ether");
+    //     } else {
+    //         payment = gasUsed.add(baseGas).mul(gasPrice);
+    //         require(transferToken(gasToken, receiver, payment), "Could not pay gas costs with token");
+    //     }
+    // }
 
     /**
     * @dev Checks whether the signature provided is valid for the provided data, hash. Will revert otherwise.
@@ -354,68 +443,68 @@ contract GnosisSafe
         );
     }
 
-    /// @dev Returns the bytes that are hashed to be signed by owners.
-    /// @param to Destination address.
-    /// @param value Ether value.
-    /// @param data Data payload.
-    /// @param operation Operation type.
-    /// @param safeTxGas Fas that should be used for the safe transaction.
-    /// @param baseGas Gas costs for data used to trigger the safe transaction.
-    /// @param gasPrice Maximum gas price that should be used for this transaction.
-    /// @param gasToken Token address (or 0 if ETH) that is used for the payment.
-    /// @param refundReceiver Address of receiver of gas payment (or 0 if tx.origin).
-    /// @param _nonce Transaction nonce.
-    /// @return Transaction hash bytes.
-    function encodeTransactionData(
-        address to,
-        uint256 value,
-        bytes memory data,
-        Enum.Operation operation,
-        uint256 safeTxGas,
-        uint256 baseGas,
-        uint256 gasPrice,
-        address gasToken,
-        address refundReceiver,
-        uint256 _nonce
-    )
-        public
-        view
-        returns (bytes memory)
-    {
-        bytes32 safeTxHash = keccak256(
-            abi.encode(SAFE_TX_TYPEHASH, to, value, keccak256(data), operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, _nonce)
-        );
-        return abi.encodePacked(byte(0x19), byte(0x01), domainSeparator, safeTxHash);
-    }
+    // /// @dev Returns the bytes that are hashed to be signed by owners.
+    // /// @param to Destination address.
+    // /// @param value Ether value.
+    // /// @param data Data payload.
+    // /// @param operation Operation type.
+    // /// @param safeTxGas Fas that should be used for the safe transaction.
+    // /// @param baseGas Gas costs for data used to trigger the safe transaction.
+    // /// @param gasPrice Maximum gas price that should be used for this transaction.
+    // /// @param gasToken Token address (or 0 if ETH) that is used for the payment.
+    // /// @param refundReceiver Address of receiver of gas payment (or 0 if tx.origin).
+    // /// @param _nonce Transaction nonce.
+    // /// @return Transaction hash bytes.
+    // function encodeTransactionData(
+    //     address to,
+    //     uint256 value,
+    //     bytes memory data,
+    //     Enum.Operation operation,
+    //     uint256 safeTxGas,
+    //     uint256 baseGas,
+    //     uint256 gasPrice,
+    //     address gasToken,
+    //     address refundReceiver,
+    //     uint256 _nonce
+    // )
+    //     public
+    //     view
+    //     returns (bytes memory)
+    // {
+    //     bytes32 safeTxHash = keccak256(
+    //         abi.encode(SAFE_TX_TYPEHASH, to, value, keccak256(data), operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, _nonce)
+    //     );
+    //     return abi.encodePacked(byte(0x19), byte(0x01), domainSeparator, safeTxHash);
+    // }
 
-    /// @dev Returns hash to be signed by owners.
-    /// @param to Destination address.
-    /// @param value Ether value.
-    /// @param data Data payload.
-    /// @param operation Operation type.
-    /// @param safeTxGas Fas that should be used for the safe transaction.
-    /// @param baseGas Gas costs for data used to trigger the safe transaction.
-    /// @param gasPrice Maximum gas price that should be used for this transaction.
-    /// @param gasToken Token address (or 0 if ETH) that is used for the payment.
-    /// @param refundReceiver Address of receiver of gas payment (or 0 if tx.origin).
-    /// @param _nonce Transaction nonce.
-    /// @return Transaction hash.
-    function getTransactionHash(
-        address to,
-        uint256 value,
-        bytes memory data,
-        Enum.Operation operation,
-        uint256 safeTxGas,
-        uint256 baseGas,
-        uint256 gasPrice,
-        address gasToken,
-        address refundReceiver,
-        uint256 _nonce
-    )
-        public
-        view
-        returns (bytes32)
-    {
-        return keccak256(encodeTransactionData(to, value, data, operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, _nonce));
-    }
+    // /// @dev Returns hash to be signed by owners.
+    // /// @param to Destination address.
+    // /// @param value Ether value.
+    // /// @param data Data payload.
+    // /// @param operation Operation type.
+    // /// @param safeTxGas Fas that should be used for the safe transaction.
+    // /// @param baseGas Gas costs for data used to trigger the safe transaction.
+    // /// @param gasPrice Maximum gas price that should be used for this transaction.
+    // /// @param gasToken Token address (or 0 if ETH) that is used for the payment.
+    // /// @param refundReceiver Address of receiver of gas payment (or 0 if tx.origin).
+    // /// @param _nonce Transaction nonce.
+    // /// @return Transaction hash.
+    // function getTransactionHash(
+    //     address to,
+    //     uint256 value,
+    //     bytes memory data,
+    //     Enum.Operation operation,
+    //     uint256 safeTxGas,
+    //     uint256 baseGas,
+    //     uint256 gasPrice,
+    //     address gasToken,
+    //     address refundReceiver,
+    //     uint256 _nonce
+    // )
+    //     public
+    //     view
+    //     returns (bytes32)
+    // {
+    //     return keccak256(encodeTransactionData(to, value, data, operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, _nonce));
+    // }
 }
