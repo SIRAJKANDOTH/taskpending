@@ -6,10 +6,18 @@ contract APContract is ChainlinkService{
         string name;
         address feedAddress;
         bool created;
+        string symbol;
+        // address tokenAddress;
+    }
+
+    struct Protocol{
+        string name;
+        bool created;
+        string symbol;
     }
 
     // Key will be the -symbol of that partiular coin
-    mapping(string=>Asset) assets;
+    mapping(address=>Asset) assets;
     address private apsManager;
 
 
@@ -23,27 +31,34 @@ contract APContract is ChainlinkService{
         _;
     }
 
-    function _isAssetPresent(string memory _symbol)private view returns(bool)
+    function _isAssetPresent(address _address)private view returns(bool)
     {
-        return assets[_symbol].created;
+        return assets[_address].created;
     }
 
 
-    function addAsset(string memory _symbol,string memory _name,address feedAddress) public onlyManager{
-        require(!_isAssetPresent(_symbol),"Asset already present!");
-        Asset memory newAsset=Asset({name:_name,feedAddress:feedAddress,created:true});
-        assets[_symbol]=newAsset;
+    function addAsset(string memory _symbol,string memory _name,address feedAddress,address _tokenAddress) public onlyManager{
+        require(!_isAssetPresent(_tokenAddress),"Asset already present!");
+        Asset memory newAsset=Asset({name:_name,feedAddress:feedAddress,created:true,symbol:_symbol});
+        assets[_tokenAddress]=newAsset;
     }
 
-    function removeAsset(string memory _symbol) public onlyManager{
-        require(_isAssetPresent(_symbol),"Asset not present!");
-        delete assets[_symbol];
+    function removeAsset(address _tokenAddress) public onlyManager{
+        require(_isAssetPresent(_tokenAddress),"Asset not present!");
+        delete assets[_tokenAddress];
     }
-
-    function getUSDPrice(string memory _symbol) public returns(int)
+    
+    function getAssetDetails(address _tokenAddress) public view returns(string memory,address ,string memory)
     {
-        require(_isAssetPresent(_symbol),"Asset not present!");
-        return getLatestPrice(assets[_symbol].feedAddress);
+        require(_isAssetPresent(_tokenAddress),"Asset not present!");
+        return(assets[_tokenAddress].name,assets[_tokenAddress].feedAddress,assets[_tokenAddress].symbol);
+
+    }
+
+    function getUSDPrice(address _tokenAddress) public returns(int,uint)
+    {
+        require(_isAssetPresent(_tokenAddress),"Asset not present!");
+        return getLatestPrice(assets[_tokenAddress].feedAddress);
     }
 
 }
