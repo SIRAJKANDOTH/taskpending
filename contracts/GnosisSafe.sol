@@ -8,6 +8,7 @@ import "./common/SecuredTokenTransfer.sol";
 import "./interfaces/ISignatureValidator.sol";
 import "./external/GnosisSafeMath.sol";
 import "./yrToken.sol";
+import "./aps/APContract.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
@@ -36,10 +37,12 @@ contract GnosisSafe
     string public constant NAME = "Gnosis Safe";
     string public constant VERSION = "1.2.0";
 
-    IERC20 private token;
+    // IERC20 private token;
+    uint256 private tokenPrice;
     address public controller;
     address public owner;
     string[] private whiteListGroups;
+    mapping(address=>bool) depositedTokens; 
 
     //keccak256(
     //    "EIP712Domain(address verifyingContract)"
@@ -73,25 +76,29 @@ contract GnosisSafe
     uint256 public nonce;
     bytes32 public domainSeparator;
     Whitelist private whiteList;
+    APContract private apContract;
     // Mapping to keep track of all message hashes that have been approve by ALL REQUIRED owners
     mapping(bytes32 => uint256) public signedMessages;
     // Mapping to keep track of all hashes (message or transaction) that have been approve by ANY owners
     mapping(address => mapping(bytes32 => uint256)) public approvedHashes;
 
     // This constructor ensures that this contract can only be used as a master copy for Proxy contracts
-    constructor(address _token,address _whitelisted) public ERC20Detailed("YieldsterToken","YLT",18){
+    constructor(address _token, address _whitelisted, address _apContract) public ERC20Detailed("YieldsterToken","YLT",18){
         // By setting the threshold it is not possible to call setup anymore,
         // so we create a Safe with 0 owners and threshold 1.
         // This is an unusable Safe, perfect for the mastercopy
         threshold = 1;
-        token = IERC20(_token);
+        // token = IERC20(_token);
         owner=msg.sender;
         whiteList=Whitelist(_whitelisted);
         whiteListGroups=["GROUPA","GROUPB"];
+        apContract = APContract(_apContract);
     }
 
-    function vaultBalance() public view returns (uint256) {
-        return token.balanceOf(address(this)).add(IController(controller).balanceOf(address(token)));
+    function vaultBalance(address _address) public view returns (uint256) {
+        IERC20 token = ERC20(_address);
+        return token.balanceOf(address(this));
+        // return token.balanceOf(address(this)).add(IController(controller).balanceOf(address(token)));
     }
 
     function isWhiteListed() public view returns(bool){
@@ -152,9 +159,10 @@ contract GnosisSafe
 
     //Using OpenZeppelin function
 
-    function deposit(uint256 _amount) public onlyWhitelisted{
+    function deposit(address _tokenAddress, uint256 _amount) public onlyWhitelisted{
         // uint256 _pool = vaultBalance();
         // uint256 _before = token.balanceOf(address(this));
+        IERC20 token = ERC20(_tokenAddress);
         token.transferFrom(msg.sender, address(this), _amount);
         // uint256 _after = token.balanceOf(address(this));
         // _amount = _after.sub(_before); // Additional check for deflationary tokens
@@ -164,11 +172,14 @@ contract GnosisSafe
         // } else {
         //     shares = (_amount.mul(token.totalSupply())).div(_pool);
         // }
+        uint256 tokenPrice = apContract.getUSDPrice(_tokenAddress);
+        mintAmount = getMintValue(x, tokenPrice);
         _mint(msg.sender, _amount);
     }
 
-    function withdraw(uint256 _shares) public onlyWhitelisted{
+    function withdraw(address _tokenAddress, uint256 _shares) public onlyWhitelisted{
         // uint256 r = (vaultBalance().mul(_shares)).div(totalSupply());
+        IERC20 token = ERC20(_tokenAddress);
         _burn(msg.sender, _shares);
 
         // Check balance
@@ -507,4 +518,12 @@ contract GnosisSafe
     // {
     //     return keccak256(encodeTransactionData(to, value, data, operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, _nonce));
     // }
+
+    function getMintValue(uint256 vaultNAV, uint256 depositNAV) private  returns(uint256){
+        return depositNAV.div(vaultNAV.div(totalSupply()));
+    }
+
+    function getVaultNAV() private returns(uint256){
+
+    }
 }
