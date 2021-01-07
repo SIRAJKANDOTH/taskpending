@@ -15,7 +15,7 @@ contract ChainlinkService{
 
      // Feed address - https://docs.chain.link/docs/ethereum-addresses
      
-    function getLatestPrice(address feedAddress) public returns (int) {
+    function getLatestPrice(address feedAddress) public returns (int,uint) {
         priceFeed = AggregatorV3Interface(feedAddress);
         (
             uint80 roundID, 
@@ -24,6 +24,6 @@ contract ChainlinkService{
             uint timeStamp,
             uint80 answeredInRound
         ) = priceFeed.latestRoundData();
-        return price;
+        return (price,timeStamp);
     }
 }
