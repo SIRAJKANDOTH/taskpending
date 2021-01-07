@@ -18,6 +18,7 @@ contract APContract is ChainlinkService{
 
     // Key will be the -symbol of that partiular coin
     mapping(address=>Asset) assets;
+    mapping(address=>Protocol) protocols;
     address private apsManager;
 
 
@@ -36,7 +37,12 @@ contract APContract is ChainlinkService{
         return assets[_address].created;
     }
 
+    function _isProtocolPresent(address _address)private view returns(bool)
+    {
+        return protocols[_address].created;
+    }
 
+// Assets
     function addAsset(string memory _symbol,string memory _name,address feedAddress,address _tokenAddress) public onlyManager{
         require(!_isAssetPresent(_tokenAddress),"Asset already present!");
         Asset memory newAsset=Asset({name:_name,feedAddress:feedAddress,created:true,symbol:_symbol});
@@ -59,6 +65,18 @@ contract APContract is ChainlinkService{
     {
         require(_isAssetPresent(_tokenAddress),"Asset not present!");
         return getLatestPrice(assets[_tokenAddress].feedAddress);
+    }
+
+// Protocols
+    function addProtocol(string memory _symbol,string memory _name,address _protocolAddress) public onlyManager{
+        require(!_isProtocolPresent(_protocolAddress),"Protocol already present!");
+        Protocol memory newAsset=Protocol({name:_name,created:true,symbol:_symbol});
+        protocols[_protocolAddress]=newAsset;
+    }
+
+    function removeProtocol(address _protocolAddress) public onlyManager{
+        require(_isProtocolPresent(_protocolAddress),"Protocol not present!");
+        delete protocols[_protocolAddress];
     }
 
 }
