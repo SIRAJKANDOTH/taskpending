@@ -6,10 +6,10 @@ var APContract = artifacts.require("./aps/APContract.sol");
 
 module.exports = async(deployer) => {
   deployer.deploy(Whitelist).then(async(whLst)=>{
-    await deployer.deploy(APContract);
+    let aps = await deployer.deploy(APContract);
     
     var tkn = await deployer.deploy(yrToken, 10000000000000);
-    await deployer.deploy(GnosisSafe, tkn.address,whLst.address);
+    await deployer.deploy(GnosisSafe, [tkn.address],whLst.address,aps.address);
   });
   
 
