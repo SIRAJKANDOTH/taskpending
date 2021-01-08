@@ -161,13 +161,12 @@ contract GnosisSafe is
     //Using OpenZeppelin function
     //TODO: NAV Methods
     function getMintValue(uint256 vaultNAV, uint256 depositNAV)
-        private view
+        private
+        view
         returns (uint256)
     {
         return depositNAV.div(vaultNAV.div(totalSupply()));
     }
-
-
 
     function getVaultNAV() private returns (uint256) {
         // mapping(address=>bool) depositedTokens;
@@ -185,17 +184,14 @@ contract GnosisSafe is
         return nav;
     }
 
-
-
     function getDepositNav(address _tokenAddress, uint256 _amount)
-    private returns(uint256)
+        private
+        returns (uint256)
     {
         (int256 tokenUSD, uint256 timestamp) =
-                    apContract.getUSDPrice(_tokenAddress);
-    return _amount.mul(uint256(tokenUSD));
+            apContract.getUSDPrice(_tokenAddress);
+        return _amount.mul(uint256(tokenUSD));
     }
-
-
 
     function deposit(address _tokenAddress, uint256 _amount)
         public
@@ -203,34 +199,36 @@ contract GnosisSafe is
     {
         IERC20 token = ERC20(_tokenAddress);
         token.transferFrom(msg.sender, address(this), _amount);
-        uint256 _share=getMintValue(getVaultNAV(),getDepositNav(_tokenAddress,_amount));
+        uint256 _share =
+            getMintValue(getVaultNAV(), getDepositNav(_tokenAddress, _amount));
         _mint(msg.sender, _share);
     }
-
-
 
     function withdraw(address _tokenAddress, uint256 _shares)
         public
         onlyWhitelisted
     {
         // uint256 r = (vaultBalance().mul(_shares)).div(totalSupply());
+
+        (int256 tokenUSD, uint256 timestamp) =
+            apContract.getUSDPrice(_tokenAddress);
+        uint256 tokensBurned = vaultBalance(_tokenAddress).mul(_shares).div(totalSupply());
+        uint256 liquidationCosts=0;
+        uint256 navw = ((getVaultNAV().div(totalSupply())).mul(tokensBurned)) - liquidationCosts;
         IERC20 token = ERC20(_tokenAddress);
         _burn(msg.sender, _shares);
-
-        // Check balance
-        // uint256 b = token.balanceOf(address(this));
-        // if (b < r) {
-        //     uint256 _withdraw = r.sub(b);
-        //     IController(controller).withdraw(address(token), _withdraw);
-        //     uint256 _after = token.balanceOf(address(this));
-        //     uint256 _diff = _after.sub(b);
-        //     if (_diff < _withdraw) {
-        //         r = b.add(_diff);
-        //     }
-        // }
-
-        token.transfer(msg.sender, _shares);
+        token.transfer(msg.sender, navw);
     }
+
+    //     function withdraw(address _tokenAddress, uint256 _shares)
+    //     public
+    //     onlyWhitelisted
+    // {
+    //     // uint256 r = (vaultBalance().mul(_shares)).div(totalSupply());
+    //     IERC20 token = ERC20(_tokenAddress);
+    //     _burn(msg.sender, _shares);
+    //     token.transfer(msg.sender, _shares);
+    // }
 
     // /// @dev Allows to execute a Safe transaction confirmed by required number of owners and then pays the account that submitted the transaction.
     // ///      Note: The fees are always transfered, even if the user transaction fails.
@@ -593,6 +591,4 @@ contract GnosisSafe is
     // {
     //     return keccak256(encodeTransactionData(to, value, data, operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, _nonce));
     // }
-
-    
 }
