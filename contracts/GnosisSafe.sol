@@ -159,27 +159,55 @@ contract GnosisSafe is
     // }
 
     //Using OpenZeppelin function
+    //TODO: NAV Methods
+    function getMintValue(uint256 vaultNAV, uint256 depositNAV)
+        private view
+        returns (uint256)
+    {
+        return depositNAV.div(vaultNAV.div(totalSupply()));
+    }
+
+
+
+    function getVaultNAV() private returns (uint256) {
+        // mapping(address=>bool) depositedTokens;
+        uint256 nav = 0;
+        for (uint256 i = 0; i < tokensList.length; i++) {
+            if (depositedTokens[tokensList[i]]) {
+                (int256 tokenUSD, uint256 timestamp) =
+                    apContract.getUSDPrice(tokensList[i]);
+                nav += (vaultBalance(tokensList[i]) * uint256(tokenUSD));
+                // .div(
+                //     totalSupply()
+                // );
+            }
+        }
+        return nav;
+    }
+
+
+
+    function getDepositNav(address _tokenAddress, uint256 _amount)
+    private returns(uint256)
+    {
+        (int256 tokenUSD, uint256 timestamp) =
+                    apContract.getUSDPrice(_tokenAddress);
+    return _amount.mul(uint256(tokenUSD));
+    }
+
+
 
     function deposit(address _tokenAddress, uint256 _amount)
         public
         onlyWhitelisted
     {
-        // uint256 _pool = vaultBalance();
-        // uint256 _before = token.balanceOf(address(this));
         IERC20 token = ERC20(_tokenAddress);
         token.transferFrom(msg.sender, address(this), _amount);
-        // uint256 _after = token.balanceOf(address(this));
-        // _amount = _after.sub(_before); // Additional check for deflationary tokens
-        // uint256 shares = 0;
-        // if (token.totalSupply() == 0) {
-        //     shares = _amount;
-        // } else {
-        //     shares = (_amount.mul(token.totalSupply())).div(_pool);
-        // }
-        // uint256 tokenPrice = apContract.getUSDPrice(_tokenAddress);
-        // mintAmount = getMintValue(x, tokenPrice);  <<Ref
-        _mint(msg.sender, _amount);
+        uint256 _share=getMintValue(getVaultNAV(),getDepositNav(_tokenAddress,_amount));
+        _mint(msg.sender, _share);
     }
+
+
 
     function withdraw(address _tokenAddress, uint256 _shares)
         public
@@ -566,25 +594,5 @@ contract GnosisSafe is
     //     return keccak256(encodeTransactionData(to, value, data, operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, _nonce));
     // }
 
-    function getMintValue(uint256 vaultNAV, uint256 depositNAV)
-        private
-        returns (uint256)
-    {
-        return depositNAV.div(vaultNAV.div(totalSupply()));
-    }
-
-    function getVaultNAV() private returns (uint256) {
-        // mapping(address=>bool) depositedTokens;
-        uint256 nav = 0;
-        for (uint256 i = 0; i < tokensList.length; i++) {
-            if (depositedTokens[tokensList[i]]) {
-                (int256 tokenUSD, uint256 timestamp) =
-                    apContract.getUSDPrice(tokensList[i]);
-                nav += (vaultBalance(tokensList[i]) * uint256(tokenUSD)).div(
-                    totalSupply()
-                );
-            }
-        }
-        return nav;
-    }
+    
 }
