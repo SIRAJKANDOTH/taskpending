@@ -39,7 +39,7 @@ contract GnosisSafe is
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
-
+    bool private isSmartDeposit = false;
     string public constant NAME = "Gnosis Safe";
     string public constant VERSION = "1.2.0";
 
@@ -199,9 +199,16 @@ contract GnosisSafe is
     {
         IERC20 token = ERC20(_tokenAddress);
         token.transferFrom(msg.sender, address(this), _amount);
-        uint256 _share =
-            getMintValue(getVaultNAV(), getDepositNav(_tokenAddress, _amount));
-        _mint(msg.sender, _share);
+
+        if(isSmartDeposit){
+            //hook into smart deposit
+            //send token.balanceOf(address(this)) to smart deposit
+        }
+        else {
+            uint256 _share = getMintValue(getVaultNAV(), getDepositNav(_tokenAddress, _amount));
+            _mint(msg.sender, _share);
+        }
+
     }
 
     function withdraw(address _tokenAddress, uint256 _shares)
