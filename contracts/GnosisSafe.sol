@@ -63,6 +63,11 @@ contract GnosisSafe is
     bytes32 private constant SAFE_TX_TYPEHASH =
         0xbb8310d486368db6bd6f849402fdd73ad53d316b5a4b2644ad6efe0f941286d8;
 
+
+
+        address private constant ETHER_FEED_ADDRESS =
+        0x8A753747A1Fa494EC906cE90E9f37563A8AF630e;
+
     //keccak256(
     //    "SafeMessage(bytes message)"
     //);
@@ -199,10 +204,23 @@ contract GnosisSafe is
     {
         IERC20 token = ERC20(_tokenAddress);
         token.transferFrom(msg.sender, address(this), _amount);
-        uint256 _share =
+        uint256 _share;
+        // If no tokens issued the token value will be equivalent to deposit value
+        if(totalSupply()==0)
+        {
+            _share=_amount;
+            (int256 tokenUSD, uint256 timestamp) = apContract.getUSDPrice(_tokenAddress);
+            tokenPrice=uint256(tokenUSD);
+        }
+        else{
+        _share =
             getMintValue(getVaultNAV(), getDepositNav(_tokenAddress, _amount));
+            }
         _mint(msg.sender, _share);
     }
+
+
+    
 
     function withdraw(address _tokenAddress, uint256 _shares)
         public
@@ -213,7 +231,12 @@ contract GnosisSafe is
         (int256 tokenUSD, uint256 timestamp) =
             apContract.getUSDPrice(_tokenAddress);
         uint256 tokensBurned = vaultBalance(_tokenAddress).mul(_shares).div(totalSupply());
+        (int256 etherUSD, uint256 time) =
+            apContract.getUSDPrice(_tokenAddress);
         uint256 liquidationCosts=0;
+        // uint256 liquidationCosts=tx.gasprice;
+
+        
         uint256 navw = ((getVaultNAV().div(totalSupply())).mul(tokensBurned)) - liquidationCosts;
         IERC20 token = ERC20(_tokenAddress);
         _burn(msg.sender, _shares);
