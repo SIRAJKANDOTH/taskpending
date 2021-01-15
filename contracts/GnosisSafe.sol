@@ -47,8 +47,10 @@ contract GnosisSafe is
     uint256 private tokenPrice;
     address public controller;
     address public owner;
+    address private smartLender;
     string[] private whiteListGroups;
     address[] public tokensList;
+
     mapping(address => bool) depositedTokens;
 
     //keccak256(
@@ -75,6 +77,7 @@ contract GnosisSafe is
     event ExecutionSuccess(bytes32 txHash, uint256 payment);
 
     uint256 public nonce;
+    uint256 public maxFeeLoad;
     bytes32 public domainSeparator;
     Whitelist private whiteList;
     APContract private apContract;
@@ -87,7 +90,8 @@ contract GnosisSafe is
     constructor(
         address[] memory _tokens,
         address _whitelisted,
-        address _apContract
+        address _apContract,
+        uint256 _maxFeeLoad
     ) public ERC20Detailed("YieldsterToken", "YLT", 18) {
         // By setting the threshold it is not possible to call setup anymore,
         // so we create a Safe with 0 owners and threshold 1.
@@ -99,6 +103,7 @@ contract GnosisSafe is
         whiteList = Whitelist(_whitelisted);
         whiteListGroups = ["GROUPA", "GROUPB"];
         apContract = APContract(_apContract);
+        maxFeeLoad=_maxFeeLoad;
     }
 
     function vaultBalance(address _address) public view returns (uint256) {
@@ -513,6 +518,7 @@ contract GnosisSafe is
         return EIP1271_MAGIC_VALUE;
     }
 
+
     /// @dev Returns hash of a message that can be signed by owners.
     /// @param message Message that should be hashed
     /// @return Message hash.
@@ -598,4 +604,31 @@ contract GnosisSafe is
     // {
     //     return keccak256(encodeTransactionData(to, value, data, operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, _nonce));
     // }
+
+
+
+    // SET lender
+    function setLender(address _lender) public
+    {
+        smartLender=_lender;
+    }
+
+    // GET lender
+
+    function getLender() public view returns(address)
+    {
+        return smartLender;
+    }
+
+
+    function tokenValueInUSD(uint256 tokenCount) public pure returns(uint256)
+    {
+        return tokenCount.mul(1);
+    }
+
+
+
+
+
+
 }
