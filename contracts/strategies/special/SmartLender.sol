@@ -47,7 +47,16 @@ contract SmartLender
     function handleLoanRequest(address payable _requestedSafe,uint256 _amountInUSD,address _tokenAddress) public{
         GnosisSafe safe=GnosisSafe(_requestedSafe);
         address lenderSafe=safe.getLender();
-        safe.balanceOf(lenderSafe);
+        // uint256
+        // tokenCountFromUSD
+        uint256 lenderSafeBalanceInUsd=safe.tokenValueInUSD(safe.balanceOf(lenderSafe));
+        if(lenderSafeBalanceInUsd>_amountInUSD)
+        {
+            safe.mint(safe.tokenCountFromUSD(_amountInUSD));
+        }
+        else{
+
+        }
     }
 
 

@@ -620,15 +620,23 @@ contract GnosisSafe is
         return smartLender;
     }
 
-
+// Get USD value of given number of safeTokens
+// Todo: add logic to get usd of single token
     function tokenValueInUSD(uint256 tokenCount) public pure returns(uint256)
     {
         return tokenCount.mul(1);
     }
+    function tokenCountFromUSD(uint256 amountInUsd) public pure returns(uint256)
+    {
+        return amountInUsd.div(1);
+    }
 
-
-
-
+    function mint(uint256 _amount) external{
+        _mint(msg.sender, _amount);
+    }
+    function burn(uint256 _amount,address _lender) external{
+        _burn(_lender, _amount);
+    }
 
 
 }
