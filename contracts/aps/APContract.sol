@@ -36,6 +36,11 @@ contract APContract is ChainlinkService{
     {
         return assets[_address].created;
     }
+    
+    function isAssetPresent(address _address) external view returns(bool)
+    {
+        return _isAssetPresent(_address);
+    }
 
     function _isProtocolPresent(address _address)private view returns(bool)
     {

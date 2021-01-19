@@ -19,6 +19,7 @@ import "./whitelist/Whitelist.sol";
 
 
 import "./interfaces/IController.sol";
+import "./interfaces/IAPContract.sol";
 
 
 /// @title Gnosis Safe - A multisignature wallet with support for confirmations using signed messages based on ERC191.
@@ -33,12 +34,14 @@ contract GnosisSafe
     using Address for address;
     using SafeMath for uint256;
 
-    string public constant NAME = "Gnosis Safe";
-    string public constant VERSION = "1.2.0";
+    string public safeName = "Gnosis Safe";
+    string public version = "1.2.0";
 
     IERC20 private token;
     address public controller;
     address public owner;
+    address public manager;
+    mapping(address => bool) public safeAssets;
     string[] private whiteListGroups;
 
     //keccak256(
@@ -73,21 +76,28 @@ contract GnosisSafe
     uint256 public nonce;
     bytes32 public domainSeparator;
     Whitelist private whiteList;
+
     // Mapping to keep track of all message hashes that have been approve by ALL REQUIRED owners
     mapping(bytes32 => uint256) public signedMessages;
+
     // Mapping to keep track of all hashes (message or transaction) that have been approve by ANY owners
     mapping(address => mapping(bytes32 => uint256)) public approvedHashes;
 
     // This constructor ensures that this contract can only be used as a master copy for Proxy contracts
-    constructor(address _token,address _whitelisted) public ERC20Detailed("YieldsterToken","YLT",18){
-        // By setting the threshold it is not possible to call setup anymore,
-        // so we create a Safe with 0 owners and threshold 1.
-        // This is an unusable Safe, perfect for the mastercopy
+    // constructor(address _token,address _whitelisted) public ERC20Detailed("YieldsterToken","YLT",18){
+    //     // By setting the threshold it is not possible to call setup anymore,
+    //     // so we create a Safe with 0 owners and threshold 1.
+    //     // This is an unusable Safe, perfect for the mastercopy
+    //     threshold = 1;
+    //     token = IERC20(_token);
+    //     owner=msg.sender;
+    //     whiteList=Whitelist(_whitelisted);
+    //     whiteListGroups=["GROUPA","GROUPB"];
+    // }
+
+    constructor(address _controller) public ERC20Detailed("Yieldster Token","YT",18){
+        controller = _controller;
         threshold = 1;
-        token = IERC20(_token);
-        owner=msg.sender;
-        whiteList=Whitelist(_whitelisted);
-        whiteListGroups=["GROUPA","GROUPB"];
     }
 
     function vaultBalance() public view returns (uint256) {
@@ -109,46 +119,67 @@ contract GnosisSafe
 
     }
 
-
     modifier onlyWhitelisted{
         require(isWhiteListed(),"Note allowed to access the resources");
         _;
     }
 
-    // /// @dev Setup function sets initial storage of contract.
-    // /// @param _owners List of Safe owners.
-    // /// @param _threshold Number of required confirmations for a Safe transaction.
-    // /// @param to Contract address for optional delegate call.
-    // /// @param data Data payload for optional delegate call.
-    // /// @param fallbackHandler Handler for fallback calls to this contract
-    // /// @param paymentToken Token that should be used for the payment (0 is ETH)
-    // /// @param payment Value that should be paid
-    // /// @param paymentReceiver Adddress that should receive the payment (or 0 if tx.origin)
-    // function setup(
-    //     address[] calldata _owners,
-    //     uint256 _threshold,
-    //     address to,
-    //     bytes calldata data,
-    //     address fallbackHandler,
-    //     address paymentToken,
-    //     uint256 payment,
-    //     address payable paymentReceiver
-    // )
-    //     external
-    // {
-    //     require(domainSeparator == 0, "Domain Separator already set!");
-    //     domainSeparator = keccak256(abi.encode(DOMAIN_SEPARATOR_TYPEHASH, this));
-    //     setupOwners(_owners, _threshold);
-    //     if (fallbackHandler != address(0)) internalSetFallbackHandler(fallbackHandler);
-    //     // As setupOwners can only be called if the contract has not been initialized we don't need a check for setupModules
-    //     setupModules(to, data);
+    /// @dev Setup function sets initial storage of contract.
+    // / @param _owners List of Safe owners.
+    // / @param _threshold Number of required confirmations for a Safe transaction.
+    /// @param to Contract address for optional delegate call.
+    /// @param data Data payload for optional delegate call.
+    /// @param fallbackHandler Handler for fallback calls to this contract
+    /// @param paymentToken Token that should be used for the payment (0 is ETH)
+    /// @param payment Value that should be paid
+    /// @param paymentReceiver Adddress that should receive the payment (or 0 if tx.origin)
+    function setup(
+        // address[] calldata _owners,
+        // uint256 _threshold,
+        // string calldata _safeName,
+        string calldata _tokenName,
+        string calldata _symbol,
+        address _manager,
+        address[] calldata _safeAssets,
+        address _whitelisted,
+        address to,
+        bytes calldata data,
+        address fallbackHandler,
+        address paymentToken,
+        uint256 payment,
+        address payable paymentReceiver
+    )
+        external
+    {
+        require(domainSeparator == 0, "Domain Separator already set!");
+        domainSeparator = keccak256(abi.encode(DOMAIN_SEPARATOR_TYPEHASH, this));
+        // setupOwners(_owners, _threshold);
+        if (fallbackHandler != address(0)) internalSetFallbackHandler(fallbackHandler);
 
-    //     if (payment > 0) {
-    //         // To avoid running into issues with EIP-170 we reuse the handlePayment function (to avoid adjusting code of that has been verified we do not adjust the method itself)
-    //         // baseGas = 0, gasPrice = 1 and gas = payment => amount = (payment + 0) * 1 = payment
-    //         handlePayment(payment, 0, 1, paymentToken, paymentReceiver);
-    //     }
-    // }
+        // safeName = _safeName;
+        manager = _manager;
+        owner = msg.sender;
+
+        //Adding assets to the safe
+         for (uint256 i = 0; i < _safeAssets.length; i++) {
+            address asset = _safeAssets[i];
+            require(asset != address(0), "Invalid asset provided");
+            require(IAPContract(controller).isAssetPresent(asset), "Asset not supported by Yieldster");
+            safeAssets[asset] = true;
+        }
+        //Setting up whitelist
+        whiteList=Whitelist(_whitelisted);
+        whiteListGroups=["GROUPA","GROUPB"];
+
+        // As setupOwners can only be called if the contract has not been initialized we don't need a check for setupModules
+        setupModules(to, data);
+
+        if (payment > 0) {
+            // To avoid running into issues with EIP-170 we reuse the handlePayment function (to avoid adjusting code of that has been verified we do not adjust the method itself)
+            // baseGas = 0, gasPrice = 1 and gas = payment => amount = (payment + 0) * 1 = payment
+            handlePayment(payment, 0, 1, paymentToken, paymentReceiver);
+        }
+    }
 
     //Using OpenZeppelin function
 
@@ -249,107 +280,107 @@ contract GnosisSafe
     //     }
     // }
 
-    // function handlePayment(
-    //     uint256 gasUsed,
-    //     uint256 baseGas,
-    //     uint256 gasPrice,
-    //     address gasToken,
-    //     address payable refundReceiver
-    // )
-    //     private
-    //     returns (uint256 payment)
-    // {
-    //     // solium-disable-next-line security/no-tx-origin
-    //     address payable receiver = refundReceiver == address(0) ? tx.origin : refundReceiver;
-    //     if (gasToken == address(0)) {
-    //         // For ETH we will only adjust the gas price to not be higher than the actual used gas price
-    //         payment = gasUsed.add(baseGas).mul(gasPrice < tx.gasprice ? gasPrice : tx.gasprice);
-    //         // solium-disable-next-line security/no-send
-    //         require(receiver.send(payment), "Could not pay gas costs with ether");
-    //     } else {
-    //         payment = gasUsed.add(baseGas).mul(gasPrice);
-    //         require(transferToken(gasToken, receiver, payment), "Could not pay gas costs with token");
-    //     }
-    // }
-
-    /**
-    * @dev Checks whether the signature provided is valid for the provided data, hash. Will revert otherwise.
-    * @param dataHash Hash of the data (could be either a message hash or transaction hash)
-    * @param data That should be signed (this is passed to an external validator contract)
-    * @param signatures Signature data that should be verified. Can be ECDSA signature, contract signature (EIP-1271) or approved hash.
-    * @param consumeHash Indicates that in case of an approved hash the storage can be freed to save gas
-    */
-    function checkSignatures(bytes32 dataHash, bytes memory data, bytes memory signatures, bool consumeHash)
-        internal
+    function handlePayment(
+        uint256 gasUsed,
+        uint256 baseGas,
+        uint256 gasPrice,
+        address gasToken,
+        address payable refundReceiver
+    )
+        private
+        returns (uint256 payment)
     {
-        // Load threshold to avoid multiple storage loads
-        uint256 _threshold = threshold;
-        // Check that a threshold is set
-        require(_threshold > 0, "Threshold needs to be defined!");
-        // Check that the provided signature data is not too short
-        require(signatures.length >= _threshold.mul(65), "Signatures data too short");
-        // There cannot be an owner with address 0.
-        address lastOwner = address(0);
-        address currentOwner;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-        uint256 i;
-        for (i = 0; i < _threshold; i++) {
-            (v, r, s) = signatureSplit(signatures, i);
-            // If v is 0 then it is a contract signature
-            if (v == 0) {
-                // When handling contract signatures the address of the contract is encoded into r
-                currentOwner = address(uint256(r));
-
-                // Check that signature data pointer (s) is not pointing inside the static part of the signatures bytes
-                // This check is not completely accurate, since it is possible that more signatures than the threshold are send.
-                // Here we only check that the pointer is not pointing inside the part that is being processed
-                require(uint256(s) >= _threshold.mul(65), "Invalid contract signature location: inside static part");
-
-                // Check that signature data pointer (s) is in bounds (points to the length of data -> 32 bytes)
-                require(uint256(s).add(32) <= signatures.length, "Invalid contract signature location: length not present");
-
-                // Check if the contract signature is in bounds: start of data is s + 32 and end is start + signature length
-                uint256 contractSignatureLen;
-                // solium-disable-next-line security/no-inline-assembly
-                assembly {
-                    contractSignatureLen := mload(add(add(signatures, s), 0x20))
-                }
-                require(uint256(s).add(32).add(contractSignatureLen) <= signatures.length, "Invalid contract signature location: data not complete");
-
-                // Check signature
-                bytes memory contractSignature;
-                // solium-disable-next-line security/no-inline-assembly
-                assembly {
-                    // The signature data for contract signatures is appended to the concatenated signatures and the offset is stored in s
-                    contractSignature := add(add(signatures, s), 0x20)
-                }
-                require(ISignatureValidator(currentOwner).isValidSignature(data, contractSignature) == EIP1271_MAGIC_VALUE, "Invalid contract signature provided");
-            // If v is 1 then it is an approved hash
-            } else if (v == 1) {
-                // When handling approved hashes the address of the approver is encoded into r
-                currentOwner = address(uint256(r));
-                // Hashes are automatically approved by the sender of the message or when they have been pre-approved via a separate transaction
-                require(msg.sender == currentOwner || approvedHashes[currentOwner][dataHash] != 0, "Hash has not been approved");
-                // Hash has been marked for consumption. If this hash was pre-approved free storage
-                if (consumeHash && msg.sender != currentOwner) {
-                    approvedHashes[currentOwner][dataHash] = 0;
-                }
-            } else if (v > 30) {
-                // To support eth_sign and similar we adjust v and hash the messageHash with the Ethereum message prefix before applying ecrecover
-                currentOwner = ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", dataHash)), v - 4, r, s);
-            } else {
-                // Use ecrecover with the messageHash for EOA signatures
-                currentOwner = ecrecover(dataHash, v, r, s);
-            }
-            require (
-                currentOwner > lastOwner && owners[currentOwner] != address(0) && currentOwner != SENTINEL_OWNERS,
-                "Invalid owner provided"
-            );
-            lastOwner = currentOwner;
+        // solium-disable-next-line security/no-tx-origin
+        address payable receiver = refundReceiver == address(0) ? tx.origin : refundReceiver;
+        if (gasToken == address(0)) {
+            // For ETH we will only adjust the gas price to not be higher than the actual used gas price
+            payment = gasUsed.add(baseGas).mul(gasPrice < tx.gasprice ? gasPrice : tx.gasprice);
+            // solium-disable-next-line security/no-send
+            require(receiver.send(payment), "Could not pay gas costs with ether");
+        } else {
+            payment = gasUsed.add(baseGas).mul(gasPrice);
+            require(transferToken(gasToken, receiver, payment), "Could not pay gas costs with token");
         }
     }
+
+    // /**
+    // * @dev Checks whether the signature provided is valid for the provided data, hash. Will revert otherwise.
+    // * @param dataHash Hash of the data (could be either a message hash or transaction hash)
+    // * @param data That should be signed (this is passed to an external validator contract)
+    // * @param signatures Signature data that should be verified. Can be ECDSA signature, contract signature (EIP-1271) or approved hash.
+    // * @param consumeHash Indicates that in case of an approved hash the storage can be freed to save gas
+    // */
+    // function checkSignatures(bytes32 dataHash, bytes memory data, bytes memory signatures, bool consumeHash)
+    //     internal
+    // {
+    //     // Load threshold to avoid multiple storage loads
+    //     uint256 _threshold = threshold;
+    //     // Check that a threshold is set
+    //     require(_threshold > 0, "Threshold needs to be defined!");
+    //     // Check that the provided signature data is not too short
+    //     require(signatures.length >= _threshold.mul(65), "Signatures data too short");
+    //     // There cannot be an owner with address 0.
+    //     address lastOwner = address(0);
+    //     address currentOwner;
+    //     uint8 v;
+    //     bytes32 r;
+    //     bytes32 s;
+    //     uint256 i;
+    //     for (i = 0; i < _threshold; i++) {
+    //         (v, r, s) = signatureSplit(signatures, i);
+    //         // If v is 0 then it is a contract signature
+    //         if (v == 0) {
+    //             // When handling contract signatures the address of the contract is encoded into r
+    //             currentOwner = address(uint256(r));
+
+    //             // Check that signature data pointer (s) is not pointing inside the static part of the signatures bytes
+    //             // This check is not completely accurate, since it is possible that more signatures than the threshold are send.
+    //             // Here we only check that the pointer is not pointing inside the part that is being processed
+    //             require(uint256(s) >= _threshold.mul(65), "Invalid contract signature location: inside static part");
+
+    //             // Check that signature data pointer (s) is in bounds (points to the length of data -> 32 bytes)
+    //             require(uint256(s).add(32) <= signatures.length, "Invalid contract signature location: length not present");
+
+    //             // Check if the contract signature is in bounds: start of data is s + 32 and end is start + signature length
+    //             uint256 contractSignatureLen;
+    //             // solium-disable-next-line security/no-inline-assembly
+    //             assembly {
+    //                 contractSignatureLen := mload(add(add(signatures, s), 0x20))
+    //             }
+    //             require(uint256(s).add(32).add(contractSignatureLen) <= signatures.length, "Invalid contract signature location: data not complete");
+
+    //             // Check signature
+    //             bytes memory contractSignature;
+    //             // solium-disable-next-line security/no-inline-assembly
+    //             assembly {
+    //                 // The signature data for contract signatures is appended to the concatenated signatures and the offset is stored in s
+    //                 contractSignature := add(add(signatures, s), 0x20)
+    //             }
+    //             require(ISignatureValidator(currentOwner).isValidSignature(data, contractSignature) == EIP1271_MAGIC_VALUE, "Invalid contract signature provided");
+    //         // If v is 1 then it is an approved hash
+    //         } else if (v == 1) {
+    //             // When handling approved hashes the address of the approver is encoded into r
+    //             currentOwner = address(uint256(r));
+    //             // Hashes are automatically approved by the sender of the message or when they have been pre-approved via a separate transaction
+    //             require(msg.sender == currentOwner || approvedHashes[currentOwner][dataHash] != 0, "Hash has not been approved");
+    //             // Hash has been marked for consumption. If this hash was pre-approved free storage
+    //             if (consumeHash && msg.sender != currentOwner) {
+    //                 approvedHashes[currentOwner][dataHash] = 0;
+    //             }
+    //         } else if (v > 30) {
+    //             // To support eth_sign and similar we adjust v and hash the messageHash with the Ethereum message prefix before applying ecrecover
+    //             currentOwner = ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", dataHash)), v - 4, r, s);
+    //         } else {
+    //             // Use ecrecover with the messageHash for EOA signatures
+    //             currentOwner = ecrecover(dataHash, v, r, s);
+    //         }
+    //         require (
+    //             currentOwner > lastOwner && owners[currentOwner] != address(0) && currentOwner != SENTINEL_OWNERS,
+    //             "Invalid owner provided"
+    //         );
+    //         lastOwner = currentOwner;
+    //     }
+    // }
 
     /// @dev Allows to estimate a Safe transaction.
     ///      This method is only meant for estimation purpose, therefore two different protection mechanism against execution in a transaction have been made:
@@ -376,72 +407,72 @@ contract GnosisSafe
         revert(string(abi.encodePacked(requiredGas)));
     }
 
-    /**
-    * @dev Marks a hash as approved. This can be used to validate a hash that is used by a signature.
-    * @param hashToApprove The hash that should be marked as approved for signatures that are verified by this contract.
-    */
-    function approveHash(bytes32 hashToApprove)
-        external
-    {
-        require(owners[msg.sender] != address(0), "Only owners can approve a hash");
-        approvedHashes[msg.sender][hashToApprove] = 1;
-        emit ApproveHash(hashToApprove, msg.sender);
-    }
+    // /**
+    // * @dev Marks a hash as approved. This can be used to validate a hash that is used by a signature.
+    // * @param hashToApprove The hash that should be marked as approved for signatures that are verified by this contract.
+    // */
+    // function approveHash(bytes32 hashToApprove)
+    //     external
+    // {
+    //     require(owners[msg.sender] != address(0), "Only owners can approve a hash");
+    //     approvedHashes[msg.sender][hashToApprove] = 1;
+    //     emit ApproveHash(hashToApprove, msg.sender);
+    // }
 
-    /**
-    * @dev Marks a message as signed, so that it can be used with EIP-1271
-    * @notice Marks a message (`_data`) as signed.
-    * @param _data Arbitrary length data that should be marked as signed on the behalf of address(this)
-    */
-    function signMessage(bytes calldata _data)
-        external
-        authorized
-    {
-        bytes32 msgHash = getMessageHash(_data);
-        signedMessages[msgHash] = 1;
-        emit SignMsg(msgHash);
-    }
+    // /**
+    // * @dev Marks a message as signed, so that it can be used with EIP-1271
+    // * @notice Marks a message (`_data`) as signed.
+    // * @param _data Arbitrary length data that should be marked as signed on the behalf of address(this)
+    // */
+    // function signMessage(bytes calldata _data)
+    //     external
+    //     authorized
+    // {
+    //     bytes32 msgHash = getMessageHash(_data);
+    //     signedMessages[msgHash] = 1;
+    //     emit SignMsg(msgHash);
+    // }
 
-    /**
-    * Implementation of ISignatureValidator (see `interfaces/ISignatureValidator.sol`)
-    * @dev Should return whether the signature provided is valid for the provided data.
-    *       The save does not implement the interface since `checkSignatures` is not a view method.
-    *       The method will not perform any state changes (see parameters of `checkSignatures`)
-    * @param _data Arbitrary length data signed on the behalf of address(this)
-    * @param _signature Signature byte array associated with _data
-    * @return a bool upon valid or invalid signature with corresponding _data
-    */
-    function isValidSignature(bytes calldata _data, bytes calldata _signature)
-        external
-        returns (bytes4)
-    {
-        bytes32 messageHash = getMessageHash(_data);
-        if (_signature.length == 0) {
-            require(signedMessages[messageHash] != 0, "Hash not approved");
-        } else {
-            // consumeHash needs to be false, as the state should not be changed
-            checkSignatures(messageHash, _data, _signature, false);
-        }
-        return EIP1271_MAGIC_VALUE;
-    }
+    // /**
+    // * Implementation of ISignatureValidator (see `interfaces/ISignatureValidator.sol`)
+    // * @dev Should return whether the signature provided is valid for the provided data.
+    // *       The save does not implement the interface since `checkSignatures` is not a view method.
+    // *       The method will not perform any state changes (see parameters of `checkSignatures`)
+    // * @param _data Arbitrary length data signed on the behalf of address(this)
+    // * @param _signature Signature byte array associated with _data
+    // * @return a bool upon valid or invalid signature with corresponding _data
+    // */
+    // function isValidSignature(bytes calldata _data, bytes calldata _signature)
+    //     external
+    //     returns (bytes4)
+    // {
+    //     bytes32 messageHash = getMessageHash(_data);
+    //     if (_signature.length == 0) {
+    //         require(signedMessages[messageHash] != 0, "Hash not approved");
+    //     } else {
+    //         // consumeHash needs to be false, as the state should not be changed
+    //         checkSignatures(messageHash, _data, _signature, false);
+    //     }
+    //     return EIP1271_MAGIC_VALUE;
+    // }
 
-    /// @dev Returns hash of a message that can be signed by owners.
-    /// @param message Message that should be hashed
-    /// @return Message hash.
-    function getMessageHash(
-        bytes memory message
-    )
-        public
-        view
-        returns (bytes32)
-    {
-        bytes32 safeMessageHash = keccak256(
-            abi.encode(SAFE_MSG_TYPEHASH, keccak256(message))
-        );
-        return keccak256(
-            abi.encodePacked(byte(0x19), byte(0x01), domainSeparator, safeMessageHash)
-        );
-    }
+    // /// @dev Returns hash of a message that can be signed by owners.
+    // /// @param message Message that should be hashed
+    // /// @return Message hash.
+    // function getMessageHash(
+    //     bytes memory message
+    // )
+    //     public
+    //     view
+    //     returns (bytes32)
+    // {
+    //     bytes32 safeMessageHash = keccak256(
+    //         abi.encode(SAFE_MSG_TYPEHASH, keccak256(message))
+    //     );
+    //     return keccak256(
+    //         abi.encodePacked(byte(0x19), byte(0x01), domainSeparator, safeMessageHash)
+    //     );
+    // }
 
     // /// @dev Returns the bytes that are hashed to be signed by owners.
     // /// @param to Destination address.
