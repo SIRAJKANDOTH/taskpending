@@ -4,7 +4,9 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../../GnosisSafe.sol";
-contract SmartLender
+import "../interfaces/IStrategy.sol";
+import "../interfaces/ISmartLender.sol";
+contract SmartLender is IStrategy,ISmartLender
 {
     using SafeMath for uint256;
     using Address for address;
@@ -52,13 +54,31 @@ contract SmartLender
         uint256 lenderSafeBalanceInUsd=safe.tokenValueInUSD(safe.balanceOf(lenderSafe));
         if(lenderSafeBalanceInUsd>_amountInUSD)
         {
+            //should we use transfer or mint/ burn ?
             safe.mint(safe.tokenCountFromUSD(_amountInUSD));
+            safe.burn(safe.tokenCountFromUSD(_amountInUSD),lenderSafe);
         }
         else{
 
         }
     }
 
+//Need to add OCB logic
+    function getOCB() private returns(uint256){
+        return 0;
+    }
+
+    function MintSmartLenderToken(address payable lenderAddress,uint256 tokenValueInUsd) private
+    {
+        GnosisSafe lenderSafe=GnosisSafe(lenderAddress);
+        uint256 share=lenderSafe.tokenCountFromUSD(tokenValueInUsd);
+        lenderSafe.mint(share);
+    }
+
+
+    function acceptLoadRequest() private{
+
+    }
 
 
 }
