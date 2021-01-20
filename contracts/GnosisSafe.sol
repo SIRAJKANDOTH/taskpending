@@ -13,7 +13,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
+import "./token/ERC20Detailed.sol";
 import "./whitelist/Whitelist.sol";
 // import "@openzeppelin/contracts/ownership/Ownable.sol";
 
@@ -83,19 +83,7 @@ contract GnosisSafe
     // Mapping to keep track of all hashes (message or transaction) that have been approve by ANY owners
     mapping(address => mapping(bytes32 => uint256)) public approvedHashes;
 
-    // This constructor ensures that this contract can only be used as a master copy for Proxy contracts
-    // constructor(address _token,address _whitelisted) public ERC20Detailed("YieldsterToken","YLT",18){
-    //     // By setting the threshold it is not possible to call setup anymore,
-    //     // so we create a Safe with 0 owners and threshold 1.
-    //     // This is an unusable Safe, perfect for the mastercopy
-    //     threshold = 1;
-    //     token = IERC20(_token);
-    //     owner=msg.sender;
-    //     whiteList=Whitelist(_whitelisted);
-    //     whiteListGroups=["GROUPA","GROUPB"];
-    // }
-
-    constructor(address _controller) public ERC20Detailed("Yieldster Token","YT",18){
+    constructor(address _controller) public {
         controller = _controller;
         threshold = 1;
     }
@@ -162,6 +150,8 @@ contract GnosisSafe
         controller = _controller;
         owner = msg.sender;
 
+        setupToken(_tokenName, _symbol);
+
         //Adding assets to the safe
          for (uint256 i = 0; i < _safeAssets.length; i++) {
             address asset = _safeAssets[i];
@@ -182,6 +172,7 @@ contract GnosisSafe
         //     handlePayment(payment, 0, 1, paymentToken, paymentReceiver);
         // }
     }
+    
 
     //Using OpenZeppelin function
 

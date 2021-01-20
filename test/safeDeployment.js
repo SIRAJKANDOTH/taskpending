@@ -1,5 +1,4 @@
 const utils = require("./utils/general");
-
 const CreateAndAddModules = artifacts.require(
 	"./libraries/CreateAndAddModules.sol"
 );
@@ -61,8 +60,8 @@ contract("Gnosis Safe", function (accounts) {
 				"Example Safe1",
 				"Example Token1",
 				"EXM1",
-                accounts[2],
-                apContract.address,
+				accounts[2],
+				apContract.address,
 				[accounts[3], accounts[4]],
 				whitelist.address,
 				createAndAddModules.address,
@@ -76,8 +75,8 @@ contract("Gnosis Safe", function (accounts) {
 				"Example Safe2",
 				"Example Token2",
 				"EXM2",
-                accounts[2],
-                apContract.address,
+				accounts[2],
+				apContract.address,
 				[accounts[3], accounts[4]],
 				whitelist.address,
 				createAndAddModules.address,
@@ -97,13 +96,11 @@ contract("Gnosis Safe", function (accounts) {
 			"proxy",
 			proxyFactory.address,
 			GnosisSafe,
-			"create Gnosis Safe"
+			"create Gnosis Safe 1"
 		);
 
 		console.log("name ", await gnosisSafe1.safeName());
-
 		console.log("safe 1 controller ", await gnosisSafe1.controller());
-		// assert.equal(await gnosisSafe1.controller(), apContract.address);
 
 		gnosisSafe2 = await utils.getParamFromTxEvent(
 			await proxyFactory.createProxy(
@@ -114,7 +111,7 @@ contract("Gnosis Safe", function (accounts) {
 			"proxy",
 			proxyFactory.address,
 			GnosisSafe,
-			"create Gnosis Safe"
+			"create Gnosis Safe 2"
 		);
 
 		console.log("name2 ", await gnosisSafe2.safeName());
@@ -128,12 +125,21 @@ contract("Gnosis Safe", function (accounts) {
 		});
 
 		let modules1 = await gnosisSafe1.getModules();
-        whitelistModule1 = await WhitelistModule.at(modules1[0]);
-        
+		whitelistModule1 = await WhitelistModule.at(modules1[0]);
+
 		let modules2 = await gnosisSafe2.getModules();
 		whitelistModule2 = await WhitelistModule.at(modules2[0]);
 
 		assert.equal(await whitelistModule1.manager.call(), gnosisSafe1.address);
 		assert.equal(await whitelistModule2.manager.call(), gnosisSafe2.address);
+
+		console.log("token name", await gnosisSafe1.name());
+        console.log("token symbol", await gnosisSafe1.symbol());
+        
+
+		// it("depositing money to safe", async() => {
+		//     gnosisSafe1.deposit()
+
+		// })
 	});
 });
