@@ -12,5 +12,5 @@ module.exports = async (deployer) => {
 
   // var tkn = await deployer.deploy(yrToken, 10000000000000);
   
-	await deployer.deploy(GnosisSafe, apContract.address);
+	await deployer.deploy(GnosisSafe);
 };

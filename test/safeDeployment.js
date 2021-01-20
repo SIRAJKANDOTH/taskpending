@@ -31,11 +31,11 @@ contract("Gnosis Safe", function (accounts) {
 		apContract = await APContract.new();
 		let whitelist = await Whitelist.new();
 
-		gnosisSafeMasterCopy = await GnosisSafe.new(apContract.address);
-		console.log(
-			"master copy controller",
-			await gnosisSafeMasterCopy.controller()
+		gnosisSafeMasterCopy = await utils.deployContract(
+			"deploying Gnosis Safe Mastercopy",
+			GnosisSafe
 		);
+
 		let whitelistModuleMasterCopy = await WhitelistModule.new([]);
 
 		// Create Gnosis Safe and Whitelist Module in one transactions
@@ -58,8 +58,8 @@ contract("Gnosis Safe", function (accounts) {
 		gnosisSafeData1 = await gnosisSafeMasterCopy.contract.methods
 			.setup(
 				"Example Safe1",
-				"Example Token1",
-				"EXM1",
+				"Token 1",
+				"TKN1",
 				accounts[2],
 				apContract.address,
 				[accounts[3], accounts[4]],
@@ -73,8 +73,8 @@ contract("Gnosis Safe", function (accounts) {
 		gnosisSafeData2 = await gnosisSafeMasterCopy.contract.methods
 			.setup(
 				"Example Safe2",
-				"Example Token2",
-				"EXM2",
+				"Token 2",
+				"TKN2",
 				accounts[2],
 				apContract.address,
 				[accounts[3], accounts[4]],
@@ -134,12 +134,7 @@ contract("Gnosis Safe", function (accounts) {
 		assert.equal(await whitelistModule2.manager.call(), gnosisSafe2.address);
 
 		console.log("token name", await gnosisSafe1.name());
-        console.log("token symbol", await gnosisSafe1.symbol());
-        
+		console.log("token symbol", await gnosisSafe1.symbol());
 
-		// it("depositing money to safe", async() => {
-		//     gnosisSafe1.deposit()
-
-		// })
 	});
 });
