@@ -3,16 +3,14 @@ var GnosisSafe = artifacts.require("./GnosisSafe.sol");
 var Whitelist = artifacts.require("./whitelist/Whitelist.sol");
 var APContract = artifacts.require("./aps/APContract.sol");
 
+module.exports = async (deployer) => {
+	await deployer.deploy(Whitelist);
+	const whitelist = await Whitelist.deployed();
 
-module.exports = async(deployer) => {
-  deployer.deploy(Whitelist).then(async(whLst)=>{
-    await deployer.deploy(APContract);
-    
-    var tkn = await deployer.deploy(yrToken, 10000000000000);
-    await deployer.deploy(GnosisSafe, tkn.address,whLst.address);
-  });
+	await deployer.deploy(APContract);
+	const apContract = await APContract.deployed();
+
+  // var tkn = await deployer.deploy(yrToken, 10000000000000);
   
-
+	await deployer.deploy(GnosisSafe, apContract.address);
 };
-
-
