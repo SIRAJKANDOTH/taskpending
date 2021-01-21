@@ -6,7 +6,7 @@ import "./IProxyCreationCallback.sol";
 /// @author Stefan George - <stefan@gnosis.pm>
 contract GnosisSafeProxyFactory {
 
-    event ProxyCreation(GnosisSafeProxy proxy);
+    event ProxyCreation(GnosisSafeProxy proxy , address MasterCopy);
 
     /// @dev Allows to create new proxy contact and execute a message call to the new proxy within one transaction.
     /// @param masterCopy Address of master copy.
@@ -21,7 +21,7 @@ contract GnosisSafeProxyFactory {
             assembly {
                 if eq(call(gas, proxy, 0, add(data, 0x20), mload(data), 0, 0), 0) { revert(0, 0) }
             }
-        emit ProxyCreation(proxy);
+        emit ProxyCreation(proxy, masterCopy);
     }
 
     /// @dev Allows to retrieve the runtime code of a deployed Proxy. This can be used to check that the expected Proxy was deployed.
@@ -67,7 +67,7 @@ contract GnosisSafeProxyFactory {
             assembly {
                 if eq(call(gas, proxy, 0, add(initializer, 0x20), mload(initializer), 0, 0), 0) { revert(0,0) }
             }
-        emit ProxyCreation(proxy);
+        emit ProxyCreation(proxy, _mastercopy);
     }
 
     /// @dev Allows to create new proxy contact, execute a message call to the new proxy and call a specified callback within one transaction

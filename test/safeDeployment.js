@@ -53,6 +53,10 @@ contract("Gnosis Safe", function (accounts) {
 	});
 
 	it("should create two safes", async () => {
+		proxyFactory.ProxyCreation((err, result) => {
+			if (err) console.log("error");
+			console.log(result);
+		});
 		gnosisSafe1 = await utils.getParamFromTxEvent(
 			await proxyFactory.createProxy(
 				gnosisSafeMasterCopy.address,
@@ -76,6 +80,9 @@ contract("Gnosis Safe", function (accounts) {
 			GnosisSafe,
 			"create Gnosis Safe 2"
 		);
+		console.log("Master Copy address", gnosisSafeMasterCopy.address);
+		console.log("Safe 1 address", gnosisSafe1.address);
+		console.log("Safe 2 address", gnosisSafe2.address);
 
 		it("safe 1 has an address", async () => {
 			assert.ok(gnosisSafe1.address);

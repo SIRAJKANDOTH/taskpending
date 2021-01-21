@@ -1,5 +1,6 @@
 pragma solidity >=0.5.0 <0.7.0;
 import "./ChainlinkService.sol";
+
 contract APContract is ChainlinkService{
 
     struct Asset{
@@ -7,7 +8,6 @@ contract APContract is ChainlinkService{
         address feedAddress;
         bool created;
         string symbol;
-        // address tokenAddress;
     }
 
     struct Protocol{
@@ -16,14 +16,29 @@ contract APContract is ChainlinkService{
         string symbol;
     }
 
-    // Key will be the -symbol of that partiular coin
-    mapping(address=>Asset) assets;
-    mapping(address=>Protocol) protocols;
+    struct Vault{
+        mapping(address => bool) vaultAssets;
+        mapping(address => bool) vaultProtocols;
+        address vaultAPSManager;
+        string[] whitelistGroups;
+
+    }
+
+    mapping(address => Asset) assets;
+
+    mapping(address => Protocol) protocols;
+
+    mapping(address => Vault) vaults;
+
+
+
     address private apsManager;
+    address private whitelistModule;
 
 
-    constructor() public{
-        apsManager=msg.sender;
+    constructor(address _whitelistModule) public{
+        apsManager = msg.sender;
+        whitelistModule = _whitelistModule;
     }
 
     modifier onlyManager
@@ -32,7 +47,7 @@ contract APContract is ChainlinkService{
         _;
     }
 
-    function _isAssetPresent(address _address)private view returns(bool)
+    function _isAssetPresent(address _address) private view returns(bool)
     {
         return assets[_address].created;
     }
@@ -42,24 +57,42 @@ contract APContract is ChainlinkService{
         return _isAssetPresent(_address);
     }
 
-    function _isProtocolPresent(address _address)private view returns(bool)
+    function _isProtocolPresent(address _address) private view returns(bool)
     {
         return protocols[_address].created;
     }
 
 // Assets
-    function addAsset(string memory _symbol,string memory _name,address feedAddress,address _tokenAddress) public onlyManager{
+    function addAsset(
+        string memory _symbol, 
+        string memory _name,
+        address feedAddress,
+        address _tokenAddress
+        ) 
+        public 
+        onlyManager
+        {
         require(!_isAssetPresent(_tokenAddress),"Asset already present!");
         Asset memory newAsset=Asset({name:_name,feedAddress:feedAddress,created:true,symbol:_symbol});
         assets[_tokenAddress]=newAsset;
     }
 
-    function removeAsset(address _tokenAddress) public onlyManager{
+    function removeAsset(
+        address _tokenAddress
+        ) 
+        public 
+        onlyManager
+        {
         require(_isAssetPresent(_tokenAddress),"Asset not present!");
         delete assets[_tokenAddress];
     }
     
-    function getAssetDetails(address _tokenAddress) public view returns(string memory,address ,string memory)
+    function getAssetDetails(
+        address _tokenAddress
+        ) 
+        public 
+        view 
+        returns(string memory, address, string memory)
     {
         require(_isAssetPresent(_tokenAddress),"Asset not present!");
         return(assets[_tokenAddress].name,assets[_tokenAddress].feedAddress,assets[_tokenAddress].symbol);
@@ -73,7 +106,14 @@ contract APContract is ChainlinkService{
     }
 
 // Protocols
-    function addProtocol(string memory _symbol,string memory _name,address _protocolAddress) public onlyManager{
+    function addProtocol(
+        string memory _symbol,
+        string memory _name,
+        address _protocolAddress
+        ) 
+        public 
+        onlyManager
+        {
         require(!_isProtocolPresent(_protocolAddress),"Protocol already present!");
         Protocol memory newAsset=Protocol({name:_name,created:true,symbol:_symbol});
         protocols[_protocolAddress]=newAsset;

@@ -7,21 +7,20 @@ contract Whitelist{
     using Address for address;
 
     struct Role{
-        // address[] vault;
-        mapping(address=>bool) members;
+        mapping(address => bool) members;
         address admin;
         address owner;
         bool created;
     }
+    
     address public whiteListManager;
-    mapping(string=>Role) private whiteList;
-    mapping(address=>mapping(string=>bool)) private memberRoles;
+    mapping(string => Role) private whiteList;
+    mapping(address => mapping(string => bool)) private memberRoles;
 
     modifier onlyOwner{
          require(msg.sender == whiteListManager,"Only Whitelist manager can call this function.");
         _;
     }
-
 
     function _isRole(string memory _name) private view returns(bool){
         return whiteList[_name].created;
@@ -30,7 +29,7 @@ contract Whitelist{
     constructor() public{
         whiteListManager=msg.sender;
 
-         Role memory newRole= Role({admin:msg.sender,owner:msg.sender,created:true});
+        Role memory newRole= Role({admin:msg.sender,owner:msg.sender,created:true});
         whiteList["GROUPA"]=newRole;
         whiteList["GROUPA"].members[msg.sender]=true;
 
@@ -44,10 +43,6 @@ contract Whitelist{
         memberRoles[msg.sender]["GROUPA"]=true;
         memberRoles[msg.sender]["GROUPB"]=true;
     }
-
-    // function _isNotMemeber(address _address,string memory _role) private view returns(bool){
-    //     return memberRoles[_address].contains[_role];
-    // }
 
 
     function createRole(string memory _name, address _admin) public onlyOwner{
