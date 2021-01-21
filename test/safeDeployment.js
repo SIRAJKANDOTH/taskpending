@@ -35,8 +35,7 @@ contract("Gnosis Safe", function (accounts) {
 				accounts[2],
 				apContract.address,
 				[accounts[3], accounts[4]],
-				whitelist.address,
-				accounts[4]
+				whitelist.address
 			)
 			.encodeABI();
 
@@ -48,8 +47,7 @@ contract("Gnosis Safe", function (accounts) {
 				accounts[2],
 				apContract.address,
 				[accounts[3], accounts[4]],
-				whitelist.address,
-				accounts[4]
+				whitelist.address
 			)
 			.encodeABI();
 	});

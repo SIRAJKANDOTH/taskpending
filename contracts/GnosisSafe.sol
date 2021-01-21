@@ -1,8 +1,6 @@
 pragma solidity >=0.5.0 <0.7.0;
-import "./base/FallbackManager.sol";
 import "./common/MasterCopy.sol";
 import "./external/GnosisSafeMath.sol";
-import "./yrToken.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
@@ -20,7 +18,6 @@ import "./interfaces/IAPContract.sol";
 /// @author Ricardo Guilherme Schmidt - (Status Research & Development GmbH) - Gas Token Payment
 contract GnosisSafe
     is MasterCopy, 
-    FallbackManager, 
     ERC20,
     ERC20Detailed {
 
@@ -36,16 +33,10 @@ contract GnosisSafe
     address public controller;
     address public owner;
     address public manager;
+    bool private safeSetupCompleted = false;
     mapping(address => bool) public safeAssets;
     string[] private whiteListGroups;
     Whitelist private whiteList;
-
-    //keccak256(
-    //    "EIP712Domain(address verifyingContract)"
-    //);
-    bytes32 private constant DOMAIN_SEPARATOR_TYPEHASH = 0x035aff83d86937d35b32e04f0ddc6ff469290eef2f1b692d8a815c89404d4749;
-
-    bytes32 public domainSeparator;
 
 
     function vaultBalance() public view returns (uint256) {
@@ -73,8 +64,6 @@ contract GnosisSafe
     }
 
     /// @dev Setup function sets initial storage of contract.
-    /// @param fallbackHandler Handler for fallback calls to this contract
-
     function setup(
         string calldata _safeName,
         string calldata _tokenName,
@@ -82,17 +71,13 @@ contract GnosisSafe
         address _manager,
         address _controller, 
         address[] calldata _safeAssets,
-        address _whitelisted,
-        address fallbackHandler
-
+        address _whitelisted
     )
         external
     {
-        require(domainSeparator == 0, "Domain Separator already set!");
-        domainSeparator = keccak256(abi.encode(DOMAIN_SEPARATOR_TYPEHASH, this));
-        // setupOwners(_owners, _threshold);
-        if (fallbackHandler != address(0)) internalSetFallbackHandler(fallbackHandler);
+        require(!safeSetupCompleted, "Safe is already setup");
 
+        safeSetupCompleted = true;
         safeName = _safeName;
         manager = _manager;
         controller = _controller;
