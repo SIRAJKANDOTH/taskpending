@@ -1,11 +1,11 @@
 pragma solidity >=0.5.0 <0.7.0;
-import "./base/ModuleManager.sol";
-import "./base/OwnerManager.sol";
+// import "./base/ModuleManager.sol";
+// import "./base/OwnerManager.sol";
 import "./base/FallbackManager.sol";
 import "./common/MasterCopy.sol";
-import "./common/SignatureDecoder.sol";
-import "./common/SecuredTokenTransfer.sol";
-import "./interfaces/ISignatureValidator.sol";
+// import "./common/SignatureDecoder.sol";
+// import "./common/SecuredTokenTransfer.sol";
+// import "./interfaces/ISignatureValidator.sol";
 import "./external/GnosisSafeMath.sol";
 import "./yrToken.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -27,7 +27,15 @@ import "./interfaces/IAPContract.sol";
 /// @author Richard Meissner - <richard@gnosis.io>
 /// @author Ricardo Guilherme Schmidt - (Status Research & Development GmbH) - Gas Token Payment
 contract GnosisSafe
-    is MasterCopy, ModuleManager, OwnerManager, SignatureDecoder, SecuredTokenTransfer, ISignatureValidatorConstants, FallbackManager, ERC20,ERC20Detailed {
+    is MasterCopy, 
+    // ModuleManager, 
+    // OwnerManager, 
+    // SignatureDecoder, 
+    // SecuredTokenTransfer, 
+    // ISignatureValidatorConstants, 
+    FallbackManager, 
+    ERC20,
+    ERC20Detailed {
 
     // using GnosisSafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -43,6 +51,7 @@ contract GnosisSafe
     address public manager;
     mapping(address => bool) public safeAssets;
     string[] private whiteListGroups;
+    Whitelist private whiteList;
 
     //keccak256(
     //    "EIP712Domain(address verifyingContract)"
@@ -59,33 +68,32 @@ contract GnosisSafe
     //);
     // bytes32 private constant SAFE_MSG_TYPEHASH = 0x60b3cbf8b4a223d68d641b3b6ddf9a298e7f33710cf3d3a9d1146b5a6150fbca;
 
-    event ApproveHash(
-        bytes32 indexed approvedHash,
-        address indexed owner
-    );
-    event SignMsg(
-        bytes32 indexed msgHash
-    );
-    event ExecutionFailure(
-        bytes32 txHash, uint256 payment
-    );
-    event ExecutionSuccess(
-        bytes32 txHash, uint256 payment
-    );
+    // event ApproveHash(
+    //     bytes32 indexed approvedHash,
+    //     address indexed owner
+    // );
+    // event SignMsg(
+    //     bytes32 indexed msgHash
+    // );
+    // event ExecutionFailure(
+    //     bytes32 txHash, uint256 payment
+    // );
+    // event ExecutionSuccess(
+    //     bytes32 txHash, uint256 payment
+    // );
 
-    uint256 public nonce;
+    // uint256 public nonce;
     bytes32 public domainSeparator;
-    Whitelist private whiteList;
 
     // Mapping to keep track of all message hashes that have been approve by ALL REQUIRED owners
-    mapping(bytes32 => uint256) public signedMessages;
+    // mapping(bytes32 => uint256) public signedMessages;
 
     // Mapping to keep track of all hashes (message or transaction) that have been approve by ANY owners
-    mapping(address => mapping(bytes32 => uint256)) public approvedHashes;
+    // mapping(address => mapping(bytes32 => uint256)) public approvedHashes;
 
-    constructor() public {
-        threshold = 1;
-    }
+    // constructor() public {
+    //     threshold = 1;
+    // }
 
     function vaultBalance() public view returns (uint256) {
         return token.balanceOf(address(this)).add(IController(controller).balanceOf(address(token)));
@@ -114,8 +122,8 @@ contract GnosisSafe
     /// @dev Setup function sets initial storage of contract.
     // / @param _owners List of Safe owners.
     // / @param _threshold Number of required confirmations for a Safe transaction.
-    /// @param to Contract address for optional delegate call.
-    /// @param data Data payload for optional delegate call.
+    // / @param to Contract address for optional delegate call.
+    // / @param data Data payload for optional delegate call.
     /// @param fallbackHandler Handler for fallback calls to this contract
     // / @param paymentToken Token that should be used for the payment (0 is ETH)
     // / @param payment Value that should be paid
@@ -130,8 +138,8 @@ contract GnosisSafe
         address _controller, 
         address[] calldata _safeAssets,
         address _whitelisted,
-        address to,
-        bytes calldata data,
+        // address to,
+        // bytes calldata data,
         address fallbackHandler
         // address paymentToken,
         // uint256 payment,
@@ -163,7 +171,7 @@ contract GnosisSafe
         whiteListGroups=["GROUPA","GROUPB"];
 
         // As setupOwners can only be called if the contract has not been initialized we don't need a check for setupModules
-        setupModules(to, data);
+        // setupModules(to, data);
 
         // if (payment > 0) {
         //     // To avoid running into issues with EIP-170 we reuse the handlePayment function (to avoid adjusting code of that has been verified we do not adjust the method itself)
