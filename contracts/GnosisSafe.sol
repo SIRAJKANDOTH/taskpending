@@ -87,7 +87,6 @@ contract GnosisSafe
         //Adding assets to the safe
          for (uint256 i = 0; i < _safeAssets.length; i++) {
             address asset = _safeAssets[i];
-            require(asset != address(0), "Invalid asset provided");
             require(IAPContract(APSController).isAssetPresent(asset), "Asset not supported by Yieldster");
             safeAssets[asset] = true;
         }

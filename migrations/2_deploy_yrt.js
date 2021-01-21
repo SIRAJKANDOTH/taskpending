@@ -7,7 +7,7 @@ module.exports = async (deployer) => {
 	await deployer.deploy(Whitelist);
 	const whitelist = await Whitelist.deployed();
 
-	await deployer.deploy(APContract);
+	await deployer.deploy(APContract,whitelist.address);
 	const apContract = await APContract.deployed();
   
 	await deployer.deploy(GnosisSafe);

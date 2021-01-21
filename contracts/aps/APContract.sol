@@ -1,4 +1,6 @@
 pragma solidity >=0.5.0 <0.7.0;
+pragma experimental ABIEncoderV2;
+
 import "./ChainlinkService.sol";
 
 contract APContract is ChainlinkService{
@@ -20,7 +22,8 @@ contract APContract is ChainlinkService{
         mapping(address => bool) vaultAssets;
         mapping(address => bool) vaultProtocols;
         address vaultAPSManager;
-        uint256[] whitelistGroup;
+        string[] whitelistGroup;
+        bool created;
     }
 
     mapping(address => Asset) assets;
@@ -30,6 +33,7 @@ contract APContract is ChainlinkService{
     mapping(address => Vault) vaults;
 
     address private superAdmin;
+
     mapping(address => bool) APSManagers;
 
     address private whitelistModule;
@@ -75,31 +79,52 @@ contract APContract is ChainlinkService{
         address[] memory _vaultAssets,
         address[] memory _vaultProtocols,
         address _vaultAPSManager,
-        uint256[] memory _whitelistGroup
+        string[] memory _whitelistGroup
     )
     public
     onlyManager
     {
-        Vault memory newVault = Vault({vaultAPSManager:_vaultAPSManager, whitelistGroup:_whitelistGroup});
+        Vault memory newVault = Vault(
+            {
+            vaultAPSManager:_vaultAPSManager, 
+            whitelistGroup:_whitelistGroup, 
+            created:true
+            });
+
+        vaults[vaultAddress] = newVault;
+
         for (uint256 i = 0; i < _vaultAssets.length; i++) {
             address asset = _vaultAssets[i];
-            require(asset != address(0), "Invalid asset provided");
             require(_isAssetPresent(asset), "Asset not supported by Yieldster");
-            vaults[vaultAddress] = newVault;
             vaults[vaultAddress].vaultAssets[asset] = true;
         }
+
         for (uint256 i = 0; i < _vaultProtocols.length; i++) {
             address protocol = _vaultProtocols[i];
-            require(protocol != address(0), "Invalid protocol provided");
             require(_isProtocolPresent(protocol), "protocol not supported by Yieldster");
-            vaults[vaultAddress] = newVault;
             vaults[vaultAddress].vaultProtocols[protocol] = true;
         }
 
     }
+
+    function _isVaultPresent(address _address) external view returns(bool)
+    {
+        return vaults[_address].created;
+    }
     
+    function isAssetEnabledInVault(
+        address _vaultAddress, 
+        address _asset
+    )
+    external
+    view
+    returns(bool)
+    {
+        require(this._isVaultPresent(_vaultAddress),"Vault is not present in APS");
+        return vaults[_vaultAddress].vaultAssets[_asset];
+    }
 
-
+    
 
 // Assets
     function _isAssetPresent(address _address) private view returns(bool)
