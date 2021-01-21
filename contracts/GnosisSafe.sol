@@ -29,8 +29,7 @@ contract GnosisSafe
     string public safeName = "Gnosis Safe";
     string public version = "1.2.0";
 
-    IERC20 private token;
-    address public controller;
+    address public APSController;
     address public owner;
     address public manager;
     bool private safeSetupCompleted = false;
@@ -39,9 +38,9 @@ contract GnosisSafe
     Whitelist private whiteList;
 
 
-    function vaultBalance() public view returns (uint256) {
-        return token.balanceOf(address(this)).add(IController(controller).balanceOf(address(token)));
-    }
+    // function vaultBalance() public view returns (uint256) {
+    //     return ;
+    // }
 
     function isWhiteListed() public view returns(bool){
         bool memberStatus;
@@ -59,7 +58,7 @@ contract GnosisSafe
     }
 
     modifier onlyWhitelisted{
-        require(isWhiteListed(),"Note allowed to access the resources");
+        require(isWhiteListed(),"Not allowed to access the resources");
         _;
     }
 
@@ -69,7 +68,7 @@ contract GnosisSafe
         string calldata _tokenName,
         string calldata _symbol,
         address _manager,
-        address _controller, 
+        address _APSController, 
         address[] calldata _safeAssets,
         address _whitelisted
     )
@@ -80,7 +79,7 @@ contract GnosisSafe
         safeSetupCompleted = true;
         safeName = _safeName;
         manager = _manager;
-        controller = _controller;
+        APSController = _APSController;
         owner = msg.sender;
 
         setupToken(_tokenName, _symbol);
@@ -89,7 +88,7 @@ contract GnosisSafe
          for (uint256 i = 0; i < _safeAssets.length; i++) {
             address asset = _safeAssets[i];
             require(asset != address(0), "Invalid asset provided");
-            require(IAPContract(controller).isAssetPresent(asset), "Asset not supported by Yieldster");
+            require(IAPContract(APSController).isAssetPresent(asset), "Asset not supported by Yieldster");
             safeAssets[asset] = true;
         }
         //Setting up whitelist
@@ -102,7 +101,7 @@ contract GnosisSafe
     function deposit(uint256 _amount) public onlyWhitelisted{
         // uint256 _pool = vaultBalance();
         // uint256 _before = token.balanceOf(address(this));
-        token.transferFrom(msg.sender, address(this), _amount);
+        // token.transferFrom(msg.sender, address(this), _amount);
         // uint256 _after = token.balanceOf(address(this));
         // _amount = _after.sub(_before); // Additional check for deflationary tokens
         // uint256 shares = 0;
@@ -130,7 +129,7 @@ contract GnosisSafe
         //     }
         // }
 
-        token.transfer(msg.sender, _shares);
+        // token.transfer(msg.sender, _shares);
     }
 
 }

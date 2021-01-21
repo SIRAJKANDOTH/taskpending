@@ -9,8 +9,6 @@ module.exports = async (deployer) => {
 
 	await deployer.deploy(APContract);
 	const apContract = await APContract.deployed();
-
-  // var tkn = await deployer.deploy(yrToken, 10000000000000);
   
 	await deployer.deploy(GnosisSafe);
 };
