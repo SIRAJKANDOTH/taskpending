@@ -20,8 +20,7 @@ contract APContract is ChainlinkService{
         mapping(address => bool) vaultAssets;
         mapping(address => bool) vaultProtocols;
         address vaultAPSManager;
-        string[] whitelistGroups;
-
+        uint256[] whitelistGroup;
     }
 
     mapping(address => Asset) assets;
@@ -30,23 +29,79 @@ contract APContract is ChainlinkService{
 
     mapping(address => Vault) vaults;
 
+    address private superAdmin;
+    mapping(address => bool) APSManagers;
 
-
-    address private apsManager;
     address private whitelistModule;
 
 
     constructor(address _whitelistModule) public{
-        apsManager = msg.sender;
+        superAdmin = msg.sender;
+        APSManagers[msg.sender] = true;
         whitelistModule = _whitelistModule;
+    }
+
+//APS Managers and Super Admin functions
+    modifier onlySuperAdmin
+    {
+        require(superAdmin == msg.sender, "Only Super Admin is allowed to perform this operation");
+        _;
     }
 
     modifier onlyManager
     {
-        require(msg.sender == apsManager, "Only APS manager allowed to call this operation!");
+        require(APSManagers[msg.sender], "Only APS managers allowed to perform this operation!");
         _;
     }
 
+    function addManager(address _manager) 
+    public
+    onlySuperAdmin
+    {
+        APSManagers[_manager] = true;
+    }
+
+    function removeManager(address _manager)
+    public
+    onlySuperAdmin
+    {
+        APSManagers[_manager] = false;
+    } 
+
+//Vaults
+
+    function addVault(
+        address vaultAddress,
+        address[] memory _vaultAssets,
+        address[] memory _vaultProtocols,
+        address _vaultAPSManager,
+        uint256[] memory _whitelistGroup
+    )
+    public
+    onlyManager
+    {
+        Vault memory newVault = Vault({vaultAPSManager:_vaultAPSManager, whitelistGroup:_whitelistGroup});
+        for (uint256 i = 0; i < _vaultAssets.length; i++) {
+            address asset = _vaultAssets[i];
+            require(asset != address(0), "Invalid asset provided");
+            require(_isAssetPresent(asset), "Asset not supported by Yieldster");
+            vaults[vaultAddress] = newVault;
+            vaults[vaultAddress].vaultAssets[asset] = true;
+        }
+        for (uint256 i = 0; i < _vaultProtocols.length; i++) {
+            address protocol = _vaultProtocols[i];
+            require(protocol != address(0), "Invalid protocol provided");
+            require(_isProtocolPresent(protocol), "protocol not supported by Yieldster");
+            vaults[vaultAddress] = newVault;
+            vaults[vaultAddress].vaultProtocols[protocol] = true;
+        }
+
+    }
+    
+
+
+
+// Assets
     function _isAssetPresent(address _address) private view returns(bool)
     {
         return assets[_address].created;
@@ -57,12 +112,6 @@ contract APContract is ChainlinkService{
         return _isAssetPresent(_address);
     }
 
-    function _isProtocolPresent(address _address) private view returns(bool)
-    {
-        return protocols[_address].created;
-    }
-
-// Assets
     function addAsset(
         string memory _symbol, 
         string memory _name,
@@ -106,6 +155,11 @@ contract APContract is ChainlinkService{
     }
 
 // Protocols
+    function _isProtocolPresent(address _address) private view returns(bool)
+    {
+        return protocols[_address].created;
+    }
+
     function addProtocol(
         string memory _symbol,
         string memory _name,
