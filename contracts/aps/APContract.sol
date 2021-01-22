@@ -25,12 +25,15 @@ contract APContract is ChainlinkService{
         string[] whitelistGroup;
         bool created;
     }
+    event VaultCreation(address vaultAddress);
 
     mapping(address => Asset) assets;
 
     mapping(address => Protocol) protocols;
 
     mapping(address => Vault) vaults;
+
+    address private MasterCopy;
 
     address private superAdmin;
 
@@ -39,9 +42,10 @@ contract APContract is ChainlinkService{
     address private whitelistModule;
 
 
-    constructor(address _whitelistModule) public{
+    constructor(address _MasterCopy, address _whitelistModule) public{
         superAdmin = msg.sender;
         APSManagers[msg.sender] = true;
+        MasterCopy = _MasterCopy;
         whitelistModule = _whitelistModule;
     }
 
@@ -58,6 +62,13 @@ contract APContract is ChainlinkService{
         _;
     }
 
+    modifier onlyVault
+    {
+        require(isVault(msg.sender), "Only Yieldster vaults can perform this operation");
+        _;
+    }
+
+
     function addManager(address _manager) 
     public
     onlySuperAdmin
@@ -72,18 +83,56 @@ contract APContract is ChainlinkService{
         APSManagers[_manager] = false;
     } 
 
+
+    function createVault() 
+        public 
+        returns (address result) 
+        {
+            bytes20 targetBytes = bytes20(MasterCopy);
+            assembly {
+              let clone := mload(0x40)
+              mstore(clone, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)
+              mstore(add(clone, 0x14), targetBytes)
+              mstore(add(clone, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)
+              result := create(0, clone, 0x37)
+       }
+       emit VaultCreation(result);
+    }
+
+    function isVault(
+        address query
+        ) 
+        internal 
+        view 
+        returns (bool result) 
+        {
+            bytes20 targetBytes = bytes20(MasterCopy);
+            assembly {
+              let clone := mload(0x40)
+              mstore(clone, 0x363d3d373d3d3d363d7300000000000000000000000000000000000000000000)
+              mstore(add(clone, 0xa), targetBytes)
+              mstore(add(clone, 0x1e), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)
+
+              let other := add(clone, 0x40)
+              extcodecopy(query, other, 0, 0x2d)
+              result := and(
+                eq(mload(clone), mload(other)),
+                eq(mload(add(clone, 0xd)), mload(add(other, 0xd)))
+              )
+            }
+        }
+
 //Vaults
 
     function addVault(
-        address vaultAddress,
         address[] memory _vaultAssets,
         address[] memory _vaultProtocols,
         address _vaultAPSManager,
         string[] memory _whitelistGroup
     )
+    onlyVault
     public
-    onlyManager
-    {
+    {   
         Vault memory newVault = Vault(
             {
             vaultAPSManager:_vaultAPSManager, 
@@ -91,18 +140,18 @@ contract APContract is ChainlinkService{
             created:true
             });
 
-        vaults[vaultAddress] = newVault;
+        vaults[msg.sender] = newVault;
 
         for (uint256 i = 0; i < _vaultAssets.length; i++) {
             address asset = _vaultAssets[i];
             require(_isAssetPresent(asset), "Asset not supported by Yieldster");
-            vaults[vaultAddress].vaultAssets[asset] = true;
+            vaults[msg.sender].vaultAssets[asset] = true;
         }
 
         for (uint256 i = 0; i < _vaultProtocols.length; i++) {
             address protocol = _vaultProtocols[i];
             require(_isProtocolPresent(protocol), "protocol not supported by Yieldster");
-            vaults[vaultAddress].vaultProtocols[protocol] = true;
+            vaults[msg.sender].vaultProtocols[protocol] = true;
         }
 
     }
@@ -123,7 +172,6 @@ contract APContract is ChainlinkService{
         require(this._isVaultPresent(_vaultAddress),"Vault is not present in APS");
         return vaults[_vaultAddress].vaultAssets[_asset];
     }
-
     
 
 // Assets
@@ -132,10 +180,6 @@ contract APContract is ChainlinkService{
         return assets[_address].created;
     }
     
-    function isAssetPresent(address _address) external view returns(bool)
-    {
-        return _isAssetPresent(_address);
-    }
 
     function addAsset(
         string memory _symbol, 

@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.5.0 <0.7.0;
+pragma experimental ABIEncoderV2;
+
 
 interface IAPContract{
     
@@ -16,4 +18,8 @@ interface IAPContract{
     function addProtocol(string calldata ,string calldata ,address) external;
 
     function removeProtocol(address) external;
+
+    function addVault(address[] calldata ,address[] calldata ,address ,string[] calldata) external;
+
+     function createVault(address) external;
 }

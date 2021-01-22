@@ -1,4 +1,6 @@
 pragma solidity >=0.5.0 <0.7.0;
+pragma experimental ABIEncoderV2;
+
 import "./common/MasterCopy.sol";
 import "./external/GnosisSafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -38,10 +40,6 @@ contract GnosisSafe
     Whitelist private whiteList;
 
 
-    // function vaultBalance() public view returns (uint256) {
-    //     return ;
-    // }
-
     function isWhiteListed() public view returns(bool){
         bool memberStatus;
         for(uint256 i=0;i<whiteListGroups.length;i++)
@@ -64,35 +62,29 @@ contract GnosisSafe
 
     /// @dev Setup function sets initial storage of contract.
     function setup(
-        string calldata _safeName,
+        // string calldata _safeName,
         string calldata _tokenName,
         string calldata _symbol,
-        address _manager,
+        // address _manager,
         address _APSController, 
-        address[] calldata _safeAssets,
-        address _whitelisted
+        address[] calldata _vaultAssets,
+        address[] calldata _vaultProtocols,
+        string[] calldata _whitelistGroup
     )
         external
     {
         require(!safeSetupCompleted, "Safe is already setup");
 
         safeSetupCompleted = true;
-        safeName = _safeName;
-        manager = _manager;
+        // safeName = _safeName;
+        // manager = _manager;
         APSController = _APSController;
         owner = msg.sender;
 
         setupToken(_tokenName, _symbol);
 
-        //Adding assets to the safe
-         for (uint256 i = 0; i < _safeAssets.length; i++) {
-            address asset = _safeAssets[i];
-            require(IAPContract(APSController).isAssetPresent(asset), "Asset not supported by Yieldster");
-            safeAssets[asset] = true;
-        }
-        //Setting up whitelist
-        whiteList=Whitelist(_whitelisted);
-        whiteListGroups=["GROUPA","GROUPB"];
+        IAPContract(APSController).addVault(_vaultAssets, _vaultProtocols, msg.sender, _whitelistGroup);
+
     }
     
 
