@@ -58,7 +58,8 @@ contract SmartLender is IStrategy,ISmartLender
             safe.mint(safe.tokenCountFromUSD(_amountInUSD));
             safe.burn(safe.tokenCountFromUSD(_amountInUSD),lenderSafe);
         }
-        else{
+        else if(safe.getEstimatedReturn()>GnosisSafe(lenderSafe).getEstimatedReturn){
+
 
         }
     }
@@ -78,6 +79,10 @@ contract SmartLender is IStrategy,ISmartLender
 
     function acceptLoadRequest() private{
 
+    }
+
+    function rejectLoanRequest() private{
+        
     }
 
 

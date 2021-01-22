@@ -8,8 +8,9 @@ module.exports = {
   networks: {
     development: {
       host: "localhost",
-      port: 8545,
-      network_id: "*" // Match any network id
+      port: 7545,
+      network_id: "*", // Match any network id
+      websockets: true
     },
     rinkeby: {
       network_id: '4',
