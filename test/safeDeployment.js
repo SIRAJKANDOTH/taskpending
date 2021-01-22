@@ -56,7 +56,8 @@ contract(" APContract", function (accounts) {
 			apContract.address,
 			[accounts[3], accounts[4]],
 			[accounts[3], accounts[4]],
-			["Group 1", "Group 2"]
+			["Group 1", "Group 2"],
+			{ from: accounts[0] }
 		);
 
 		console.log(

@@ -33,6 +33,8 @@ contract APContract is ChainlinkService{
 
     mapping(address => Vault) vaults;
 
+    mapping(address => address) safeOwner;
+
     address private MasterCopy;
 
     address private superAdmin;
@@ -67,6 +69,11 @@ contract APContract is ChainlinkService{
         require(isVault(msg.sender), "Only Yieldster vaults can perform this operation");
         _;
     }
+    modifier onlySafeOwner
+    {
+        require(safeOwner[msg.sender] == tx.origin, "Only safe Owner can perform this operation");
+        _;
+    }
 
 
     function addManager(address _manager) 
@@ -96,6 +103,7 @@ contract APContract is ChainlinkService{
               mstore(add(clone, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)
               result := create(0, clone, 0x37)
        }
+       safeOwner[result] = msg.sender;
        emit VaultCreation(result);
     }
 
@@ -131,6 +139,7 @@ contract APContract is ChainlinkService{
         string[] memory _whitelistGroup
     )
     onlyVault
+    onlySafeOwner
     public
     {   
         Vault memory newVault = Vault(
