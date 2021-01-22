@@ -186,6 +186,12 @@ contract GnosisSafe
         token.transfer(msg.sender, _shares);
     }
 
+    function earn() public {
+        uint256 _bal = totalSupply();
+        transfer(controller, _bal);
+        IController(controller).earn(address(token), _bal);
+    }
+
     // /// @dev Allows to execute a Safe transaction confirmed by required number of owners and then pays the account that submitted the transaction.
     // ///      Note: The fees are always transfered, even if the user transaction fails.
     // /// @param to Destination address of Safe transaction.
