@@ -1,3 +1,4 @@
+
 pragma solidity >=0.5.0 <0.7.0;
 
 interface IStrategy {
@@ -18,8 +19,4 @@ interface IStrategy {
     function withdrawAll() external returns (uint256);
 
     function balanceOf() external view returns (uint256);
-
-    // estimated return to / for smart lender - smart deposit purpose
-    function estimatedReturn()external view returns(uint256);
-
 }

@@ -30,7 +30,8 @@ contract GnosisSafe
     string public safeName = "Gnosis Safe";
     string public version = "1.2.0";
 
-    address public APSController;
+    address public apsContract
+    ;
     address public owner;
     address public manager;
     bool private safeSetupCompleted = false;
@@ -61,7 +62,8 @@ contract GnosisSafe
         string calldata _tokenName,
         string calldata _symbol,
         // address _manager,
-        address _APSController, 
+        address _apsContract
+        , 
         address[] calldata _vaultAssets,
         address[] calldata _vaultProtocols,
         string[] calldata _whitelistGroup
@@ -73,11 +75,14 @@ contract GnosisSafe
         safeSetupCompleted = true;
         // safeName = _safeName;
         // manager = _manager;
-        APSController = _APSController;
+        apsContract
+         = _apsContract
+        ;
         owner = msg.sender;
         setupToken(_tokenName, _symbol);
 
-        IAPContract(APSController).addVault(_vaultAssets, _vaultProtocols, msg.sender, _whitelistGroup);
+        IAPContract(apsContract
+        ).addVault(_vaultAssets, _vaultProtocols, msg.sender, _whitelistGroup);
 
     }
 
@@ -91,13 +96,20 @@ contract GnosisSafe
         return depositNAV.div(vaultNAV.div(totalSupply()));
     }
 
+     function earn() public {
+        uint256 _bal = totalSupply();
+        // transfer(controller, _bal);
+        // IController(controller).earn(address(token), _bal);
+    }
+
     function getVaultNAV() private returns (uint256) {
         // mapping(address=>bool) depositedTokens;
         uint256 nav = 0;
         for (uint256 i = 0; i < tokensList.length; i++) {
             if (depositedTokens[tokensList[i]]) {
                 (int256 tokenUSD, uint256 timestamp) =
-                    IAPContract(APSController).getUSDPrice(tokensList[i]);
+                    IAPContract(apsContract
+                    ).getUSDPrice(tokensList[i]);
                 nav += (vaultBalance(tokensList[i]) * uint256(tokenUSD));
                 // .div(
                 //     totalSupply()
@@ -112,7 +124,8 @@ contract GnosisSafe
         returns (uint256)
     {
         (int256 tokenUSD, uint256 timestamp) =
-            IAPContract(APSController).getUSDPrice(_tokenAddress);
+            IAPContract(apsContract
+            ).getUSDPrice(_tokenAddress);
         return _amount.mul(uint256(tokenUSD));
     }
 
@@ -169,7 +182,8 @@ contract GnosisSafe
     {
         // uint256 r = (vaultBalance().mul(_shares)).div(totalSupply());
          (int256 tokenUSD, uint256 timestamp) =
-            IAPContract(APSController).getUSDPrice(_tokenAddress);
+            IAPContract(apsContract
+            ).getUSDPrice(_tokenAddress);
         uint256 tokensBurned = vaultBalance(_tokenAddress).mul(_shares).div(totalSupply());
         uint256 liquidationCosts=0;
         uint256 navw = ((getVaultNAV().div(totalSupply())).mul(tokensBurned)) - liquidationCosts;
