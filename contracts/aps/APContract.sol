@@ -28,33 +28,44 @@ contract APContract is ChainlinkService{
     event VaultCreation(address vaultAddress);
 
     mapping(address => Asset) assets;
+    
+    address[] assetList;
 
     mapping(address => Protocol) protocols;
 
     mapping(address => Vault) vaults;
 
+    mapping(address => mapping(address => address)) public converters;
+
     mapping(address => address) safeOwner;
 
     address private MasterCopy;
 
-    address private superAdmin;
+    address private yieldsterDAO;
 
     mapping(address => bool) APSManagers;
 
     address private whitelistModule;
 
+    address public whitelistManager;
 
-    constructor(address _MasterCopy, address _whitelistModule) public{
-        superAdmin = msg.sender;
-        APSManagers[msg.sender] = true;
-        MasterCopy = _MasterCopy;
-        whitelistModule = _whitelistModule;
-    }
+
+    constructor(
+        address _MasterCopy, 
+        address _whitelistModule
+        ) 
+        public
+        {
+            yieldsterDAO = msg.sender;
+            APSManagers[msg.sender] = true;
+            MasterCopy = _MasterCopy;
+            whitelistModule = _whitelistModule;
+        }
 
 //APS Managers and Super Admin functions
-    modifier onlySuperAdmin
+    modifier onlyYieldsterDAO
     {
-        require(superAdmin == msg.sender, "Only Super Admin is allowed to perform this operation");
+        require(yieldsterDAO == msg.sender, "Only Yieldster DAO is allowed to perform this operation");
         _;
     }
 
@@ -78,18 +89,40 @@ contract APContract is ChainlinkService{
 
     function addManager(address _manager) 
     public
-    onlySuperAdmin
+    onlyYieldsterDAO
     {
         APSManagers[_manager] = true;
     }
 
     function removeManager(address _manager)
     public
-    onlySuperAdmin
+    onlyYieldsterDAO
     {
         APSManagers[_manager] = false;
     } 
 
+    function changeWhitelistManager(address _whitelistManager)
+    public
+    onlyYieldsterDAO
+    {
+        whitelistManager = _whitelistManager;
+    }
+
+//Converters
+
+    function setConverter(
+        address _input,
+        address _output,
+        address _converter
+    ) 
+    public 
+    onlyManager
+    {
+        converters[_input][_output] = _converter;
+    }
+
+
+//Vaults
 
     function createVault() 
         public 
@@ -130,7 +163,7 @@ contract APContract is ChainlinkService{
             }
         }
 
-//Vaults
+
 
     function addVault(
         address[] memory _vaultAssets,
@@ -142,6 +175,7 @@ contract APContract is ChainlinkService{
     onlySafeOwner
     public
     {   
+        require(APSManagers[_vaultAPSManager], "Invalid APS Manager provided");
         Vault memory newVault = Vault(
             {
             vaultAPSManager:_vaultAPSManager, 
@@ -181,6 +215,7 @@ contract APContract is ChainlinkService{
         require(this._isVaultPresent(_vaultAddress),"Vault is not present in APS");
         return vaults[_vaultAddress].vaultAssets[_asset];
     }
+
     
 
 // Assets
@@ -200,6 +235,7 @@ contract APContract is ChainlinkService{
         onlyManager
         {
         require(!_isAssetPresent(_tokenAddress),"Asset already present!");
+        assetList.push(_tokenAddress);
         Asset memory newAsset=Asset({name:_name,feedAddress:feedAddress,created:true,symbol:_symbol});
         assets[_tokenAddress]=newAsset;
     }
@@ -224,6 +260,14 @@ contract APContract is ChainlinkService{
         require(_isAssetPresent(_tokenAddress),"Asset not present!");
         return(assets[_tokenAddress].name,assets[_tokenAddress].feedAddress,assets[_tokenAddress].symbol);
 
+    }
+
+    function getAssetList()
+    view
+    public
+    returns(address[] memory)
+    {
+        return assetList;
     }
 
     function getUSDPrice(address _tokenAddress) public returns(int,uint)

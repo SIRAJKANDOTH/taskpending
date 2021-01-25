@@ -19,7 +19,8 @@ import "./interfaces/IAPContract.sol";
 /// @author Richard Meissner - <richard@gnosis.io>
 /// @author Ricardo Guilherme Schmidt - (Status Research & Development GmbH) - Gas Token Payment
 contract GnosisSafe
-    is MasterCopy, 
+    is 
+    MasterCopy, 
     ERC20,
     ERC20Detailed {
 
@@ -65,7 +66,7 @@ contract GnosisSafe
         // string calldata _safeName,
         string calldata _tokenName,
         string calldata _symbol,
-        // address _manager,
+        address _manager,
         address _APSController, 
         address[] calldata _vaultAssets,
         address[] calldata _vaultProtocols,
@@ -77,13 +78,13 @@ contract GnosisSafe
 
         safeSetupCompleted = true;
         // safeName = _safeName;
-        // manager = _manager;
+        manager = _manager;
         APSController = _APSController;
         owner = msg.sender;
 
         setupToken(_tokenName, _symbol);
 
-        IAPContract(APSController).addVault(_vaultAssets, _vaultProtocols, msg.sender, _whitelistGroup);
+        IAPContract(APSController).addVault(_vaultAssets, _vaultProtocols, manager, _whitelistGroup);
 
     }
     

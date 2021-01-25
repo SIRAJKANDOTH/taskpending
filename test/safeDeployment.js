@@ -90,5 +90,7 @@ contract(" APContract", function (accounts) {
 			"TKN1",
 			"symbol is correctly set for safe"
 		);
+
+		console.log("vault assets ", await apContract.vaults(newGnosisSafeAddress));
 	});
 });
