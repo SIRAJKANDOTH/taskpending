@@ -20,20 +20,33 @@ contract APContract is ChainlinkService{
 
     struct Vault{
         mapping(address => bool) vaultAssets;
-        mapping(address => bool) vaultProtocols;
+        mapping(address => bool) vaultDepositAssets;
+        mapping(address => bool) vaultWithdrawalAssets;
+        mapping(address => bool) vaultEnabledStrategy;
+        mapping(address => bool) vaultEnabledProtocols;
         address vaultAPSManager;
         string[] whitelistGroup;
         bool created;
     }
+
+    mapping(address => address) vaultCurrentStrategy;
+    mapping(address => address) vaultCurrentProtocol;
+
+    struct Strategy{
+        string strategyName;
+        mapping(address => bool) strategyProtocols;
+        bool created;
+    }
+
     event VaultCreation(address vaultAddress);
 
     mapping(address => Asset) assets;
-    
-    address[] assetList;
 
     mapping(address => Protocol) protocols;
 
     mapping(address => Vault) vaults;
+
+    mapping(address => Strategy) strategies;
 
     mapping(address => mapping(address => address)) public converters;
 
@@ -62,7 +75,7 @@ contract APContract is ChainlinkService{
             whitelistModule = _whitelistModule;
         }
 
-//APS Managers and Super Admin functions
+//Modifiers
     modifier onlyYieldsterDAO
     {
         require(yieldsterDAO == msg.sender, "Only Yieldster DAO is allowed to perform this operation");
@@ -87,6 +100,7 @@ contract APContract is ChainlinkService{
     }
 
 
+//Managers
     function addManager(address _manager) 
     public
     onlyYieldsterDAO
@@ -109,7 +123,6 @@ contract APContract is ChainlinkService{
     }
 
 //Converters
-
     function setConverter(
         address _input,
         address _output,
@@ -140,9 +153,7 @@ contract APContract is ChainlinkService{
        emit VaultCreation(result);
     }
 
-    function isVault(
-        address query
-        ) 
+    function isVault(address query) 
         internal 
         view 
         returns (bool result) 
@@ -167,6 +178,7 @@ contract APContract is ChainlinkService{
 
     function addVault(
         address[] memory _vaultAssets,
+        address[] memory _vaultStrategy,
         address[] memory _vaultProtocols,
         address _vaultAPSManager,
         string[] memory _whitelistGroup
@@ -189,17 +201,28 @@ contract APContract is ChainlinkService{
             address asset = _vaultAssets[i];
             require(_isAssetPresent(asset), "Asset not supported by Yieldster");
             vaults[msg.sender].vaultAssets[asset] = true;
+            vaults[msg.sender].vaultDepositAssets[asset] = true;
+            vaults[msg.sender].vaultWithdrawalAssets[asset] = true;
         }
 
+        for (uint256 i = 0; i < _vaultStrategy.length; i++) {
+            address strategy = _vaultStrategy[i];
+            require(_isStrategyPresent(strategy), "Strategy not supported by Yieldster");
+            vaults[msg.sender].vaultEnabledStrategy[strategy] = true;
+        }
+        
         for (uint256 i = 0; i < _vaultProtocols.length; i++) {
             address protocol = _vaultProtocols[i];
-            require(_isProtocolPresent(protocol), "protocol not supported by Yieldster");
-            vaults[msg.sender].vaultProtocols[protocol] = true;
+            require(_isProtocolPresent(protocol), "Protocol not supported by Yieldster");
+            vaults[msg.sender].vaultEnabledProtocols[protocol] = true;
         }
 
     }
 
-    function _isVaultPresent(address _address) external view returns(bool)
+    function _isVaultPresent(address _address) 
+        external 
+        view 
+        returns(bool)
     {
         return vaults[_address].created;
     }
@@ -219,7 +242,10 @@ contract APContract is ChainlinkService{
     
 
 // Assets
-    function _isAssetPresent(address _address) private view returns(bool)
+    function _isAssetPresent(address _address) 
+        private 
+        view 
+        returns(bool)
     {
         return assets[_address].created;
     }
@@ -235,14 +261,11 @@ contract APContract is ChainlinkService{
         onlyManager
         {
         require(!_isAssetPresent(_tokenAddress),"Asset already present!");
-        assetList.push(_tokenAddress);
-        Asset memory newAsset=Asset({name:_name,feedAddress:feedAddress,created:true,symbol:_symbol});
+        Asset memory newAsset=Asset({name:_name, feedAddress:feedAddress, created:true, symbol:_symbol});
         assets[_tokenAddress]=newAsset;
     }
 
-    function removeAsset(
-        address _tokenAddress
-        ) 
+    function removeAsset(address _tokenAddress) 
         public 
         onlyManager
         {
@@ -250,34 +273,67 @@ contract APContract is ChainlinkService{
         delete assets[_tokenAddress];
     }
     
-    function getAssetDetails(
-        address _tokenAddress
-        ) 
+    function getAssetDetails(address _tokenAddress) 
         public 
         view 
         returns(string memory, address, string memory)
     {
         require(_isAssetPresent(_tokenAddress),"Asset not present!");
-        return(assets[_tokenAddress].name,assets[_tokenAddress].feedAddress,assets[_tokenAddress].symbol);
+        return(assets[_tokenAddress].name, assets[_tokenAddress].feedAddress, assets[_tokenAddress].symbol);
 
     }
 
-    function getAssetList()
-    view
-    public
-    returns(address[] memory)
-    {
-        return assetList;
-    }
 
-    function getUSDPrice(address _tokenAddress) public returns(int,uint)
+    function getUSDPrice(address _tokenAddress) 
+        public 
+        returns(int,uint)
     {
         require(_isAssetPresent(_tokenAddress),"Asset not present!");
         return getLatestPrice(assets[_tokenAddress].feedAddress);
     }
 
+//Strategies
+    function _isStrategyPresent(address _address) 
+        private 
+        view 
+        returns(bool)
+    {
+        return strategies[_address].created;
+    }
+
+    function addStrategy(
+        string memory _strategyName,
+        address _strategyAddress,
+        address[] memory _strategyProtocols
+        ) 
+        public 
+        onlyManager
+    {
+        require(!_isStrategyPresent(_strategyAddress),"Strategy already present!");
+        Strategy memory newStrategy=Strategy({ strategyName:_strategyName, created:true });
+        strategies[_strategyAddress]=newStrategy;
+
+        for (uint256 i = 0; i < _strategyProtocols.length; i++) {
+            address protocol = _strategyProtocols[i];
+            require(_isProtocolPresent(protocol), "Protocol not supported by Yieldster");
+            strategies[_strategyAddress].strategyProtocols[protocol] = true;
+        }
+        
+    }
+
+    function removeStrategy(address _strategyAddress) 
+        public 
+        onlyManager
+    {
+        require(_isStrategyPresent(_strategyAddress),"Strategy not present!");
+        delete strategies[_strategyAddress];
+    }
+
 // Protocols
-    function _isProtocolPresent(address _address) private view returns(bool)
+    function _isProtocolPresent(address _address) 
+        private 
+        view 
+        returns(bool)
     {
         return protocols[_address].created;
     }
@@ -289,13 +345,16 @@ contract APContract is ChainlinkService{
         ) 
         public 
         onlyManager
-        {
+    {
         require(!_isProtocolPresent(_protocolAddress),"Protocol already present!");
-        Protocol memory newAsset=Protocol({name:_name,created:true,symbol:_symbol});
-        protocols[_protocolAddress]=newAsset;
+        Protocol memory newProtocol=Protocol({ name:_name, created:true, symbol:_symbol });
+        protocols[_protocolAddress]=newProtocol;
     }
 
-    function removeProtocol(address _protocolAddress) public onlyManager{
+    function removeProtocol(address _protocolAddress) 
+        public 
+        onlyManager
+    {
         require(_isProtocolPresent(_protocolAddress),"Protocol not present!");
         delete protocols[_protocolAddress];
     }
