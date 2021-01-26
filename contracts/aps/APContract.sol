@@ -24,7 +24,7 @@ contract APContract is ChainlinkService{
         mapping(address => bool) vaultWithdrawalAssets;
         mapping(address => bool) vaultEnabledStrategy;
         mapping(address => bool) vaultEnabledProtocols;
-        address[] vaultEnaledStrategyList;
+        address[] vaultEnabledStrategyList;
         address[] vaultEnabledProtocolList;
         address vaultAPSManager;
         string[] whitelistGroup;
@@ -192,8 +192,8 @@ contract APContract is ChainlinkService{
         require(APSManagers[_vaultAPSManager], "Invalid APS Manager provided");
         Vault memory newVault = Vault(
             {
-            vaultEnaledStrategyList:_vaultStrategy,
-            vaultEnaledProtocolList:_vaultProtocol,
+            vaultEnabledStrategyList:_vaultStrategy,
+            vaultEnabledProtocolList:_vaultProtocols,
             vaultAPSManager:_vaultAPSManager, 
             whitelistGroup:_whitelistGroup, 
             created:true
@@ -260,7 +260,7 @@ contract APContract is ChainlinkService{
     returns(address[] memory)
     {
         require(_isVaultPresent(_vaultAddress), "Safe not present");
-        return vaults[_vaultAddress].vaultEnaledStrategyList;
+        return vaults[_vaultAddress].vaultEnabledStrategyList;
     }
 
     
