@@ -24,6 +24,8 @@ contract APContract is ChainlinkService{
         mapping(address => bool) vaultWithdrawalAssets;
         mapping(address => bool) vaultEnabledStrategy;
         mapping(address => bool) vaultEnabledProtocols;
+        address[] vaultEnaledStrategyList;
+        address[] vaultEnabledProtocolList;
         address vaultAPSManager;
         string[] whitelistGroup;
         bool created;
@@ -190,6 +192,8 @@ contract APContract is ChainlinkService{
         require(APSManagers[_vaultAPSManager], "Invalid APS Manager provided");
         Vault memory newVault = Vault(
             {
+            vaultEnaledStrategyList:_vaultStrategy,
+            vaultEnaledProtocolList:_vaultProtocol,
             vaultAPSManager:_vaultAPSManager, 
             whitelistGroup:_whitelistGroup, 
             created:true
@@ -230,7 +234,7 @@ contract APContract is ChainlinkService{
         require(vaults[_vaultAddress].vaultAPSManager == msg.sender, "Only the vault Manager can perform this operation");
         vaultActiveStrategy[_vaultAddress] = _strategyAddress;
     }
-    
+
     function setVaultActiveProtocol(
         address _vaultAddress,
         address _protocolAddress
@@ -244,23 +248,19 @@ contract APContract is ChainlinkService{
     }
 
     function _isVaultPresent(address _address) 
-        external 
+        private 
         view 
         returns(bool)
     {
         return vaults[_address].created;
     }
     
-    function isAssetEnabledInVault(
-        address _vaultAddress, 
-        address _asset
-    )
-    external
-    view
-    returns(bool)
+    function getEnabledVaultStrategies(address _vaultAddress)
+    public
+    returns(address[] memory)
     {
-        require(this._isVaultPresent(_vaultAddress),"Vault is not present in APS");
-        return vaults[_vaultAddress].vaultAssets[_asset];
+        require(_isVaultPresent(_vaultAddress), "Safe not present");
+        return vaults[_vaultAddress].vaultEnaledStrategyList;
     }
 
     
@@ -334,8 +334,8 @@ contract APContract is ChainlinkService{
         onlyManager
     {
         require(!_isStrategyPresent(_strategyAddress),"Strategy already present!");
-        Strategy memory newStrategy=Strategy({ strategyName:_strategyName, created:true });
-        strategies[_strategyAddress]=newStrategy;
+        Strategy memory newStrategy = Strategy({ strategyName:_strategyName, created:true });
+        strategies[_strategyAddress] = newStrategy;
 
         for (uint256 i = 0; i < _strategyProtocols.length; i++) {
             address protocol = _strategyProtocols[i];
@@ -371,8 +371,8 @@ contract APContract is ChainlinkService{
         onlyManager
     {
         require(!_isProtocolPresent(_protocolAddress),"Protocol already present!");
-        Protocol memory newProtocol=Protocol({ name:_name, created:true, symbol:_symbol });
-        protocols[_protocolAddress]=newProtocol;
+        Protocol memory newProtocol = Protocol({ name:_name, created:true, symbol:_symbol });
+        protocols[_protocolAddress] = newProtocol;
     }
 
     function removeProtocol(address _protocolAddress) 
