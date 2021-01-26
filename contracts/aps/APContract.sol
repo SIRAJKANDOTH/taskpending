@@ -29,8 +29,8 @@ contract APContract is ChainlinkService{
         bool created;
     }
 
-    mapping(address => address) vaultCurrentStrategy;
-    mapping(address => address) vaultCurrentProtocol;
+    mapping(address => address) vaultActiveStrategy;
+    mapping(address => address) vaultActiveProtocol;
 
     struct Strategy{
         string strategyName;
@@ -217,6 +217,30 @@ contract APContract is ChainlinkService{
             vaults[msg.sender].vaultEnabledProtocols[protocol] = true;
         }
 
+    }
+
+    function setVaultActiveStrategy(
+        address _vaultAddress,
+        address _strategyAddress
+    )
+    external
+    {
+        require(vaults[_vaultAddress].created, "Vault not present");
+        require(strategies[_strategyAddress].created, "Strategy not present");
+        require(vaults[_vaultAddress].vaultAPSManager == msg.sender, "Only the vault Manager can perform this operation");
+        vaultActiveStrategy[_vaultAddress] = _strategyAddress;
+    }
+    
+    function setVaultActiveProtocol(
+        address _vaultAddress,
+        address _protocolAddress
+    )
+    external
+    {
+        require(vaults[_vaultAddress].created, "Vault not present");
+        require(protocols[_protocolAddress].created, "Protocol not present");
+        require(vaults[_vaultAddress].vaultAPSManager == msg.sender, "Only the vault Manager can perform this operation");
+        vaultActiveProtocol[_vaultAddress] = _protocolAddress;
     }
 
     function _isVaultPresent(address _address) 
