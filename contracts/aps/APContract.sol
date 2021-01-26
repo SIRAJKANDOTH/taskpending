@@ -25,16 +25,16 @@ contract APContract is ChainlinkService{
         mapping(address => bool) vaultWithdrawalAssets;
         mapping(address => bool) vaultEnabledStrategy;
         mapping(address => bool) vaultEnabledProtocols;
-        address[] vaultEnabledStrategyList;
-        address[] vaultEnabledProtocolList;
         address vaultAPSManager;
         string[] whitelistGroup;
         bool created;
     }
 
+    mapping(address => mapping(address => mapping(address => bool))) vaultStrategyEnabledProtocols;
+
     mapping(address => address) vaultActiveStrategy;
-    mapping(address => mapping(address => mapping(address => bool))) vaultStrategyApprovedProtocols;
-    mapping(address => address) vaultActiveProtocol;
+    
+    mapping(address => mapping(address => address)) vaultStrategyActiveProtocol;
 
     struct Strategy{
         string strategyName;
@@ -194,8 +194,6 @@ contract APContract is ChainlinkService{
         require(APSManagers[_vaultAPSManager], "Invalid APS Manager provided");
         Vault memory newVault = Vault(
             {
-            vaultEnabledStrategyList:_vaultStrategy,
-            vaultEnabledProtocolList:_vaultProtocols,
             vaultAPSManager:_vaultAPSManager, 
             whitelistGroup:_whitelistGroup, 
             created:true
@@ -237,16 +235,38 @@ contract APContract is ChainlinkService{
         vaultActiveStrategy[_vaultAddress] = _strategyAddress;
     }
 
-    function setVaultActiveProtocol(
+    function setVaultStrategyEnabledProtocol(
         address _vaultAddress,
-        address _protocolAddress
+        address _vaultStrategy,
+        address[] memory _strategyProtocols
     )
-    external
+    public
     {
         require(vaults[_vaultAddress].created, "Vault not present");
+        require(strategies[_vaultStrategy].created, "Strategy not present");
+        require(vaults[_vaultAddress].vaultEnabledStrategy[_vaultStrategy], "This strategy is not enabled for this vault");
+
+        for (uint256 i = 0; i < _strategyProtocols.length; i++) {
+            address protocol = _strategyProtocols[i];
+            require(_isProtocolPresent(protocol), "Protocol not supported by Yieldster");
+            vaultStrategyEnabledProtocols[_vaultAddress][_vaultStrategy][protocol] = true;
+        }
+    }
+
+    function setvaultStrategyActiveProtocol(
+        address _vaultAddress,
+        address _strategyAddress,
+        address _protocolAddress
+    )
+    public
+    {
+        require(vaults[_vaultAddress].created, "Vault not present");
+        require(strategies[_strategyAddress].created, "Strategy not present");
         require(protocols[_protocolAddress].created, "Protocol not present");
+        require(vaults[_vaultAddress].vaultEnabledStrategy[_strategyAddress], "This strategy is not enabled for Vault");
+        require(vaultStrategyEnabledProtocols[_vaultAddress][_strategyAddress][_protocolAddress], "Protocol is not enabled for the provided strategy");
         require(vaults[_vaultAddress].vaultAPSManager == msg.sender, "Only the vault Manager can perform this operation");
-        vaultActiveProtocol[_vaultAddress] = _protocolAddress;
+        vaultStrategyActiveProtocol[_vaultAddress][_strategyAddress] = _protocolAddress;
     }
 
     function _isVaultPresent(address _address) 
@@ -257,14 +277,6 @@ contract APContract is ChainlinkService{
         return vaults[_address].created;
     }
     
-    function getEnabledVaultStrategies(address _vaultAddress)
-    public
-    view
-    returns(address[] memory)
-    {
-        require(_isVaultPresent(_vaultAddress), "Safe not present");
-        return vaults[_vaultAddress].vaultEnabledStrategyList;
-    }
 
     
 
