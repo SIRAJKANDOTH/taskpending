@@ -66,7 +66,7 @@ contract GnosisSafe
         // string calldata _safeName,
         string calldata _tokenName,
         string calldata _symbol,
-        address _manager,
+        // address _manager,
         address _APSController, 
         address[] calldata _vaultAssets,
         address[] calldata _vaultProtocols,
@@ -77,14 +77,14 @@ contract GnosisSafe
         require(!safeSetupCompleted, "Safe is already setup");
 
         safeSetupCompleted = true;
-        // safeName = _safeName;
-        manager = _manager;
+        // safeName = _safeName;    //must find a way to include safename and manager in setup stack too deep error
+        // manager = _manager;
         APSController = _APSController;
         owner = msg.sender;
 
         setupToken(_tokenName, _symbol);
-
-        IAPContract(APSController).addVault(_vaultAssets, _vaultProtocols, manager, _whitelistGroup);
+        //need to remove msg.sender and pass the manager
+        IAPContract(APSController).addVault(_vaultAssets, _vaultProtocols, msg.sender, _whitelistGroup);
 
     }
     
