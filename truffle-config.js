@@ -15,7 +15,7 @@ module.exports = {
     rinkeby: {
       network_id: '4',
       provider: () => {
-        return new HDWalletProvider('provide admit leaf net sun account error double end glue civil else', 'https://rinkeby.infura.io/v3/' + '7260d3ed3ad0499a9727603ebaa96c8b')
+        return new HDWalletProvider(mnemonic, token)
       },
       gasPrice: 25000000000, // 25 Gwei
     },

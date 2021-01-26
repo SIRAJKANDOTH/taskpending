@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.5.0 <0.7.0;
 pragma experimental ABIEncoderV2;
 
@@ -32,6 +33,7 @@ contract APContract is ChainlinkService{
     }
 
     mapping(address => address) vaultActiveStrategy;
+    mapping(address => mapping(address => mapping(address => bool))) vaultStrategyApprovedProtocols;
     mapping(address => address) vaultActiveProtocol;
 
     struct Strategy{
@@ -257,6 +259,7 @@ contract APContract is ChainlinkService{
     
     function getEnabledVaultStrategies(address _vaultAddress)
     public
+    view
     returns(address[] memory)
     {
         require(_isVaultPresent(_vaultAddress), "Safe not present");
