@@ -67,18 +67,18 @@ contract GnosisSafe
         _;
     }
 
-    /// @dev Setup function sets initial storage of contract.
+    // /// @dev Setup function sets initial storage of contract.
     function setup(
-        // string calldata _safeName,  //commented out to deal with stack too deep error
-        string calldata _tokenName,
-        string calldata _symbol,
+        // string memory _safeName,  //commented out to deal with stack too deep error
+        string memory _tokenName,
+        string memory _symbol,
         address _vaultAPSManager,
         address _vaultStrategyManager,
         address _APContract, //Need to hardcode APContract address before deploying
-        address[] calldata _vaultAssets,
-        string[] calldata _whitelistGroups
+        address[] memory _vaultAssets,
+        string[] memory _whitelistGroups
     )
-        external
+        public
     {
         require(!vaultSetupCompleted, "Safe is already setup");
 
