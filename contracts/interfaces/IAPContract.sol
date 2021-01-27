@@ -19,7 +19,15 @@ interface IAPContract{
 
     function removeProtocol(address) external;
 
-    function addVault(address[] calldata ,address[] calldata ,address ,string[] calldata) external;
+    function addVault(address[] calldata,address, address ,string[] calldata) external;
 
-     function createVault(address) external;
+    function createVault(address) external;
+
+    function getYieldsterDAO() view external returns(address);
+
+    function changeVaultAPSManager(address) external;
+
+    function setVaultStrategyAndProtocol(address _vaultStrategy, address[] calldata _strategyProtocols) external;
+
+    function getwhitelistModule() view external returns(address);
 }

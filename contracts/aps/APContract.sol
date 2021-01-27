@@ -26,6 +26,7 @@ contract APContract is ChainlinkService{
         mapping(address => bool) vaultEnabledStrategy;
         mapping(address => bool) vaultEnabledProtocols;
         address vaultAPSManager;
+        address vaultStrategyManager;
         string[] whitelistGroup;
         bool created;
     }
@@ -126,6 +127,36 @@ contract APContract is ChainlinkService{
         whitelistManager = _whitelistManager;
     }
 
+    function getYieldsterDAO()
+    view
+    public 
+    returns(address)
+    {
+        return yieldsterDAO;
+    }
+
+    function getwhitelistModule()
+    view
+    public 
+    returns(address)
+    {
+        return whitelistModule;
+    }
+
+    function changeVaultAPSManager(address _vaultAPSManager)
+    external
+    {
+        require(vaults[msg.sender].created, "Vault is not present");
+        require(APSManagers[_vaultAPSManager], "address not a member of APS Manager list");
+        vaults[msg.sender].vaultAPSManager = _vaultAPSManager;
+    }
+    function changeVaultStrategyManager(address _vaultStrategyManager)
+    external
+    {
+        require(vaults[msg.sender].created, "Vault is not present");
+        vaults[msg.sender].vaultStrategyManager = _vaultStrategyManager;
+    }
+
 //Converters
     function setConverter(
         address _input,
@@ -182,9 +213,8 @@ contract APContract is ChainlinkService{
 
     function addVault(
         address[] memory _vaultAssets,
-        address[] memory _vaultStrategy,
-        address[] memory _vaultProtocols,
         address _vaultAPSManager,
+        address _vaultStrategyManager,
         string[] memory _whitelistGroup
     )
     onlyVault
@@ -195,6 +225,7 @@ contract APContract is ChainlinkService{
         Vault memory newVault = Vault(
             {
             vaultAPSManager:_vaultAPSManager, 
+            vaultStrategyManager:_vaultStrategyManager,
             whitelistGroup:_whitelistGroup, 
             created:true
             });
@@ -207,18 +238,6 @@ contract APContract is ChainlinkService{
             vaults[msg.sender].vaultAssets[asset] = true;
             vaults[msg.sender].vaultDepositAssets[asset] = true;
             vaults[msg.sender].vaultWithdrawalAssets[asset] = true;
-        }
-
-        for (uint256 i = 0; i < _vaultStrategy.length; i++) {
-            address strategy = _vaultStrategy[i];
-            require(_isStrategyPresent(strategy), "Strategy not supported by Yieldster");
-            vaults[msg.sender].vaultEnabledStrategy[strategy] = true;
-        }
-        
-        for (uint256 i = 0; i < _vaultProtocols.length; i++) {
-            address protocol = _vaultProtocols[i];
-            require(_isProtocolPresent(protocol), "Protocol not supported by Yieldster");
-            vaults[msg.sender].vaultEnabledProtocols[protocol] = true;
         }
 
     }
@@ -235,21 +254,20 @@ contract APContract is ChainlinkService{
         vaultActiveStrategy[_vaultAddress] = _strategyAddress;
     }
 
-    function setVaultStrategyEnabledProtocol(
-        address _vaultAddress,
+    function setVaultStrategyAndProtocol(
         address _vaultStrategy,
-        address[] memory _strategyProtocols
+        address[] calldata _strategyProtocols
     )
-    public
+    external
     {
-        require(vaults[_vaultAddress].created, "Vault not present");
+        require(vaults[msg.sender].created, "Vault not present");
         require(strategies[_vaultStrategy].created, "Strategy not present");
-        require(vaults[_vaultAddress].vaultEnabledStrategy[_vaultStrategy], "This strategy is not enabled for this vault");
+        vaults[msg.sender].vaultEnabledStrategy[_vaultStrategy] = true;
 
         for (uint256 i = 0; i < _strategyProtocols.length; i++) {
             address protocol = _strategyProtocols[i];
             require(_isProtocolPresent(protocol), "Protocol not supported by Yieldster");
-            vaultStrategyEnabledProtocols[_vaultAddress][_vaultStrategy][protocol] = true;
+            vaultStrategyEnabledProtocols[msg.sender][_vaultStrategy][protocol] = true;
         }
     }
 

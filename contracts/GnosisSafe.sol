@@ -33,11 +33,15 @@ contract GnosisSafe
     string public safeName = "Gnosis Safe";
     string public version = "1.2.0";
 
-    address public APSController;
+    address public APContract;
     address public owner;
-    address public manager;
-    bool private safeSetupCompleted = false;
+    address public vaultAPSManager;
+    address public vaultStrategyManager;
+
+    bool private vaultSetupCompleted = false;
+
     mapping(address => bool) public safeAssets;
+    
     string[] private whiteListGroups;
     Whitelist private whiteList;
 
@@ -64,31 +68,81 @@ contract GnosisSafe
 
     /// @dev Setup function sets initial storage of contract.
     function setup(
-        // string calldata _safeName,
+        // string calldata _safeName,  //commented out to deal with stack too deep error
         string calldata _tokenName,
         string calldata _symbol,
-        // address _manager,
-        address _APSController, 
+        address _vaultAPSManager,
+        address _vaultStrategyManager,
+        address _APContract, //Need to hardcode APContract address before deploying
         address[] calldata _vaultAssets,
-        address[] calldata _vaultProtocols,
         string[] calldata _whitelistGroup
     )
         external
     {
-        require(!safeSetupCompleted, "Safe is already setup");
+        require(!vaultSetupCompleted, "Safe is already setup");
 
-        safeSetupCompleted = true;
-        // safeName = _safeName;    //must find a way to include safename and manager in setup stack too deep error
-        // manager = _manager;
-        APSController = _APSController;
+        vaultSetupCompleted = true;
+        // safeName = _safeName;    //to be uncommented when deploying 
+        vaultAPSManager = _vaultAPSManager;
+        vaultStrategyManager = _vaultStrategyManager;
+        APContract = _APContract;
         owner = msg.sender;
 
+        whiteList = Whitelist(IAPContract(APContract).getwhitelistModule());
+
         setupToken(_tokenName, _symbol);
-        //need to remove msg.sender and pass the manager
-        IAPContract(APSController).addVault(_vaultAssets, _vaultProtocols, msg.sender, _whitelistGroup);
+        IAPContract(APContract).addVault(_vaultAssets, _vaultAPSManager,_vaultStrategyManager, _whitelistGroup);
 
     }
-    
+
+    //Function to enable a strategy and the corresponding protocol
+        function setVaultStrategyAndProtocol(
+        address _vaultStrategy,
+        address[] memory _strategyProtocols
+    )
+    public
+    {
+        require(msg.sender == vaultAPSManager, "This operation can only be perfomed by APS Manager");
+        IAPContract(APContract).setVaultStrategyAndProtocol(_vaultStrategy, _strategyProtocols);
+    }
+
+
+    //Function to get APS manager of the vault
+    function getAPSManager()
+    view
+    public
+    returns(address) 
+    {
+        return vaultAPSManager;
+    }
+
+    //Function to change the strategy manager of the vault
+    function changeAPSManager(address _vaultAPSManager)
+    public
+    {
+        require(IAPContract(APContract).getYieldsterDAO() == msg.sender, "This operation can only be perfomed by yieldster DAO");
+        IAPContract(APContract).changeVaultAPSManager(_vaultAPSManager);
+        vaultAPSManager = _vaultAPSManager;
+    }
+
+    //Function to get strategy manager of the vault
+    function getStrategyManager()
+    view
+    public
+    returns(address) 
+    {
+        return vaultStrategyManager;
+    }
+
+    //Function to change the strategy manager of the vault
+    function changeStrategyManager(address _strategyManager)
+    public
+    {
+        require(IAPContract(APContract).getYieldsterDAO() == msg.sender, "This operation can only be perfomed by yieldster DAO");
+        IAPContract(APContract).changeVaultAPSManager(_strategyManager);
+        vaultStrategyManager = _strategyManager;
+    }
+
 
     //Using OpenZeppelin function
     function deposit(uint256 _amount) public onlyWhitelisted{
