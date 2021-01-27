@@ -254,6 +254,15 @@ contract APContract is ChainlinkService{
         vaultActiveStrategy[_vaultAddress] = _strategyAddress;
     }
 
+    function getVaultActiveStrategy(address _vaultAddress)
+    public
+    view
+    returns(address)
+    {
+        require(vaults[_vaultAddress].created, "Vault not present");
+        return vaultActiveStrategy[_vaultAddress];
+    }
+
     function setVaultStrategyAndProtocol(
         address _vaultStrategy,
         address[] calldata _strategyProtocols
