@@ -37,6 +37,7 @@ contract GnosisSafe
     address public owner;
     address public vaultAPSManager;
     address public vaultStrategyManager;
+    
 
     bool private vaultSetupCompleted = false;
 
@@ -75,7 +76,7 @@ contract GnosisSafe
         address _vaultStrategyManager,
         address _APContract, //Need to hardcode APContract address before deploying
         address[] calldata _vaultAssets,
-        string[] calldata _whitelistGroup
+        string[] calldata _whitelistGroups
     )
         external
     {
@@ -87,11 +88,12 @@ contract GnosisSafe
         vaultStrategyManager = _vaultStrategyManager;
         APContract = _APContract;
         owner = msg.sender;
+        whiteListGroups = _whitelistGroups;
 
         whiteList = Whitelist(IAPContract(APContract).getwhitelistModule());
 
         setupToken(_tokenName, _symbol);
-        IAPContract(APContract).addVault(_vaultAssets, _vaultAPSManager,_vaultStrategyManager, _whitelistGroup);
+        IAPContract(APContract).addVault(_vaultAssets, _vaultAPSManager,_vaultStrategyManager, _whitelistGroups);
 
     }
 
