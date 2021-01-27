@@ -105,17 +105,17 @@ contract GnosisSafe
     function getVaultNAV() private returns (uint256) {
         // mapping(address=>bool) depositedTokens;
         uint256 nav = 0;
-        for (uint256 i = 0; i < tokensList.length; i++) {
-            if (depositedTokens[tokensList[i]]) {
-                (int256 tokenUSD, uint256 timestamp) =
-                    IAPContract(apsContract
-                    ).getUSDPrice(tokensList[i]);
-                nav += (vaultBalance(tokensList[i]) * uint256(tokenUSD));
-                // .div(
-                //     totalSupply()
-                // );
-            }
-        }
+        // for (uint256 i = 0; i < tokensList.length; i++) {
+        //     if (depositedTokens[tokensList[i]]) {
+        //         (int256 tokenUSD, uint256 timestamp) =
+        //             IAPContract(apsContract
+        //             ).getUSDPrice(tokensList[i]);
+        //         nav += (vaultBalance(tokensList[i]) * uint256(tokenUSD));
+        //         // .div(
+        //         //     totalSupply()
+        //         // );
+        //     }
+        // }
         return nav;
     }
 
@@ -136,28 +136,28 @@ contract GnosisSafe
         IERC20 token = ERC20(_tokenAddress);
         token.transferFrom(msg.sender, address(this), _amount);
 
-        if(isSmartDeposit){
-            //hook into smart deposit
-            //send token.balanceOf(address(this)) to smart deposit
-        }
-        else {
-            uint256 _share = getMintValue(getVaultNAV(), getDepositNav(_tokenAddress, _amount));
-            _mint(msg.sender, _share);
-        }
+        // if(isSmartDeposit){
+        //     //hook into smart deposit
+        //     //send token.balanceOf(address(this)) to smart deposit
+        // }
+        // else {
+        //     uint256 _share = getMintValue(getVaultNAV(), getDepositNav(_tokenAddress, _amount));
+        //     _mint(msg.sender, _share);
+        // }
 
     }
  // SET lender
-    function setLender(address _lender) public
-    {
-        smartLender=_lender;
-    }
+    // function setLender(address _lender) public
+    // {
+    //     smartLender=_lender;
+    // }
 
-    // GET lender
+    // // GET lender
 
-    function getLender() public view returns(address)
-    {
-        return smartLender;
-    }
+    // function getLender() public view returns(address)
+    // {
+    //     return smartLender;
+    // }
 
 // Get USD value of given number of safeTokens
 // Todo: add logic to get usd of single token
@@ -184,12 +184,12 @@ contract GnosisSafe
          (int256 tokenUSD, uint256 timestamp) =
             IAPContract(apsContract
             ).getUSDPrice(_tokenAddress);
-        uint256 tokensBurned = vaultBalance(_tokenAddress).mul(_shares).div(totalSupply());
+        // uint256 tokensBurned = vaultBalance(_tokenAddress).mul(_shares).div(totalSupply());
         uint256 liquidationCosts=0;
-        uint256 navw = ((getVaultNAV().div(totalSupply())).mul(tokensBurned)) - liquidationCosts;
+        // uint256 navw = ((getVaultNAV().div(totalSupply())).mul(tokensBurned)) - liquidationCosts;
         IERC20 token = ERC20(_tokenAddress);
         _burn(msg.sender, _shares);
-        token.transfer(msg.sender, navw);
+        // token.transfer(msg.sender, navw);
     }
 
         // Check balance
@@ -205,7 +205,7 @@ contract GnosisSafe
         // }
 
         // token.transfer(msg.sender, _shares);
-    function getEstimatedReturn() public view{
+    function getEstimatedReturn() public view returns(uint256){
         return 1;
 
     }
