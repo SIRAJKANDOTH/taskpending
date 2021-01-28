@@ -173,6 +173,17 @@ contract APContract is ChainlinkService{
         converters[_input][_output] = _converter;
     }
 
+    function getConverter(
+        address _input,
+        address _output
+    )
+    public
+    view
+    returns(address)
+    {
+        return converters[_input][_output];
+    }
+
 //Vaults
     function createVault(address _owner, address _vaultAddress)
     public
@@ -334,7 +345,7 @@ contract APContract is ChainlinkService{
 
 
     function getUSDPrice(address _tokenAddress) 
-        public 
+        public view
         returns(int,uint)
     {
         require(_isAssetPresent(_tokenAddress),"Asset not present!");

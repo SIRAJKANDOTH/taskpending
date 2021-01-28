@@ -13,6 +13,7 @@ import "./token/ERC20Detailed.sol";
 import "./whitelist/Whitelist.sol";
 import "./interfaces/IController.sol";
 import "./interfaces/IAPContract.sol";
+import "./interfaces/IExchange.sol";
 
 /// @title Gnosis Safe - A multisignature wallet with support for confirmations using signed messages based on ERC191.
 /// @author Stefan George - <stefan@gnosis.io>
@@ -168,30 +169,23 @@ contract GnosisSafe
         return depositNAV.div(vaultNAV.div(totalSupply()));
     }
 
-     function earn() public {
-        uint256 _bal = totalSupply();
-        // transfer(controller, _bal);
-        // IController(controller).earn(address(token), _bal);
-    }
 
-    function getVaultNAV() private returns (uint256) {
+    function getVaultNAV() private view returns (uint256) {
         uint256 nav = 0;
         for (uint256 i = 0; i < assetList.length; i++) {
-                (int256 tokenUSD, uint256 timestamp) =
+                (int256 tokenUSD, ) =
                     IAPContract(APContract
                     ).getUSDPrice(assetList[i]);
-                nav += (IERC20(assetList[i]).balanceOf(this) * uint256(tokenUSD));
-            
-        // }
-        return nav;
+                nav += (IERC20(assetList[i]).balanceOf(address(this)) * uint256(tokenUSD));       
     }
+     return nav;
     }
     function getDepositNav(address _tokenAddress, uint256 _amount)
+        view
         private
         returns (uint256)
     {
-        (int256 tokenUSD, uint256 timestamp) =
-            IAPContract(APContract).getUSDPrice(_tokenAddress);
+        (int256 tokenUSD, ) = IAPContract(APContract).getUSDPrice(_tokenAddress);
         return _amount.mul(uint256(tokenUSD));
     }
 
@@ -199,32 +193,32 @@ contract GnosisSafe
         public
         onlyWhitelisted
     { 
-        require(IAPContract(APContract).vaults(address(this)).vaultDepositAssets(_tokenAddress),"Not a approved deposit assets!");
+        uint256 _share;
+        require(IAPContract(APContract).isDepositAsset(_tokenAddress), "Not a approved deposit assets!");
         IERC20 token = ERC20(_tokenAddress);
         token.transferFrom(msg.sender, address(this), _amount);
-        uint256 _share;
-        if(totalSupply()==0){
-            _share=_amount;
+
+        if(totalSupply() == 0){
+            _share = _amount;
         }
         else{
             _share = getMintValue(getVaultNAV(), getDepositNav(_tokenAddress, _amount));
         }
         _mint(msg.sender, _share);
+
         if(!isAssetDeposited[_tokenAddress])
         {
-            isAssetDeposited[_tokenAddress]=true;
+            isAssetDeposited[_tokenAddress] = true;
             assetList.push(_tokenAddress);
         }
     }
 
-
-    function tokenValueInUSD(uint256 tokenCount) public pure returns(uint256)
+    function tokenCountFromUSD(uint256 amountInUsd) 
+    public 
+    view
+    returns(uint256)
     {
-        return tokenCount.mul(1);
-    }
-    function tokenCountFromUSD(uint256 amountInUsd) public pure returns(uint256)
-    {
-        return amountInUsd.div(1);
+        return amountInUsd.div(getVaultNAV().div(totalSupply()));
     }
 
     function mint(uint256 _amount) external{
@@ -233,38 +227,61 @@ contract GnosisSafe
     function burn(uint256 _amount,address _lender) external{
         _burn(_lender, _amount);
     }
+
+
     function withdraw(address _tokenAddress, uint256 _shares)
         public
         onlyWhitelisted
     {
-        // uint256 r = (vaultBalance().mul(_shares)).div(totalSupply());
-         (int256 tokenUSD, uint256 timestamp) =
+        require(IAPContract(APContract).isWithdrawalAsset(_tokenAddress),"Not a approved Withdrawal asset");
+        require(balanceOf(msg.sender) >= _shares,"You don't have enough shares");
+         (int256 tokenUSD, ) =
             IAPContract(APContract
             ).getUSDPrice(_tokenAddress);
-        // uint256 tokensBurned = vaultBalance(_tokenAddress).mul(_shares).div(totalSupply());
-        uint256 liquidationCosts=0;
-        // uint256 navw = ((getVaultNAV().div(totalSupply())).mul(tokensBurned)) - liquidationCosts;
-        IERC20 token = ERC20(_tokenAddress);
-        _burn(msg.sender, _shares);
-        // token.transfer(msg.sender, navw);
+            uint256 safeValueInUSD = tokenValueInUSD(_shares);
+            uint256 tokenCount = safeValueInUSD.div(uint256(tokenUSD));
+            if(tokenCount > IERC20(_tokenAddress).balanceOf(address(this)))
+            {
+                _burn(msg.sender, _shares);
+                IERC20(_tokenAddress).transfer(msg.sender,tokenCount);
+            }
+            // Exchange token
+            else{
+                uint256 need = tokenCount - IERC20(_tokenAddress).balanceOf(address(this));
+                for(uint256 i = 0; i < assetList.length; i++ ){
+                    IERC20 haveToken = IERC20(assetList[i]);
+                    uint256 haveTokenCount = haveToken.balanceOf(address(this));
+                    (int256 haveTokenUSD, ) = IAPContract(APContract).getUSDPrice(assetList[i]);
+                    if(haveTokenCount.mul(uint256(haveTokenUSD)) > need.mul(uint256(tokenUSD)))
+                    {
+                        address converter = IAPContract(APContract).getConverter(assetList[i], _tokenAddress);
+                        if(converter != address(0))
+                        {
+                            (
+                                uint256 returnAmount, uint256[] memory distribution
+                            )= IExchange(converter).getExpectedReturn(haveToken,IERC20(_tokenAddress),need,0,0);
+                            if( haveTokenCount.mul(uint256(haveTokenUSD)) > (need+(need-returnAmount).mul(3)).mul(uint256(tokenUSD)))
+                            {
+                                IExchange(converter).swap(IERC20(assetList[i]),IERC20(_tokenAddress),need+(need-returnAmount).mul(3),need,distribution,0);
+                                _burn(msg.sender, _shares);
+                                IERC20(_tokenAddress).transfer(msg.sender,tokenCount);
+                                break;
+                            }
+                        
+                        }
+
+                    }
+                    
+                }
+
+            }
+    
     }
 
-        // Check balance
-        // uint256 b = token.balanceOf(address(this));
-        // if (b < r) {
-        //     uint256 _withdraw = r.sub(b);
-        //     IController(controller).withdraw(address(token), _withdraw);
-        //     uint256 _after = token.balanceOf(address(this));
-        //     uint256 _diff = _after.sub(b);
-        //     if (_diff < _withdraw) {
-        //         r = b.add(_diff);
-        //     }
-        // }
 
-        // token.transfer(msg.sender, _shares);
-    function getEstimatedReturn() public view returns(uint256){
-        return 1;
-
+    function tokenValueInUSD(uint256 tokenCount) public view returns(uint256)
+    {
+        return getVaultNAV().div(totalSupply()).mul(tokenCount);
     }
 
 }

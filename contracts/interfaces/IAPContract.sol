@@ -13,7 +13,7 @@ interface IAPContract{
     
     function getAssetDetails(address ) external view returns(string memory,address ,string memory);
 
-    function getUSDPrice(address ) external returns(int,uint);
+    function getUSDPrice(address ) external view returns(int,uint);
 
     function addProtocol(string calldata ,string calldata ,address) external;
 
@@ -34,4 +34,6 @@ interface IAPContract{
     function isDepositAsset(address ) external view returns(bool);
 
     function isWithdrawalAsset(address ) external view returns(bool);
+
+    function getConverter( address , address) external view returns(address);
 }

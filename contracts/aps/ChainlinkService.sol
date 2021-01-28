@@ -1,7 +1,7 @@
 pragma solidity >=0.5.0 <0.7.0;
 import "@chainlink/contracts/src/v0.5/interfaces/AggregatorV3Interface.sol";
 contract ChainlinkService{
-    AggregatorV3Interface internal priceFeed;
+   
     
 
     /**
@@ -15,14 +15,10 @@ contract ChainlinkService{
 
      // Feed address - https://docs.chain.link/docs/ethereum-addresses
      
-    function getLatestPrice(address feedAddress) public returns (int,uint) {
-        priceFeed = AggregatorV3Interface(feedAddress);
+    function getLatestPrice(address feedAddress) public view returns (int,uint) {
+         AggregatorV3Interface priceFeed = AggregatorV3Interface(feedAddress);
         (
-            uint80 roundID, 
-            int price,
-            uint startedAt,
-            uint timeStamp,
-            uint80 answeredInRound
+            ,int price,,uint timeStamp,
         ) = priceFeed.latestRoundData();
         return (price,timeStamp);
     }
