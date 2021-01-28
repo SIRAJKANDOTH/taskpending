@@ -14,7 +14,6 @@ import "./whitelist/Whitelist.sol";
 import "./interfaces/IController.sol";
 import "./interfaces/IAPContract.sol";
 
-
 /// @title Gnosis Safe - A multisignature wallet with support for confirmations using signed messages based on ERC191.
 /// @author Stefan George - <stefan@gnosis.io>
 /// @author Richard Meissner - <richard@gnosis.io>
@@ -37,6 +36,8 @@ contract GnosisSafe
     address public vaultStrategyManager;
     bool private vaultSetupCompleted = false;
     bool private vaultRegistrationCompleted = false;
+    address[] private assetList;
+    mapping(address=>bool) isAssetDeposited;
 
     mapping(address => bool) public safeAssets;
     
@@ -44,19 +45,15 @@ contract GnosisSafe
     Whitelist private whiteList;
 
 
-    function isWhiteListed() public view returns(bool){
+    function isWhiteListed() public view returns (bool) {
         bool memberStatus;
-        for(uint256 i=0;i<whiteListGroups.length;i++)
-        {
-
-            if(whiteList.isMember(whiteListGroups[i],msg.sender))
-            {
-                memberStatus=true;
+        for (uint256 i = 0; i < whiteListGroups.length; i++) {
+            if (whiteList.isMember(whiteListGroups[i], msg.sender)) {
+                memberStatus = true;
                 break;
             }
         }
         return memberStatus;
-
     }
 
     modifier onlyWhitelisted{
@@ -162,24 +159,95 @@ contract GnosisSafe
 
 
     //Using OpenZeppelin function
-    function deposit(uint256 _amount) public onlyWhitelisted{
-        // uint256 _pool = vaultBalance();
-        // uint256 _before = token.balanceOf(address(this));
-        // token.transferFrom(msg.sender, address(this), _amount);
-        // uint256 _after = token.balanceOf(address(this));
-        // _amount = _after.sub(_before); // Additional check for deflationary tokens
-        // uint256 shares = 0;
-        // if (token.totalSupply() == 0) {
-        //     shares = _amount;
-        // } else {
-        //     shares = (_amount.mul(token.totalSupply())).div(_pool);
-        // }
-        _mint(msg.sender, _amount);
+    //TODO: NAV Methods
+    function getMintValue(uint256 vaultNAV, uint256 depositNAV)
+        private
+        view
+        returns (uint256)
+    {
+        return depositNAV.div(vaultNAV.div(totalSupply()));
     }
 
-    function withdraw(uint256 _shares) public onlyWhitelisted{
+     function earn() public {
+        uint256 _bal = totalSupply();
+        // transfer(controller, _bal);
+        // IController(controller).earn(address(token), _bal);
+    }
+
+    function getVaultNAV() private returns (uint256) {
+        uint256 nav = 0;
+        for (uint256 i = 0; i < assetList.length; i++) {
+                (int256 tokenUSD, uint256 timestamp) =
+                    IAPContract(APContract
+                    ).getUSDPrice(assetList[i]);
+                nav += (IERC20(assetList[i]).balanceOf(this) * uint256(tokenUSD));
+            
+        // }
+        return nav;
+    }
+    }
+    function getDepositNav(address _tokenAddress, uint256 _amount)
+        private
+        returns (uint256)
+    {
+        (int256 tokenUSD, uint256 timestamp) =
+            IAPContract(APContract).getUSDPrice(_tokenAddress);
+        return _amount.mul(uint256(tokenUSD));
+    }
+
+    function deposit(address _tokenAddress, uint256 _amount)
+        public
+        onlyWhitelisted
+    { 
+        require(IAPContract(APContract).vaults(address(this)).vaultDepositAssets(_tokenAddress),"Not a approved deposit assets!");
+        IERC20 token = ERC20(_tokenAddress);
+        token.transferFrom(msg.sender, address(this), _amount);
+        uint256 _share;
+        if(totalSupply()==0){
+            _share=_amount;
+        }
+        else{
+            _share = getMintValue(getVaultNAV(), getDepositNav(_tokenAddress, _amount));
+        }
+        _mint(msg.sender, _share);
+        if(!isAssetDeposited[_tokenAddress])
+        {
+            isAssetDeposited[_tokenAddress]=true;
+            assetList.push(_tokenAddress);
+        }
+    }
+
+
+    function tokenValueInUSD(uint256 tokenCount) public pure returns(uint256)
+    {
+        return tokenCount.mul(1);
+    }
+    function tokenCountFromUSD(uint256 amountInUsd) public pure returns(uint256)
+    {
+        return amountInUsd.div(1);
+    }
+
+    function mint(uint256 _amount) external{
+        _mint(msg.sender, _amount);
+    }
+    function burn(uint256 _amount,address _lender) external{
+        _burn(_lender, _amount);
+    }
+    function withdraw(address _tokenAddress, uint256 _shares)
+        public
+        onlyWhitelisted
+    {
         // uint256 r = (vaultBalance().mul(_shares)).div(totalSupply());
+         (int256 tokenUSD, uint256 timestamp) =
+            IAPContract(APContract
+            ).getUSDPrice(_tokenAddress);
+        // uint256 tokensBurned = vaultBalance(_tokenAddress).mul(_shares).div(totalSupply());
+        uint256 liquidationCosts=0;
+        // uint256 navw = ((getVaultNAV().div(totalSupply())).mul(tokensBurned)) - liquidationCosts;
+        IERC20 token = ERC20(_tokenAddress);
         _burn(msg.sender, _shares);
+        // token.transfer(msg.sender, navw);
+    }
 
         // Check balance
         // uint256 b = token.balanceOf(address(this));
@@ -194,6 +262,9 @@ contract GnosisSafe
         // }
 
         // token.transfer(msg.sender, _shares);
+    function getEstimatedReturn() public view returns(uint256){
+        return 1;
+
     }
 
 }
