@@ -341,6 +341,24 @@ contract APContract is ChainlinkService{
         return getLatestPrice(assets[_tokenAddress].feedAddress);
     }
 
+    function isDepositAsset(address _assetAddress)
+    public
+    view
+    returns(bool)
+    {
+        require(vaults[msg.sender].created, "Vault not present");
+        return vaults[msg.sender].vaultDepositAssets[_assetAddress];
+    }
+    
+    function isWithdrawalAsset(address _assetAddress)
+    public
+    view
+    returns(bool)
+    {
+        require(vaults[msg.sender].created, "Vault not present");
+        return vaults[msg.sender].vaultWithdrawalAssets[_assetAddress];
+    }
+
 //Strategies
     function _isStrategyPresent(address _address) 
         private 
