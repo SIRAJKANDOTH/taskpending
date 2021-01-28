@@ -67,6 +67,8 @@ contract APContract is ChainlinkService{
 
     address public whitelistManager;
 
+    address public proxyFactory;
+
 
     constructor(
         address _MasterCopy, 
@@ -79,6 +81,13 @@ contract APContract is ChainlinkService{
             MasterCopy = _MasterCopy;
             whitelistModule = _whitelistModule;
         }
+
+    function addProxyFactory(address _proxyFactory)
+    public
+    onlyManager
+    {
+        proxyFactory = _proxyFactory;
+    }
 
 //Modifiers
     modifier onlyYieldsterDAO
@@ -93,11 +102,6 @@ contract APContract is ChainlinkService{
         _;
     }
 
-    modifier onlyVault
-    {
-        require(isVault(msg.sender), "Only Yieldster vaults can perform this operation");
-        _;
-    }
     modifier onlySafeOwner
     {
         require(safeOwner[msg.sender] == tx.origin, "Only safe Owner can perform this operation");
@@ -169,58 +173,27 @@ contract APContract is ChainlinkService{
         converters[_input][_output] = _converter;
     }
 
-
 //Vaults
-
-    function createVault() 
-        public 
-        returns (address result) 
-        {
-            bytes20 targetBytes = bytes20(MasterCopy);
-            assembly {
-              let clone := mload(0x40)
-              mstore(clone, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)
-              mstore(add(clone, 0x14), targetBytes)
-              mstore(add(clone, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)
-              result := create(0, clone, 0x37)
-       }
-       safeOwner[result] = msg.sender;
-       emit VaultCreation(result);
+    function createVault(address _owner, address _vaultAddress)
+    public
+    {
+        require(msg.sender == proxyFactory, "Only Proxy Factory can perform this operation");
+        safeOwner[_vaultAddress] = _owner;
     }
-
-    function isVault(address query) 
-        internal 
-        view 
-        returns (bool result) 
-        {
-            bytes20 targetBytes = bytes20(MasterCopy);
-            assembly {
-              let clone := mload(0x40)
-              mstore(clone, 0x363d3d373d3d3d363d7300000000000000000000000000000000000000000000)
-              mstore(add(clone, 0xa), targetBytes)
-              mstore(add(clone, 0x1e), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)
-
-              let other := add(clone, 0x40)
-              extcodecopy(query, other, 0, 0x2d)
-              result := and(
-                eq(mload(clone), mload(other)),
-                eq(mload(add(clone, 0xd)), mload(add(other, 0xd)))
-              )
-            }
-        }
-
 
 
     function addVault(
-        address[] memory _vaultAssets,
+        address[] memory _vaultDepositAssets,
+        address[] memory _vaultWithdrawalAssets,
+        address[] memory _vaultEnabledStrategies,
         address _vaultAPSManager,
         address _vaultStrategyManager,
-        string[] memory _whitelistGroup
+        string[] memory _whitelistGroup,
+        address _owner
     )
-    onlyVault
-    onlySafeOwner
     public
     {   
+        require(safeOwner[msg.sender] == _owner, "Only owner can call this function");
         require(APSManagers[_vaultAPSManager], "Invalid APS Manager provided");
         Vault memory newVault = Vault(
             {
@@ -232,12 +205,22 @@ contract APContract is ChainlinkService{
 
         vaults[msg.sender] = newVault;
 
-        for (uint256 i = 0; i < _vaultAssets.length; i++) {
-            address asset = _vaultAssets[i];
+        for (uint256 i = 0; i < _vaultDepositAssets.length; i++) {
+            address asset = _vaultDepositAssets[i];
             require(_isAssetPresent(asset), "Asset not supported by Yieldster");
             vaults[msg.sender].vaultAssets[asset] = true;
             vaults[msg.sender].vaultDepositAssets[asset] = true;
+        }
+        for (uint256 i = 0; i < _vaultWithdrawalAssets.length; i++) {
+            address asset = _vaultWithdrawalAssets[i];
+            require(_isAssetPresent(asset), "Asset not supported by Yieldster");
+            vaults[msg.sender].vaultAssets[asset] = true;
             vaults[msg.sender].vaultWithdrawalAssets[asset] = true;
+        }
+        for (uint256 i = 0; i < _vaultEnabledStrategies.length; i++) {
+            address strategy = _vaultEnabledStrategies[i];
+            require(strategies[strategy].created, "Strategy not present");
+            vaults[msg.sender].vaultEnabledStrategy[strategy] = true;
         }
 
     }

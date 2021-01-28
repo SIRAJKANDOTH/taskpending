@@ -30,7 +30,7 @@ contract GnosisSafe
     using Address for address;
     using SafeMath for uint256;
 
-    string public safeName = "Gnosis Safe";
+    string public vaultName = "Gnosis Safe";
     string public version = "1.2.0";
 
     address public APContract;
@@ -40,6 +40,7 @@ contract GnosisSafe
     
 
     bool private vaultSetupCompleted = false;
+    bool private vaultRegistrationCompleted = false;
 
     mapping(address => bool) public safeAssets;
     
@@ -69,31 +70,40 @@ contract GnosisSafe
 
     // /// @dev Setup function sets initial storage of contract.
     function setup(
-        // string memory _safeName,  //commented out to deal with stack too deep error
+        string memory _vaultName,
         string memory _tokenName,
         string memory _symbol,
         address _vaultAPSManager,
         address _vaultStrategyManager,
         address _APContract, //Need to hardcode APContract address before deploying
-        address[] memory _vaultAssets,
-        string[] memory _whitelistGroups
+        string[] memory _whiteListGroups
     )
         public
     {
-        require(!vaultSetupCompleted, "Safe is already setup");
-
+        require(!vaultSetupCompleted, "Vault is already setup");
         vaultSetupCompleted = true;
-        // safeName = _safeName;    //to be uncommented when deploying 
+        vaultName = _vaultName;
         vaultAPSManager = _vaultAPSManager;
         vaultStrategyManager = _vaultStrategyManager;
         APContract = _APContract;
-        owner = msg.sender;
-        whiteListGroups = _whitelistGroups;
-
+        owner = tx.origin;
+        whiteListGroups = _whiteListGroups;
         whiteList = Whitelist(IAPContract(APContract).getwhitelistModule());
-
         setupToken(_tokenName, _symbol);
-        IAPContract(APContract).addVault(_vaultAssets, _vaultAPSManager,_vaultStrategyManager, _whitelistGroups);
+
+    }
+
+    function registerVaultWithAPS(
+        address[] memory _vaultDepositAssets,
+        address[] memory _vaultWithdrawalAssets,
+        address[] memory _vaultEnabledStrategies
+    )
+    public
+    {
+        require(msg.sender == owner, "Only owner can perform this operation");
+        require(!vaultRegistrationCompleted, "Vault is already registered");
+        vaultRegistrationCompleted = true;
+        IAPContract(APContract).addVault(_vaultDepositAssets,_vaultWithdrawalAssets, _vaultEnabledStrategies, vaultAPSManager,vaultStrategyManager, whiteListGroups, owner);
 
     }
 
