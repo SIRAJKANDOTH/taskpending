@@ -30,15 +30,11 @@ contract GnosisSafe
     using Address for address;
     using SafeMath for uint256;
 
-    string public vaultName = "Gnosis Safe";
-    string public version = "1.2.0";
-
+    string public vaultName;
     address public APContract;
     address public owner;
     address public vaultAPSManager;
     address public vaultStrategyManager;
-    
-
     bool private vaultSetupCompleted = false;
     bool private vaultRegistrationCompleted = false;
 
