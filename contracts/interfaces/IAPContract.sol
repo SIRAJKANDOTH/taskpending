@@ -30,4 +30,8 @@ interface IAPContract{
     function setVaultStrategyAndProtocol(address _vaultStrategy, address[] calldata _strategyProtocols) external;
 
     function getwhitelistModule() view external returns(address);
+
+    function isDepositAsset(address ) external view returns(bool);
+
+    function isWithdrawalAsset(address ) external view returns(bool);
 }
