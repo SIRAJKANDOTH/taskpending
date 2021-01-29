@@ -37,7 +37,7 @@ module.exports = async (deployer) => {
 	await apContract.addProtocol("HEGIC yVault","HEGIC","0xe11ba472F74869176652C35D30dB89854b5ae84D")
 
 	await apContract.addStrategy("Yearn it All", "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7",[])
-	await apContract.addStrategy("Smart Deposit", "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7",[])
-	await apContract.addStrategy("Smart Withdraw", "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7",[])
+	await apContract.addStrategy("Smart Deposit", "0x89205A3A3b2A69De6Dbf7f01ED13V2108B2c43e7",[])
+	await apContract.addStrategy("Smart Withdraw", "0x89205A3A3b2A69De6Dbf7f01KD13B2108B2c43e7",[])
 
 };
