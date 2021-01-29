@@ -36,8 +36,8 @@ module.exports = async (deployer) => {
 	await apContract.addProtocol("yearn yearn.finance","YFI","0xBA2E7Fed597fd0E3e70f5130BcDbbFE06bB94fe1")
 	await apContract.addProtocol("HEGIC yVault","HEGIC","0xe11ba472F74869176652C35D30dB89854b5ae84D")
 
-	await apContract.addStrategy("Yearn it All", "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7",[])
-	await apContract.addStrategy("Smart Deposit", "0x89205A3A3b2A69De6Dbf7f01ED13V2108B2c43e7",[])
-	await apContract.addStrategy("Smart Withdraw", "0x89205A3A3b2A69De6Dbf7f01KD13B2108B2c43e7",[])
+	await apContract.addStrategy("Yearn it All", "0x6f7454cba97fffe10e053187f23925a86f5c20c4",[])
+	await apContract.addStrategy("Smart Deposit", "0x2bA49Aaa16E6afD2a993473cfB70Fa8559B523cF",[])
+	await apContract.addStrategy("Smart Withdraw", "0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB",[])
 
 };
