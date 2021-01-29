@@ -25,4 +25,6 @@ module.exports = async (deployer) => {
 	const proxyFactory = await ProxyFactory.deployed();
 
 	await apContract.addProxyFactory(proxyFactory.address);
+
+	await apContract.addAsset()
 };
