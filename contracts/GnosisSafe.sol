@@ -5,6 +5,7 @@ pragma experimental ABIEncoderV2;
 import "./common/MasterCopy.sol";
 import "./external/GnosisSafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./interfaces/ERC1155TokenReceiver.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
@@ -23,7 +24,8 @@ contract GnosisSafe
     is 
     MasterCopy, 
     ERC20,
-    ERC20Detailed {
+    ERC20Detailed,
+    ERC1155TokenReceiver {
 
     // using GnosisSafeMath for uint256;
     using SafeERC20 for IERC20;
