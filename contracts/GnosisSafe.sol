@@ -233,6 +233,7 @@ contract GnosisSafe
     }
 
 
+    //Withdraw function with withdrawal asset specified
     function withdraw(address _tokenAddress, uint256 _shares)
         public
         onlyWhitelisted
@@ -277,6 +278,24 @@ contract GnosisSafe
                 }                
             }
         }
+    }
+
+
+    //Withdraw Function without withdrawal asset specified
+    function withdraw(uint256 _shares)
+        public
+        onlyWhitelisted
+    {
+        require(balanceOf(msg.sender) >= _shares,"You don't have enough shares");
+        _burn(msg.sender, _shares);
+        for(uint256 i = 0; i < assetList.length; i++ )
+            {
+                IERC20 token = IERC20(assetList[i]);
+                uint256 tokensToGive = _shares.div(totalSupply()).mul(token.balanceOf(address(this)));
+                token.transfer(msg.sender, tokensToGive);
+            }
+        
+        
     }
 
 
