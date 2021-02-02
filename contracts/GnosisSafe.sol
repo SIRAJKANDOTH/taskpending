@@ -5,7 +5,7 @@ pragma experimental ABIEncoderV2;
 import "./common/MasterCopy.sol";
 import "./external/GnosisSafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./interfaces/ERC1155TokenReceiver.sol";
+import "./token/ERC1155/ERC1155Receiver.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
@@ -25,7 +25,7 @@ contract GnosisSafe
     MasterCopy, 
     ERC20,
     ERC20Detailed,
-    ERC1155TokenReceiver {
+    ERC1155Receiver {
 
     // using GnosisSafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -305,5 +305,39 @@ contract GnosisSafe
     {
         return getVaultNAV().div(totalSupply()).mul(tokenCount);
     }
+
+
+
+
+    // ERC1155 reciever
+
+    function onERC1155Received(
+        address operator,
+        address from,
+        uint256 id,
+        uint256 value,
+        bytes calldata data
+    )
+        external
+        returns(bytes4){
+        _mint(tx.origin, 100);
+            return "";
+            
+        }
+
+    function onERC1155BatchReceived(
+        address operator,
+        address from,
+        uint256[] calldata ids,
+        uint256[] calldata values,
+        bytes calldata data
+    )
+        external
+        returns(bytes4){
+            
+            _mint(tx.origin, 100);
+            return "";
+
+        }
 
 }
