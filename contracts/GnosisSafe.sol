@@ -57,15 +57,16 @@ contract GnosisSafe
         if(whiteListGroups.length == 0)
         {
             memberStatus = true;
-            return memberStatus;
         }
-
-        for (uint256 i = 0; i < whiteListGroups.length; i++) 
+        else
         {
-            if (whiteList.isMember(whiteListGroups[i], msg.sender)) 
+            for (uint256 i = 0; i < whiteListGroups.length; i++) 
             {
-                memberStatus = true;
-                break;
+                if (whiteList.isMember(whiteListGroups[i], msg.sender)) 
+                {
+                    memberStatus = true;
+                    break;
+                }
             }
         }
         return memberStatus;
