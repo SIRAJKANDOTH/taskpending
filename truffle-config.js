@@ -18,6 +18,7 @@ module.exports = {
         return new HDWalletProvider(mnemonic, token)
       },
       gasPrice: 25000000000, // 25 Gwei
+      networkCheckTimeout: 10000000
     },
     goerli: {
       provider: () => {

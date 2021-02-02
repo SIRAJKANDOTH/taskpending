@@ -176,7 +176,7 @@ contract GnosisSafe
 
     //Function to find the Token to be minted for a deposit
     function getMintValue(uint256 vaultNAV, uint256 depositNAV)
-        private
+        public
         view
         returns (uint256)
     {
@@ -185,22 +185,25 @@ contract GnosisSafe
 
     //Function to get the NAV of the vault
     function getVaultNAV() 
-        private 
+        public 
         view 
         returns (uint256) 
     {
         uint256 nav = 0;
         for (uint256 i = 0; i < assetList.length; i++) 
         {
-            (int256 tokenUSD, ) = IAPContract(APContract).getUSDPrice(assetList[i]);
-            nav += (IERC20(assetList[i]).balanceOf(address(this)) * uint256(tokenUSD));       
+            if(IERC20(assetList[i]).balanceOf(address(this)) > 0)
+            {
+                (int256 tokenUSD, ) = IAPContract(APContract).getUSDPrice(assetList[i]);
+                nav += (IERC20(assetList[i]).balanceOf(address(this)) * uint256(tokenUSD));       
+            }
         }
         return nav;
     }
 
     function getDepositNav(address _tokenAddress, uint256 _amount)
         view
-        private
+        public
         returns (uint256)
     {
         (int256 tokenUSD, ) = IAPContract(APContract).getUSDPrice(_tokenAddress);
@@ -209,7 +212,7 @@ contract GnosisSafe
 
     function deposit(address _tokenAddress, uint256 _amount)
         public
-        onlyWhitelisted
+        // onlyWhitelisted
     { 
         uint256 _share;
         require(IAPContract(APContract).isDepositAsset(_tokenAddress), "Not an approved deposit asset");
@@ -245,7 +248,7 @@ contract GnosisSafe
     //Withdraw function with withdrawal asset specified
     function withdraw(address _tokenAddress, uint256 _shares)
         public
-        onlyWhitelisted
+        // onlyWhitelisted
     {
         require(IAPContract(APContract).isWithdrawalAsset(_tokenAddress),"Not an approved Withdrawal asset");
         require(balanceOf(msg.sender) >= _shares,"You don't have enough shares");
@@ -293,7 +296,7 @@ contract GnosisSafe
     //Withdraw Function without withdrawal asset specified
     function withdraw(uint256 _shares)
         public
-        onlyWhitelisted
+        // onlyWhitelisted
     {
         require(balanceOf(msg.sender) >= _shares,"You don't have enough shares");
         _burn(msg.sender, _shares);
