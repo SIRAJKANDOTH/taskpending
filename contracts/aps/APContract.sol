@@ -196,7 +196,6 @@ contract APContract is ChainlinkService{
     function addVault(
         address[] memory _vaultDepositAssets,
         address[] memory _vaultWithdrawalAssets,
-        address[] memory _vaultEnabledStrategies,
         address _vaultAPSManager,
         address _vaultStrategyManager,
         string[] memory _whitelistGroup,
@@ -228,24 +227,16 @@ contract APContract is ChainlinkService{
             vaults[msg.sender].vaultAssets[asset] = true;
             vaults[msg.sender].vaultWithdrawalAssets[asset] = true;
         }
-        for (uint256 i = 0; i < _vaultEnabledStrategies.length; i++) {
-            address strategy = _vaultEnabledStrategies[i];
-            require(strategies[strategy].created, "Strategy not present");
-            vaults[msg.sender].vaultEnabledStrategy[strategy] = true;
-        }
-
     }
 
     function setVaultActiveStrategy(
-        address _vaultAddress,
         address _strategyAddress
     )
-    external
+    public
     {
-        require(vaults[_vaultAddress].created, "Vault not present");
+        require(vaults[msg.sender].created, "Vault not present");
         require(strategies[_strategyAddress].created, "Strategy not present");
-        require(vaults[_vaultAddress].vaultAPSManager == msg.sender, "Only the vault Manager can perform this operation");
-        vaultActiveStrategy[_vaultAddress] = _strategyAddress;
+        vaultActiveStrategy[msg.sender] = _strategyAddress;
     }
 
     function getVaultActiveStrategy(address _vaultAddress)
@@ -259,19 +250,36 @@ contract APContract is ChainlinkService{
 
     function setVaultStrategyAndProtocol(
         address _vaultStrategy,
-        address[] calldata _strategyProtocols
+        address[] memory _enabledStrategyProtocols,
+        address[] memory _disabledStrategyProtocols
     )
-    external
+    public
     {
         require(vaults[msg.sender].created, "Vault not present");
         require(strategies[_vaultStrategy].created, "Strategy not present");
         vaults[msg.sender].vaultEnabledStrategy[_vaultStrategy] = true;
 
-        for (uint256 i = 0; i < _strategyProtocols.length; i++) {
-            address protocol = _strategyProtocols[i];
+        for (uint256 i = 0; i < _enabledStrategyProtocols.length; i++) {
+            address protocol = _enabledStrategyProtocols[i];
             require(_isProtocolPresent(protocol), "Protocol not supported by Yieldster");
             vaultStrategyEnabledProtocols[msg.sender][_vaultStrategy][protocol] = true;
         }
+
+        for (uint256 i = 0; i < _disabledStrategyProtocols.length; i++) {
+            address protocol = _disabledStrategyProtocols[i];
+            require(_isProtocolPresent(protocol), "Protocol not supported by Yieldster");
+            vaultStrategyEnabledProtocols[msg.sender][_vaultStrategy][protocol] = false;
+        }
+
+    }
+
+    function disableVaultStrategy(address _strategyAddress)
+        public
+    {
+        require(vaults[msg.sender].created, "Vault not present");
+        require(strategies[_strategyAddress].created, "Strategy not present");
+        vaults[msg.sender].vaultEnabledStrategy[_strategyAddress] = false;
+
     }
 
     function setvaultStrategyActiveProtocol(

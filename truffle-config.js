@@ -68,7 +68,8 @@ module.exports = {
       version: package.dependencies.solc,
       settings: {
         optimizer: {
-          enabled: true
+          enabled: true,
+          runs:200
         },
         evmVersion: "petersburg"
       }

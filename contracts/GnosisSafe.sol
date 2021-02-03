@@ -105,28 +105,47 @@ contract GnosisSafe
 
     function registerVaultWithAPS(
         address[] memory _vaultDepositAssets,
-        address[] memory _vaultWithdrawalAssets,
-        address[] memory _vaultEnabledStrategies
+        address[] memory _vaultWithdrawalAssets
     )
     public
     {
         require(msg.sender == owner, "Only owner can perform this operation");
         require(!vaultRegistrationCompleted, "Vault is already registered");
         vaultRegistrationCompleted = true;
-        IAPContract(APContract).addVault(_vaultDepositAssets,_vaultWithdrawalAssets, _vaultEnabledStrategies, vaultAPSManager,vaultStrategyManager, whiteListGroups, owner);
+        IAPContract(APContract).addVault(_vaultDepositAssets,_vaultWithdrawalAssets, vaultAPSManager,vaultStrategyManager, whiteListGroups, owner);
 
     }
 
-    //Function to enable a strategy and the corresponding protocol
-        function setVaultStrategyAndProtocol(
+    //Function to enable a strategy and enable or disable corresponding protocol
+    function setVaultStrategyAndProtocol(
         address _vaultStrategy,
-        address[] memory _strategyProtocols
+        address[] memory _enabledStrategyProtocols,
+        address[] memory _disabledStrategyProtocols
     )
     public
     {
         require(msg.sender == vaultAPSManager, "This operation can only be perfomed by APS Manager");
-        IAPContract(APContract).setVaultStrategyAndProtocol(_vaultStrategy, _strategyProtocols);
+        IAPContract(APContract).setVaultStrategyAndProtocol(_vaultStrategy, _enabledStrategyProtocols, _disabledStrategyProtocols);
     }
+
+    //Function to disable a vault strategy
+    function disableVaultStrategy(address _strategyAddress)
+        public
+    {
+        require(msg.sender == vaultAPSManager, "This operation can only be perfomed by APS Manager");
+        IAPContract(APContract).disableVaultStrategy(_strategyAddress);
+
+    }
+
+    //Function to set the vaults active strategy
+    function setVaultActiveStrategy(address _activeVaultStrategy)
+        public
+    {
+        require(msg.sender == vaultAPSManager, "This operation can only be perfomed by APS Manager");
+        IAPContract(APContract).setVaultActiveStrategy(_activeVaultStrategy);
+
+    }
+
 
 
     //Function to get APS manager of the vault
