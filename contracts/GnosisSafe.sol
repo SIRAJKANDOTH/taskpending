@@ -213,8 +213,8 @@ contract GnosisSafe
         {
             if(IERC20(assetList[i]).balanceOf(address(this)) > 0)
             {
-                (int256 tokenUSD, ) = IAPContract(APContract).getUSDPrice(assetList[i]);
-                nav += (IERC20(assetList[i]).balanceOf(address(this)) * uint256(tokenUSD));       
+                (int256 tokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(assetList[i]);
+                nav += (IERC20(assetList[i]).balanceOf(address(this)).mul(uint256(tokenUSD)).div(uint256(decimals)));       
             }
         }
         return nav;
@@ -225,8 +225,8 @@ contract GnosisSafe
         public
         returns (uint256)
     {
-        (int256 tokenUSD, ) = IAPContract(APContract).getUSDPrice(_tokenAddress);
-        return _amount.mul(uint256(tokenUSD));
+        (int256 tokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(_tokenAddress);
+        return _amount.mul(uint256(tokenUSD)).div(uint256(decimals));
     }
 
     function deposit(address _tokenAddress, uint256 _amount)
@@ -271,7 +271,7 @@ contract GnosisSafe
     {
         require(IAPContract(APContract).isWithdrawalAsset(_tokenAddress),"Not an approved Withdrawal asset");
         require(balanceOf(msg.sender) >= _shares,"You don't have enough shares");
-        (int256 tokenUSD, ) = IAPContract(APContract).getUSDPrice(_tokenAddress);
+        (int256 tokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(_tokenAddress);
         uint256 safeTokenVaulueInUSD = tokenValueInUSD(_shares);
         uint256 tokenCount = safeTokenVaulueInUSD.div(uint256(tokenUSD));
         
@@ -287,9 +287,9 @@ contract GnosisSafe
             {
                 IERC20 haveToken = IERC20(assetList[i]);
                 uint256 haveTokenCount = haveToken.balanceOf(address(this));
-                (int256 haveTokenUSD, ) = IAPContract(APContract).getUSDPrice(assetList[i]);
+                (int256 haveTokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(assetList[i]);
 
-                if(haveTokenCount.mul(uint256(haveTokenUSD)) > need.mul(uint256(tokenUSD)))
+                if(haveTokenCount.mul(uint256(haveTokenUSD).div(uint256(decimals))) > need.mul(uint256(tokenUSD)))
                 {
                     address converter = IAPContract(APContract).getConverter(assetList[i], _tokenAddress);
                     if(converter != address(0))
