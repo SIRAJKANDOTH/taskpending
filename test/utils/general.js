@@ -186,5 +186,6 @@ Object.assign(exports, {
     createLightwallet,
     signTransaction,
     assertRejects,
-    getErrorMessage
+    getErrorMessage,
+    abi
 })

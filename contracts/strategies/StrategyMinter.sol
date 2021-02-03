@@ -11,7 +11,7 @@ contract StrategyMinter is ERC1155{
     }
 
 // test purpose
-    function mintStrategy(address safeAddress) public{
-        _mint(safeAddress, 5, 10**18, "_mint(tx.origin, 100);");
+    function mintStrategy(address safeAddress,string memory instruction) public{
+        _mint(safeAddress, 5, 10**18, bytes(instruction));
     }
 }

@@ -4,6 +4,7 @@ const APContract = artifacts.require("./aps/APContract.sol");
 const Whitelist = artifacts.require("./whitelist/Whitelist.sol");
 const ProxyFactory = artifacts.require("./GnosisSafeProxyFactory.sol");
 const StrategyMinter = artifacts.require("./strategies/StrategyMinter.sol");
+const abi = require("ethereumjs-abi");
 
 contract(" APContract", function (accounts) {
   let newGnosisSafe;
@@ -90,15 +91,33 @@ contract(" APContract", function (accounts) {
     assert.equal(await newGnosisSafe.vaultName(), "Liva One", "Names match");
 
     // testing strategy minter listner
-    console.log("Strateg minter", strategyMinter.address);
-    await strategyMinter.mintStrategy(newGnosisSafe.address);
 
-    let bal = await strategyMinter.balanceOf(newGnosisSafe.address, 0);
-	console.log("Safe minter balance", bal);
-	
-	let safeCallbackResult=await newGnosisSafe.balanceOf(accounts[0]);
-	console.log("address zero balance",safeCallbackResult);
-	console.log("test", await newGnosisSafe.test())
+    console.log("Strateg minter", strategyMinter.address);
+    console.log("before minting 11555", await apContract.test());
+    // let jsonInterface = {
+    //   name: "testCall",
+    //   type: "function",
+    //   inputs: [
+    //     {
+    //       type: "string",
+    //       name: "newVal",
+    //     }
+    //   ],
+    // };
+    // let parameters = ["hello world"];
+
+    // let funcSig = web3.eth.abi.encodeFunctionCall(jsonInterface, parameters);
+    // console.log("sign", funcSig);
+    await strategyMinter.mintStrategy(
+      newGnosisSafe.address,
+      "testCall()"
+    );
+    console.log("after minting 11555", await apContract.test());
+     await strategyMinter.mintStrategy(
+      newGnosisSafe.address,
+      "testWithParameter(string)"
+    );
+    console.log("after minting 11555 with params", await apContract.test());
 
     assert.ok(newGnosisSafe.address);
 

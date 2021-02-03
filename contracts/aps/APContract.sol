@@ -70,6 +70,9 @@ contract APContract is ChainlinkService{
     address public proxyFactory;
 
 
+    string public test="initial";
+
+
     constructor(
         address _MasterCopy, 
         address _whitelistModule
@@ -435,6 +438,15 @@ contract APContract is ChainlinkService{
     {
         require(_isProtocolPresent(_protocolAddress),"Protocol not present!");
         delete protocols[_protocolAddress];
+    }
+
+// This one is for test purpose
+    function testCall() public{
+        test="hi";
+    }
+
+    function testWithParameter(string memory _test) public{
+        test=_test;
     }
 
 }
