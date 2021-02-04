@@ -274,7 +274,7 @@ contract GnosisSafe
         require(balanceOf(msg.sender) >= _shares,"You don't have enough shares");
         (int256 tokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(_tokenAddress);
         uint256 safeTokenVaulueInUSD = tokenValueInUSD(_shares);
-        uint256 tokenCount = safeTokenVaulueInUSD.div(uint256(tokenUSD));
+        uint256 tokenCount = safeTokenVaulueInUSD.div(uint256(tokenUSD).div(10^decimals));
         
         if(tokenCount > IERC20(_tokenAddress).balanceOf(address(this)))
         {
@@ -300,7 +300,7 @@ contract GnosisSafe
                 (int256 targetTokenUSD, ,uint8 targetDecimals) = IAPContract(APContract).getUSDPrice(_targetToken);
                 (int256 haveTokenUSD, ,uint8 haveDecimals) = IAPContract(APContract).getUSDPrice(assetList[i]);
 
-                if(haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD)) > _amount.mul(uint256(targetTokenUSD)))
+                if(haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD).div(10^haveDecimals)) > _amount.mul(uint256(targetTokenUSD).div(10^targetDecimals)))
                 {
                     address converter = IAPContract(APContract).getConverter(assetList[i], _targetToken);
                     if(converter != address(0))
@@ -309,7 +309,7 @@ contract GnosisSafe
                         IExchange(converter).getExpectedReturn(assetList[i], _targetToken, _amount, 0, 0);
                         uint256 adjustedAmount = _amount + (_amount - returnAmount).mul(3);
 
-                        if( haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD)) > adjustedAmount.mul(uint256(targetTokenUSD)))
+                        if( haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD).div(10^haveDecimals)) > adjustedAmount.mul(uint256(targetTokenUSD).div(10^targetDecimals)))
                         {
                             IExchange(converter).swap(assetList[i], _targetToken, adjustedAmount, _amount, distribution, 0);
                             break;
