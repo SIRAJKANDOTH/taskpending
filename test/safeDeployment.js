@@ -4,7 +4,7 @@ const APContract = artifacts.require("./aps/APContract.sol");
 const Whitelist = artifacts.require("./whitelist/Whitelist.sol");
 const ProxyFactory = artifacts.require("./GnosisSafeProxyFactory.sol");
 const StrategyMinter = artifacts.require("./strategies/StrategyMinter.sol");
-const abi = require("ethereumjs-abi");
+var abi = require('ethereumjs-abi');
 
 contract(" APContract", function (accounts) {
   let newGnosisSafe;
@@ -94,28 +94,14 @@ contract(" APContract", function (accounts) {
 
     console.log("Strateg minter", strategyMinter.address);
     console.log("before minting 11555", await apContract.test());
-    // let jsonInterface = {
-    //   name: "testCall",
-    //   type: "function",
-    //   inputs: [
-    //     {
-    //       type: "string",
-    //       name: "newVal",
-    //     }
-    //   ],
-    // };
-    // let parameters = ["hello world"];
-
-    // let funcSig = web3.eth.abi.encodeFunctionCall(jsonInterface, parameters);
-    // console.log("sign", funcSig);
     await strategyMinter.mintStrategy(
       newGnosisSafe.address,
-      "testCall()"
+      abi.simpleEncode('testCall()').toString('hex')
     );
     console.log("after minting 11555", await apContract.test());
-     await strategyMinter.mintStrategy(
+    await strategyMinter.mintStrategy(
       newGnosisSafe.address,
-      "testWithParameter(string)"
+      abi.simpleEncode('testWithParameter(string)', 'With param').toString('hex')
     );
     console.log("after minting 11555 with params", await apContract.test());
 
