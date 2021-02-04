@@ -364,19 +364,4 @@ contract GnosisSafe
 
         }
 
-        function getEncodedData(string memory signature,string[1] memory _params) public pure returns(bytes memory){
-            if(compareStrings(signature,"testCall()")){
-                return abi.encodeWithSignature(signature);
-            }
-            else if(compareStrings(signature,"testWithParameter(string)")){
-                return abi.encodeWithSignature(signature,_params[0]);
-            }
-            else revert(signature);
-
-        }
-
-        function compareStrings(string memory a, string memory b) public pure returns (bool) {
-             return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
-        }
-
 }
