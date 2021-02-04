@@ -116,6 +116,7 @@ contract GnosisSafe
 
     }
 
+    //Have to confirm who is autherized to call these functions
     //Function to enable a strategy and enable or disable corresponding protocol
     function setVaultStrategyAndProtocol(
         address _vaultStrategy,
@@ -124,7 +125,7 @@ contract GnosisSafe
     )
     public
     {
-        require(msg.sender == vaultAPSManager, "This operation can only be perfomed by APS Manager");
+        require(msg.sender == owner, "This operation can only be perfomed by Owner");
         IAPContract(APContract).setVaultStrategyAndProtocol(_vaultStrategy, _enabledStrategyProtocols, _disabledStrategyProtocols);
     }
 
@@ -132,7 +133,7 @@ contract GnosisSafe
     function disableVaultStrategy(address _strategyAddress)
         public
     {
-        require(msg.sender == vaultAPSManager, "This operation can only be perfomed by APS Manager");
+        require(msg.sender == owner, "This operation can only be perfomed by Owner");
         IAPContract(APContract).disableVaultStrategy(_strategyAddress);
 
     }
@@ -141,7 +142,7 @@ contract GnosisSafe
     function setVaultActiveStrategy(address _activeVaultStrategy)
         public
     {
-        require(msg.sender == vaultAPSManager, "This operation can only be perfomed by APS Manager");
+        require(msg.sender == owner, "This operation can only be perfomed by Owner");
         IAPContract(APContract).setVaultActiveStrategy(_activeVaultStrategy);
 
     }
@@ -214,7 +215,7 @@ contract GnosisSafe
             if(IERC20(assetList[i]).balanceOf(address(this)) > 0)
             {
                 (int256 tokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(assetList[i]);
-                nav += (IERC20(assetList[i]).balanceOf(address(this)).mul(uint256(tokenUSD)).div(uint256(decimals)));       
+                nav += (IERC20(assetList[i]).balanceOf(address(this)).mul(uint256(tokenUSD)).div(uint256(10^decimals)));       
             }
         }
         return nav;
@@ -226,7 +227,7 @@ contract GnosisSafe
         returns (uint256)
     {
         (int256 tokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(_tokenAddress);
-        return _amount.mul(uint256(tokenUSD)).div(uint256(decimals));
+        return _amount.mul(uint256(tokenUSD)).div(uint256(10^decimals));
     }
 
     function deposit(address _tokenAddress, uint256 _amount)
@@ -289,7 +290,7 @@ contract GnosisSafe
                 uint256 haveTokenCount = haveToken.balanceOf(address(this));
                 (int256 haveTokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(assetList[i]);
 
-                if(haveTokenCount.mul(uint256(haveTokenUSD).div(uint256(decimals))) > need.mul(uint256(tokenUSD)))
+                if(haveTokenCount.mul(uint256(haveTokenUSD).div(uint256(10^decimals))) > need.mul(uint256(tokenUSD)))
                 {
                     address converter = IAPContract(APContract).getConverter(assetList[i], _tokenAddress);
                     if(converter != address(0))
