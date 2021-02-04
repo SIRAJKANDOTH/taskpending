@@ -297,22 +297,21 @@ contract GnosisSafe
         for(uint256 i = 0; i < assetList.length; i++ )
             {
                 IERC20 haveToken = IERC20(assetList[i]);
-                uint256 haveTokenCount = haveToken.balanceOf(address(this));
                 (int256 targetTokenUSD, ,uint8 targetDecimals) = IAPContract(APContract).getUSDPrice(_targetToken);
                 (int256 haveTokenUSD, ,uint8 haveDecimals) = IAPContract(APContract).getUSDPrice(assetList[i]);
 
-                if(haveTokenCount.mul(uint256(haveTokenUSD)) > _amount.mul(uint256(targetTokenUSD)))
+                if(haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD)) > _amount.mul(uint256(targetTokenUSD)))
                 {
                     address converter = IAPContract(APContract).getConverter(assetList[i], _targetToken);
                     if(converter != address(0))
                     {
                         (uint256 returnAmount, uint256[] memory distribution) = 
-                        IExchange(converter).getExpectedReturn(haveToken, IERC20(_targetToken), _amount, 0, 0);
+                        IExchange(converter).getExpectedReturn(assetList[i], _targetToken, _amount, 0, 0);
                         uint256 adjustedAmount = _amount + (_amount - returnAmount).mul(3);
 
-                        if( haveTokenCount.mul(uint256(haveTokenUSD)) > adjustedAmount.mul(uint256(targetTokenUSD)))
+                        if( haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD)) > adjustedAmount.mul(uint256(targetTokenUSD)))
                         {
-                            IExchange(converter).swap(IERC20(assetList[i]), IERC20(_targetToken), adjustedAmount, _amount, distribution, 0);
+                            IExchange(converter).swap(assetList[i], _targetToken, adjustedAmount, _amount, distribution, 0);
                             break;
                         }
                     
