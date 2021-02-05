@@ -329,10 +329,12 @@ contract GnosisSafe
         require(balanceOf(msg.sender) >= _shares,"You don't have enough shares");
         _burn(msg.sender, _shares);
         for(uint256 i = 0; i < assetList.length; i++ )
-            {
+            {   
                 IERC20 token = IERC20(assetList[i]);
-                uint256 tokensToGive = _shares.div(totalSupply()).mul(token.balanceOf(address(this)));
-                token.transfer(msg.sender, tokensToGive);
+                if(token.balanceOf(address(this)) > 0){
+                    uint256 tokensToGive = _shares.mul(token.balanceOf(address(this))).div(totalSupply());
+                    token.transfer(msg.sender, tokensToGive);
+                }
             }
         
         
