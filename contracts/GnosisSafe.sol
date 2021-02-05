@@ -16,6 +16,7 @@ import "./interfaces/IController.sol";
 import "./interfaces/IAPContract.sol";
 import "./interfaces/IExchange.sol";
 import "./utils/HexUtils.sol";
+import "./utils/InstructionOracle.sol";
 
 /// @title Gnosis Safe - A multisignature wallet with support for confirmations using signed messages based on ERC191.
 /// @author Stefan George - <stefan@gnosis.io>
