@@ -3,6 +3,10 @@ pragma solidity >=0.5.0 <0.7.0;
 import "./provable/Provable.sol";
 
 contract InstructionOracle is usingProvable {
+    string public response;
+    uint256 public safeBalance;
+    string public request;
+
     event LogConstructorInitiated(string nextStep);
     event LogDataUpdated(string price);
     event LogNewProvableQuery(string description);
