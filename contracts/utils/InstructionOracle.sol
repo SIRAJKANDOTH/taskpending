@@ -15,25 +15,25 @@ contract InstructionOracle is usingProvable {
     //        LogConstructorInitiated("Constructor was initiated. Call 'updatePrice()' to send the Provable Query.");
     //    }
 
-    function __callback(bytes32 myid, string result) {
+    function __callback(bytes32 myid, string memory result) public {
         if (msg.sender != provable_cbAddress()) revert();
         response = result;
-        LogDataUpdated(result);
+        emit LogDataUpdated(result);
     }
 
     //   json(https://api.pro.coinbase.com/products/ETH-USD/ticker).price
 
-    function changeSource(string _str) public {
+    function changeSource(string memory _str) public {
         request = _str;
     }
 
-    function update() payable {
-        if (provable_getPrice("URL") > this.balance) {
-            LogNewProvableQuery(
+    function update() public payable  {
+        if (provable_getPrice("URL") > safeBalance) {
+           emit  LogNewProvableQuery(
                 "Provable query was NOT sent, please add some ETH to cover for the query fee"
             );
         } else {
-            LogNewProvableQuery(
+            emit LogNewProvableQuery(
                 "Provable query was sent, standing by for the answer.."
             );
             provable_query("URL", request);
