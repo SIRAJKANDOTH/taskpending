@@ -4,7 +4,6 @@ import "./provable/Provable.sol";
 
 contract InstructionOracle is usingProvable {
     string public response;
-    uint256 public safeBalance;
     string public request;
 
     event LogConstructorInitiated(string nextStep);
