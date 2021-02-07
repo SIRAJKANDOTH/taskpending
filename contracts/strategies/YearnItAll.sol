@@ -32,16 +32,21 @@ contract YearnItAll is ERC20,ERC20Detailed {
     function withdraw(uint256 _amount) external{
         IVault(safeEnabledProtocols[msg.sender]).withdraw(_amount);
     }
-    function withdrawAllSafeBalance() external{
-        
+    function _withdrawAllSafeBalance() private{
         IVault(safeEnabledProtocols[msg.sender]).withdraw(_getProtoColBalanceforSafe());
-        _burn(msg.sender, IERC20(address(this)).balanceOf(msg.sender));
     }
 
 
-
+    // Withdraw all Protocl balance to Strategy
     function withdrawAll() external returns (uint256){
+        IVault(safeEnabledProtocols[msg.sender]).withdraw(IERC20(IVault(safeEnabledProtocols[msg.sender]).token()).balanceOf(msg.sender));
+    }
 
+    // Withdraw all protocol assets to safe
+    function withdrawAllToSafe() external {
+        _withdrawAllSafeBalance();
+        _burn(msg.sender, IERC20(address(this)).balanceOf(msg.sender));
+        IERC20(address(this)).transfer(msg.sender,_getProtoColBalanceforSafe());
     }
 
     function want() external view returns (address)
