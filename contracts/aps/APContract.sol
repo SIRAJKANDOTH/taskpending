@@ -357,8 +357,16 @@ contract APContract is ChainlinkService{
         returns(int, uint, uint8)
     {
         require(_isAssetPresent(_tokenAddress),"Asset not present!");
-        return getLatestPrice(assets[_tokenAddress].feedAddress);
+        return(2447000000,1612762790,8)
+        // return getLatestPrice(assets[_tokenAddress].feedAddress);
     }
+    // function getUSDPrice(address _tokenAddress) 
+    //     public view
+    //     returns(int, uint, uint8)
+    // {
+    //     require(_isAssetPresent(_tokenAddress),"Asset not present!");
+    //     return getLatestPrice(assets[_tokenAddress].feedAddress);
+    // }
 
     function isDepositAsset(address _assetAddress)
     public
