@@ -195,12 +195,12 @@ contract GnosisSafe
     }
 
     //Function to find the Token to be minted for a deposit
-    function getMintValue(uint256 vaultNAV, uint256 depositNAV)
+    function getMintValue(uint256 depositNAV)
         public
         view
         returns (uint256)
     {
-        return depositNAV.div(vaultNAV.div(totalSupply()));
+        return depositNAV.div(tokenValueInUSD());
     }
 
     //Function to get the NAV of the vault
@@ -215,7 +215,7 @@ contract GnosisSafe
             if(IERC20(assetList[i]).balanceOf(address(this)) > 0)
             {
                 (int256 tokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(assetList[i]);
-                nav += (IERC20(assetList[i]).balanceOf(address(this)).mul(uint256(tokenUSD)).div(uint256(10^decimals)));       
+                nav += (IERC20(assetList[i]).balanceOf(address(this)).mul(uint256(tokenUSD)).div(10 ** uint256(decimals)));       
             }
         }
         return nav;
@@ -227,7 +227,7 @@ contract GnosisSafe
         returns (uint256)
     {
         (int256 tokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(_tokenAddress);
-        return _amount.mul(uint256(tokenUSD)).div(uint256(10^decimals));
+        return _amount.mul(uint256(tokenUSD).div(10 ** uint256(decimals)));
     }
 
     function deposit(address _tokenAddress, uint256 _amount)
@@ -237,7 +237,6 @@ contract GnosisSafe
         uint256 _share;
         require(IAPContract(APContract).isDepositAsset(_tokenAddress), "Not an approved deposit asset");
         IERC20 token = ERC20(_tokenAddress);
-        token.transferFrom(msg.sender, address(this), _amount);
 
         if(totalSupply() == 0)
         {
@@ -245,8 +244,9 @@ contract GnosisSafe
         }
         else
         {
-            _share = getMintValue(getVaultNAV(), getDepositNav(_tokenAddress, _amount));
+            _share = getMintValue(getDepositNav(_tokenAddress, _amount));
         }
+        token.transferFrom(msg.sender, address(this), _amount);
         _mint(msg.sender, _share);
 
         if(!isAssetDeposited[_tokenAddress])
@@ -261,7 +261,7 @@ contract GnosisSafe
     view
     returns(uint256)
     {
-        return amountInUsd.div(getVaultNAV().div(totalSupply()));
+        return amountInUsd.div(tokenValueInUSD());
     }
 
 
@@ -273,10 +273,10 @@ contract GnosisSafe
         require(IAPContract(APContract).isWithdrawalAsset(_tokenAddress),"Not an approved Withdrawal asset");
         require(balanceOf(msg.sender) >= _shares,"You don't have enough shares");
         (int256 tokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(_tokenAddress);
-        uint256 safeTokenVaulueInUSD = tokenValueInUSD(_shares);
-        uint256 tokenCount = safeTokenVaulueInUSD.div(uint256(tokenUSD).div(10^decimals));
+        uint256 safeTokenVaulueInUSD = tokenValueInUSD().mul(_shares);
+        uint256 tokenCount = safeTokenVaulueInUSD.div(uint256(tokenUSD).div(10 ** uint256(decimals)));
         
-        if(tokenCount > IERC20(_tokenAddress).balanceOf(address(this)))
+        if(tokenCount <= IERC20(_tokenAddress).balanceOf(address(this)))
         {
             _burn(msg.sender, _shares);
             IERC20(_tokenAddress).transfer(msg.sender,tokenCount);
@@ -300,7 +300,7 @@ contract GnosisSafe
                 (int256 targetTokenUSD, ,uint8 targetDecimals) = IAPContract(APContract).getUSDPrice(_targetToken);
                 (int256 haveTokenUSD, ,uint8 haveDecimals) = IAPContract(APContract).getUSDPrice(assetList[i]);
 
-                if(haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD).div(10^haveDecimals)) > _amount.mul(uint256(targetTokenUSD).div(10^targetDecimals)))
+                if(haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD).div(10 ** uint256(haveDecimals))) > _amount.mul(uint256(targetTokenUSD).div(10 ** uint256(targetDecimals))))
                 {
                     address converter = IAPContract(APContract).getConverter(assetList[i], _targetToken);
                     if(converter != address(0))
@@ -309,7 +309,7 @@ contract GnosisSafe
                         IExchange(converter).getExpectedReturn(assetList[i], _targetToken, _amount, 0, 0);
                         uint256 adjustedAmount = _amount + (_amount - returnAmount).mul(3);
 
-                        if( haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD).div(10^haveDecimals)) > adjustedAmount.mul(uint256(targetTokenUSD).div(10^targetDecimals)))
+                        if( haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD).div(10 ** uint256(haveDecimals))) > adjustedAmount.mul(uint256(targetTokenUSD).div(10 ** uint256(targetDecimals))))
                         {
                             IExchange(converter).swap(assetList[i], _targetToken, adjustedAmount, _amount, distribution, 0);
                             break;
@@ -332,7 +332,7 @@ contract GnosisSafe
             {   
                 IERC20 token = IERC20(assetList[i]);
                 if(token.balanceOf(address(this)) > 0){
-                    uint256 tokensToGive = _shares.mul(token.balanceOf(address(this))).div(totalSupply());
+                    uint256 tokensToGive = _shares.mul(token.balanceOf(address(this)).div(totalSupply()));
                     token.transfer(msg.sender, tokensToGive);
                 }
             }
@@ -341,9 +341,9 @@ contract GnosisSafe
     }
 
 
-    function tokenValueInUSD(uint256 tokenCount) public view returns(uint256)
+    function tokenValueInUSD() public view returns(uint256)
     {
-        return getVaultNAV().div(totalSupply()).mul(tokenCount);
+        return getVaultNAV().div(totalSupply());
     }
 
 }

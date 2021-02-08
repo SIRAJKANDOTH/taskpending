@@ -341,32 +341,33 @@ contract APContract is ChainlinkService{
         delete assets[_tokenAddress];
     }
     
-    function getAssetDetails(address _tokenAddress) 
-        public 
-        view 
-        returns(string memory, address, string memory)
-    {
-        require(_isAssetPresent(_tokenAddress),"Asset not present!");
-        return(assets[_tokenAddress].name, assets[_tokenAddress].feedAddress, assets[_tokenAddress].symbol);
+    // function getAssetDetails(address _tokenAddress) 
+    //     public 
+    //     view 
+    //     returns(string memory, address, string memory)
+    // {
+    //     require(_isAssetPresent(_tokenAddress),"Asset not present!");
+    //     return(assets[_tokenAddress].name, assets[_tokenAddress].feedAddress, assets[_tokenAddress].symbol);
 
-    }
+    // }
 
+
+    // function getUSDPrice(address _tokenAddress) 
+    //     public view
+    //     returns(int, uint, uint8)
+    // {
+    //     require(_isAssetPresent(_tokenAddress),"Asset not present!");
+    //     return(2447000000,1612762790,8);
+    //     // return getLatestPrice(assets[_tokenAddress].feedAddress);
+    // }
 
     function getUSDPrice(address _tokenAddress) 
         public view
         returns(int, uint, uint8)
     {
         require(_isAssetPresent(_tokenAddress),"Asset not present!");
-        return(2447000000,1612762790,8)
-        // return getLatestPrice(assets[_tokenAddress].feedAddress);
+        return getLatestPrice(assets[_tokenAddress].feedAddress);
     }
-    // function getUSDPrice(address _tokenAddress) 
-    //     public view
-    //     returns(int, uint, uint8)
-    // {
-    //     require(_isAssetPresent(_tokenAddress),"Asset not present!");
-    //     return getLatestPrice(assets[_tokenAddress].feedAddress);
-    // }
 
     function isDepositAsset(address _assetAddress)
     public
