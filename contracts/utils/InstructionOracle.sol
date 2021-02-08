@@ -27,7 +27,7 @@ contract InstructionOracle is usingProvable {
     }
 
     function update() public payable  {
-        if (provable_getPrice("URL") > safeBalance) {
+        if (provable_getPrice("URL") > address(this).balance) {
            emit  LogNewProvableQuery(
                 "Provable query was NOT sent, please add some ETH to cover for the query fee"
             );
