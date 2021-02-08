@@ -11,7 +11,9 @@ contract YearnItAll is ERC20,ERC20Detailed {
 
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
-    // yearn vault - need to confirm address
+// yearn vault - need to confirm address
+
+    address usdc=0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB;
 
     mapping(address=>bool) private protocols;
     mapping(address=>address) private safeEnabledProtocols;
@@ -26,7 +28,8 @@ contract YearnItAll is ERC20,ERC20Detailed {
     
 
    function deposit(uint256 _amount) external {
-       
+    //    Should we use transfer/ or approve directly
+        IERC20(safeEnabledProtocols[msg.sender]).transfer(msg.sender,_amount);
         IVault(safeEnabledProtocols[msg.sender]).deposit(_amount);
 
         // Need to add NAV logic to the vault
@@ -76,8 +79,19 @@ contract YearnItAll is ERC20,ERC20Detailed {
     function changeProtocol(address _protocol) external{
         require(protocols[_protocol]==true, "Not an Enabled Protocols");
         require(safeEnabledProtocols[msg.sender]!=address(0), "Not a registered Safe");
+        this.withdrawAllToSafe();
+        address _withdrawalAsset=IVault(safeEnabledProtocols[msg.sender]).token();
+        
+        uint256 _balance=IERC20(_withdrawalAsset).balanceOf(msg.sender);
+        if(_withdrawalAsset!=IVault(_protocol).token())
+        {
+            // Token exchange and depositi logic
+        }
+        else{
+            this.deposit(_balance);
+        }
 
-        // Token exchange and depositi logic
+        
         safeEnabledProtocols[msg.sender]=_protocol;
     }
    }
