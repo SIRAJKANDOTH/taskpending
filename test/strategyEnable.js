@@ -208,5 +208,6 @@ contract(" Deposit", function (accounts) {
 			"Vault Strategy",
 			await apContract.getVaultActiveStrategy(newGnosisSafe.address)
 		);
+
 	});
 });
