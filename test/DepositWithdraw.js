@@ -4,6 +4,7 @@ const APContract = artifacts.require("./aps/APContract.sol");
 const Whitelist = artifacts.require("./whitelist/Whitelist.sol");
 const ProxyFactory = artifacts.require("./GnosisSafeProxyFactory.sol");
 const YRToken = artifacts.require("./yrToken.sol");
+const AishToken = artifacts.require("./aishToken.sol");
 
 function token(n) {
 	return web3.utils.toWei(n, "ether");
@@ -18,6 +19,7 @@ contract(" Deposit", function (accounts) {
 	let whitelist;
 	let proxyFactory;
 	let yrtToken;
+	let aishToken;
 
 	beforeEach(async function () {
 		whitelist = await Whitelist.new();
@@ -35,10 +37,14 @@ contract(" Deposit", function (accounts) {
 			apContract.address
 		);
 		yrtToken = await YRToken.new(token("100000000"));
+		aishToken = await AishToken.new(token("100000000"));
 
 		await yrtToken.transfer(accounts[1], token("500"), { from: accounts[0] });
 		await yrtToken.transfer(accounts[2], token("500"), { from: accounts[0] });
 		await yrtToken.transfer(accounts[3], token("500"), { from: accounts[0] });
+		await aishToken.transfer(accounts[1], token("500"), { from: accounts[0] });
+		await aishToken.transfer(accounts[2], token("500"), { from: accounts[0] });
+		await aishToken.transfer(accounts[3], token("500"), { from: accounts[0] });
 
 		await apContract.addProxyFactory(proxyFactory.address);
 
@@ -49,6 +55,12 @@ contract(" Deposit", function (accounts) {
 			"YRT Token",
 			"0x6f7454cba97fffe10e053187f23925a86f5c20c4",
 			yrtToken.address
+		);
+		await apContract.addAsset(
+			"AISH",
+			"AISH Token",
+			"0x6f7454cba97fffe10e053187f23925a86f5c20c4",
+			aishToken.address
 		);
 		await apContract.addAsset(
 			"TUSD",
@@ -179,11 +191,13 @@ contract(" Deposit", function (accounts) {
 				"0x4dbcdf9b62e891a7cec5a2568c3f4faf9e8abe2b",
 				"0x01be23585060835e02b77ef475b0cc51aa1e0709",
 				yrtToken.address,
+				aishToken.address,
 			],
 			[
 				"0x4dbcdf9b62e891a7cec5a2568c3f4faf9e8abe2b",
 				"0x01be23585060835e02b77ef475b0cc51aa1e0709",
 				yrtToken.address,
+				aishToken.address,
 			]
 		);
 		console.log("YRT TOken", yrtToken.address);
@@ -192,46 +206,66 @@ contract(" Deposit", function (accounts) {
 		assert.equal(await newGnosisSafe.vaultName(), "Liva One", "Names match");
 
 		assert.ok(newGnosisSafe.address);
+		let safeNAVInitial = await newGnosisSafe.getVaultNAV();
+		console.log("Safe NAV Initial", safeNAVInitial.toString());
+
+		let safeTokenValueInitial = await newGnosisSafe.tokenValueInUSD();
+		console.log("token value usd Initial", safeTokenValueInitial.toString());
+
+		console.log("-----------deposit----------------");
 
 		await yrtToken.approve(newGnosisSafe.address, token("100"), {
 			from: accounts[1],
 		});
-		await newGnosisSafe.deposit(yrtToken.address, token("10"), {
+		await newGnosisSafe.deposit(yrtToken.address, token("1"), {
 			from: accounts[1],
 		});
-		await yrtToken.approve(newGnosisSafe.address, token("100"), {
-			from: accounts[2],
+		await aishToken.approve(newGnosisSafe.address, token("100"), {
+			from: accounts[1],
 		});
-		await newGnosisSafe.deposit(yrtToken.address, token("8"), {
-			from: accounts[2],
-		});
-		await yrtToken.approve(newGnosisSafe.address, token("100"), {
-			from: accounts[3],
-		});
-		await newGnosisSafe.deposit(yrtToken.address, token("18"), {
-			from: accounts[3],
-		});
+		// await newGnosisSafe.deposit(aishToken.address, token("2"), {
+		// 	from: accounts[1],
+		// });
+		// await yrtToken.approve(newGnosisSafe.address, token("100"), {
+		// 	from: accounts[2],
+		// });
+		// await newGnosisSafe.deposit(yrtToken.address, token("8"), {
+		// 	from: accounts[2],
+		// });
+		// await yrtToken.approve(newGnosisSafe.address, token("100"), {
+		// 	from: accounts[3],
+		// });
+		// await newGnosisSafe.deposit(yrtToken.address, token("18"), {
+		// 	from: accounts[3],
+		// });
 
 		let yrtBalance = await yrtToken.balanceOf(newGnosisSafe.address);
-		let investor1SafeBalance = await newGnosisSafe.balanceOf(accounts[1]);
-		let investor2SafeBalance = await newGnosisSafe.balanceOf(accounts[2]);
-		let investor3SafeBalance = await newGnosisSafe.balanceOf(accounts[3]);
 		console.log(
 			"Safe YRT Balance",
 			web3.utils.fromWei(yrtBalance.toString(), "ether")
 		);
+
+		let aishBalance = await aishToken.balanceOf(newGnosisSafe.address);
+		console.log(
+			"Safe AISH Balance",
+			web3.utils.fromWei(aishBalance.toString(), "ether")
+		);
+
+		let investor1SafeBalance = await newGnosisSafe.balanceOf(accounts[1]);
+		// let investor2SafeBalance = await newGnosisSafe.balanceOf(accounts[2]);
+		// let investor3SafeBalance = await newGnosisSafe.balanceOf(accounts[3]);
 		console.log(
 			"Safe Token investor1 balance",
 			web3.utils.fromWei(investor1SafeBalance.toString(), "ether")
 		);
-		console.log(
-			"Safe Token investor2 balance",
-			web3.utils.fromWei(investor2SafeBalance.toString(), "ether")
-		);
-		console.log(
-			"Safe Token investor3 balance",
-			web3.utils.fromWei(investor3SafeBalance.toString(), "ether")
-		);
+		// console.log(
+		// 	"Safe Token investor2 balance",
+		// 	web3.utils.fromWei(investor2SafeBalance.toString(), "ether")
+		// );
+		// console.log(
+		// 	"Safe Token investor3 balance",
+		// 	web3.utils.fromWei(investor3SafeBalance.toString(), "ether")
+		// );
 		let safeNAV = await newGnosisSafe.getVaultNAV();
 		console.log("Safe NAV", safeNAV.toString());
 		console.log(
@@ -255,38 +289,61 @@ contract(" Deposit", function (accounts) {
 			"Deposit NAV",
 			web3.utils.fromWei(depositNAV.toString(), "ether")
 		);
-		let yrt = await apContract.getUSDPrice(yrtToken.address);
-		console.log(
-			"yrt values",
-			yrt[0].toString(),
-			"-",
-			yrt[1].toString(),
-			"-",
-			yrt[2].toString()
-		);
 
-		investor1SafeBalance = await newGnosisSafe.balanceOf(accounts[1]);
-		console.log(
-			"Safe Token investor1 balance",
-			web3.utils.fromWei(investor1SafeBalance.toString(), "ether")
-		);
+		// let yrt = await apContract.getUSDPrice(yrtToken.address);
+		// console.log(
+		// 	"yrt values",
+		// 	yrt[0].toString(),
+		// 	"-",
+		// 	yrt[1].toString(),
+		// 	"-",
+		// 	yrt[2].toString()
+		// );
+
+		// investor1SafeBalance = await newGnosisSafe.balanceOf(accounts[1]);
+		// console.log(
+		// 	"Safe Token investor1 balance",
+		// 	web3.utils.fromWei(investor1SafeBalance.toString(), "ether")
+		// );
 		let investor1YrtBalance = await yrtToken.balanceOf(accounts[1]);
 		console.log(
-			"Investor 1 before withdrawal",
+			"Investor 1 YRT before withdrawal",
 			web3.utils.fromWei(investor1YrtBalance.toString(), "ether")
 		);
-		await newGnosisSafe.withdraw(token("5"), {
+
+		let investor1aishBalance = await aishToken.balanceOf(accounts[1]);
+		console.log(
+			"Investor 1 AISH before withdrawal",
+			web3.utils.fromWei(investor1aishBalance.toString(), "ether")
+		);
+
+		console.log("------------withdraw-----------");
+
+		await newGnosisSafe.withdraw(token("1"), {
 			from: accounts[1],
 		});
+		// await newGnosisSafe.withdraw(token("8"), {
+		// 	from: accounts[2],
+		// });
+		// await newGnosisSafe.withdraw(token("18"), {
+		// 	from: accounts[3],
+		// });
 		investor1SafeBalance = await newGnosisSafe.balanceOf(accounts[1]);
-		investor1YrtBalance = await yrtToken.balanceOf(accounts[1]);
-		console.log(
-			"Investor 1 after withdrawal",
-			web3.utils.fromWei(investor1YrtBalance.toString(), "ether")
-		);
 		console.log(
 			"Safe Token investor1 balance",
 			web3.utils.fromWei(investor1SafeBalance.toString(), "ether")
+		);
+
+		investor1YrtBalance = await yrtToken.balanceOf(accounts[1]);
+		console.log(
+			"Investor 1 YRT after withdrawal",
+			web3.utils.fromWei(investor1YrtBalance.toString(), "ether")
+		);
+
+		investor1aishBalance = await aishToken.balanceOf(accounts[1]);
+		console.log(
+			"Investor 1 AISH after withdrawal",
+			web3.utils.fromWei(investor1aishBalance.toString(), "ether")
 		);
 
 		yrtBalance = await yrtToken.balanceOf(newGnosisSafe.address);
@@ -294,19 +351,42 @@ contract(" Deposit", function (accounts) {
 			"Safe YRT Balance",
 			web3.utils.fromWei(yrtBalance.toString(), "ether")
 		);
-		console.log("yrt address", yrtToken.address);
 
-		let investor2YrtBalance = await yrtToken.balanceOf(accounts[2]);
+		aishBalance = await aishToken.balanceOf(newGnosisSafe.address);
 		console.log(
-			"Investor 2 before withdrawal",
-			web3.utils.fromWei(investor2YrtBalance.toString(), "ether")
+			"Safe AISH Balance",
+			web3.utils.fromWei(aishBalance.toString(), "ether")
 		);
 
-		await newGnosisSafe.withdraw(yrtToken.address, token("2"),{from:accounts[2]});
-		investor2YrtBalance = await yrtToken.balanceOf(accounts[2]);
+		safeNAV = await newGnosisSafe.getVaultNAV();
+		console.log("Safe NAV", safeNAV.toString());
 		console.log(
-			"Investor 2 after withdrawal",
-			web3.utils.fromWei(investor2YrtBalance.toString(), "ether")
+			"Safe NAV from WEI",
+			web3.utils.fromWei(safeNAV.toString(), "ether")
 		);
+		safeTokenValue = await newGnosisSafe.tokenValueInUSD();
+		console.log("token value usd ", safeTokenValue.toString());
+
+		totalSupply = await newGnosisSafe.totalSupply();
+		console.log(
+			"safe total supply ",
+			web3.utils.fromWei(totalSupply.toString(), "ether")
+		);
+
+		depositNAV = await newGnosisSafe.getDepositNav(
+			yrtToken.address,
+			token("1")
+		);
+		console.log(
+			"Deposit NAV",
+			web3.utils.fromWei(depositNAV.toString(), "ether")
+		);
+
+		// await newGnosisSafe.withdraw(yrtToken.address, token("2"),{from:accounts[2]});
+		// investor2YrtBalance = await yrtToken.balanceOf(accounts[2]);
+		// console.log(
+		// 	"Investor 2 after withdrawal",
+		// 	web3.utils.fromWei(investor2YrtBalance.toString(), "ether")
+		// );
 	});
 });
