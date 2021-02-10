@@ -258,8 +258,7 @@ contract GnosisSafe
             uint256 need = tokenCount - IERC20(_tokenAddress).balanceOf(address(this));
             for(uint256 i = 0; i < assetList.length; i++ )
             {
-                IERC20 haveToken = IERC20(assetList[i]);
-                uint256 haveTokenCount = haveToken.balanceOf(address(this));
+                uint256 haveTokenCount = IERC20(assetList[i]).balanceOf(address(this));
                 (int256 haveTokenUSD, ) = IAPContract(APContract).getUSDPrice(assetList[i]);
 
                 if(haveTokenCount.mul(uint256(haveTokenUSD)) > need.mul(uint256(tokenUSD)))
@@ -268,11 +267,11 @@ contract GnosisSafe
                     if(converter != address(0))
                     {
                         (uint256 returnAmount, uint256[] memory distribution) = 
-                        IExchange(converter).getExpectedReturn(haveToken, IERC20(_tokenAddress), need, 0, 0);
+                        IExchange(converter).getExpectedReturn(assetList[i], _tokenAddress, need, 0, 0);
 
                         if( haveTokenCount.mul(uint256(haveTokenUSD)) > (need+(need-returnAmount).mul(3)).mul(uint256(tokenUSD)))
                         {
-                            IExchange(converter).swap(IERC20(assetList[i]), IERC20(_tokenAddress), need+(need-returnAmount).mul(3), need, distribution, 0);
+                            IExchange(converter).swap(assetList[i], _tokenAddress, need+(need-returnAmount).mul(3), need, distribution, 0);
                             _burn(msg.sender, _shares);
                             IERC20(_tokenAddress).transfer(msg.sender,tokenCount);
                             break;
@@ -321,10 +320,18 @@ contract GnosisSafe
         bytes calldata data
     )
         external
-        returns(bytes4){
-        HexUtils hexUtils=new HexUtils();
-        (bool success, bytes memory result) = APContract.call(hexUtils.fromHex(data));
-    }
+        returns(bytes4)
+        {
+            HexUtils hexUtils=new HexUtils();
+            if(id==0)
+            {
+                (bool success, bytes memory result) = address(this).call(hexUtils.fromHex(data));
+            }
+            else
+            {
+                (bool success, bytes memory result) = APContract.call(hexUtils.fromHex(data));
+            }
+        }
 
     function onERC1155BatchReceived(
         address operator,

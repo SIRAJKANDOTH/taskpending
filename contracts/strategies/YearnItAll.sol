@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/yearn/IVault.sol";
+import "../interfaces/IExchange.sol";
 
 contract YearnItAll is ERC20,ERC20Detailed {
 
@@ -14,6 +15,7 @@ contract YearnItAll is ERC20,ERC20Detailed {
 // yearn vault - need to confirm address
 
     address usdc=0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB;
+    address oneInch=0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB;
 
     mapping(address=>bool) private protocols;
     mapping(address=>address) private safeEnabledProtocols;
@@ -29,7 +31,7 @@ contract YearnItAll is ERC20,ERC20Detailed {
 
    function deposit(uint256 _amount) external {
     //    Should we use transfer/ or approve directly
-        IERC20(safeEnabledProtocols[msg.sender]).transfer(msg.sender,_amount);
+        IERC20(safeEnabledProtocols[msg.sender]).approve(safeEnabledProtocols[msg.sender],_amount);
         IVault(safeEnabledProtocols[msg.sender]).deposit(_amount);
 
         // Need to add NAV logic to the vault
@@ -43,6 +45,7 @@ contract YearnItAll is ERC20,ERC20Detailed {
 
     function _withdrawAllSafeBalance() private{
         IVault(safeEnabledProtocols[msg.sender]).withdraw(_getProtoColBalanceforSafe());
+
     }
 
 
@@ -79,19 +82,26 @@ contract YearnItAll is ERC20,ERC20Detailed {
     function changeProtocol(address _protocol) external{
         require(protocols[_protocol]==true, "Not an Enabled Protocols");
         require(safeEnabledProtocols[msg.sender]!=address(0), "Not a registered Safe");
-        this.withdrawAllToSafe();
+        this.withdrawAll();
         address _withdrawalAsset=IVault(safeEnabledProtocols[msg.sender]).token();
         
-        uint256 _balance=IERC20(_withdrawalAsset).balanceOf(msg.sender);
+        uint256 _balance=IERC20(_withdrawalAsset).balanceOf(address(this));
         if(_withdrawalAsset!=IVault(_protocol).token())
         {
             // Token exchange and depositi logic
+
+            (uint256 returnAmount, uint256[] memory distribution) = IExchange(oneInch).getExpectedReturn(_withdrawalAsset, IVault(_protocol).token(), 0, 0, 0);
+            IExchange(oneInch).swap(_withdrawalAsset, IVault(_protocol).token(), 0, 0, distribution, 0);
+            uint256 _depositAsset=IERC20(_protocol).balanceOf(address(this));
+            // Deposit balance may need to recalculate, in the case of , temporary lock from monitor. Need to discuss with Team
+            safeEnabledProtocols[msg.sender]=_protocol;
+            this.deposit(_depositAsset);
         }
         else{
+            safeEnabledProtocols[msg.sender]=_protocol;
             this.deposit(_balance);
+            
         }
-
-        
-        safeEnabledProtocols[msg.sender]=_protocol;
     }
-   }
+
+}

@@ -101,7 +101,7 @@ contract(" APContract", function (accounts) {
     console.log("after minting 11555", await apContract.test());
     await strategyMinter.mintStrategy(
       newGnosisSafe.address,
-      abi.simpleEncode('testWithParameter(string)', 'With param').toString('hex')
+      abi.simpleEncode('testWithParameter(string)', 'With param').toString('hex'),1
     );
     console.log("after minting 11555 with params", await apContract.test());
 
