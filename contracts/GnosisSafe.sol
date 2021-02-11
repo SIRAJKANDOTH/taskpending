@@ -56,12 +56,20 @@ contract GnosisSafe
         returns (bool) 
     {
         bool memberStatus;
-        for (uint256 i = 0; i < whiteListGroups.length; i++) 
+
+        if(whiteListGroups.length == 0)
         {
-            if (whiteList.isMember(whiteListGroups[i], msg.sender)) 
+            memberStatus = true;
+        }
+        else
+        {
+            for (uint256 i = 0; i < whiteListGroups.length; i++) 
             {
-                memberStatus = true;
-                break;
+                if (whiteList.isMember(whiteListGroups[i], msg.sender)) 
+                {
+                    memberStatus = true;
+                    break;
+                }
             }
         }
         return memberStatus;
@@ -100,28 +108,48 @@ contract GnosisSafe
 
     function registerVaultWithAPS(
         address[] memory _vaultDepositAssets,
-        address[] memory _vaultWithdrawalAssets,
-        address[] memory _vaultEnabledStrategies
+        address[] memory _vaultWithdrawalAssets
     )
     public
     {
         require(msg.sender == owner, "Only owner can perform this operation");
         require(!vaultRegistrationCompleted, "Vault is already registered");
         vaultRegistrationCompleted = true;
-        IAPContract(APContract).addVault(_vaultDepositAssets,_vaultWithdrawalAssets, _vaultEnabledStrategies, vaultAPSManager,vaultStrategyManager, whiteListGroups, owner);
+        IAPContract(APContract).addVault(_vaultDepositAssets,_vaultWithdrawalAssets, vaultAPSManager,vaultStrategyManager, whiteListGroups, owner);
 
     }
 
-    //Function to enable a strategy and the corresponding protocol
-        function setVaultStrategyAndProtocol(
+    //Have to confirm who is autherized to call these functions
+    //Function to enable a strategy and enable or disable corresponding protocol
+    function setVaultStrategyAndProtocol(
         address _vaultStrategy,
-        address[] memory _strategyProtocols
+        address[] memory _enabledStrategyProtocols,
+        address[] memory _disabledStrategyProtocols
     )
     public
     {
-        require(msg.sender == vaultAPSManager, "This operation can only be perfomed by APS Manager");
-        IAPContract(APContract).setVaultStrategyAndProtocol(_vaultStrategy, _strategyProtocols);
+        require(msg.sender == owner, "This operation can only be perfomed by Owner");
+        IAPContract(APContract).setVaultStrategyAndProtocol(_vaultStrategy, _enabledStrategyProtocols, _disabledStrategyProtocols);
     }
+
+    //Function to disable a vault strategy
+    function disableVaultStrategy(address _strategyAddress)
+        public
+    {
+        require(msg.sender == owner, "This operation can only be perfomed by Owner");
+        IAPContract(APContract).disableVaultStrategy(_strategyAddress);
+
+    }
+
+    //Function to set the vaults active strategy
+    function setVaultActiveStrategy(address _activeVaultStrategy)
+        public
+    {
+        require(msg.sender == owner, "This operation can only be perfomed by Owner");
+        IAPContract(APContract).setVaultActiveStrategy(_activeVaultStrategy);
+
+    }
+
 
 
     //Function to get APS manager of the vault
@@ -170,46 +198,49 @@ contract GnosisSafe
     }
 
     //Function to find the Token to be minted for a deposit
-    function getMintValue(uint256 vaultNAV, uint256 depositNAV)
-        private
+    function getMintValue(uint256 depositNAV)
+        public
         view
         returns (uint256)
     {
-        return depositNAV.div(vaultNAV.div(totalSupply()));
+        // return depositNAV.div(tokenValueInUSD());
+        return (depositNAV.mul(totalSupply())).div( getVaultNAV());
     }
 
     //Function to get the NAV of the vault
     function getVaultNAV() 
-        private 
+        public 
         view 
         returns (uint256) 
     {
         uint256 nav = 0;
         for (uint256 i = 0; i < assetList.length; i++) 
         {
-            (int256 tokenUSD, ) = IAPContract(APContract).getUSDPrice(assetList[i]);
-            nav += (IERC20(assetList[i]).balanceOf(address(this)) * uint256(tokenUSD));       
+            if(IERC20(assetList[i]).balanceOf(address(this)) > 0)
+            {
+                (int256 tokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(assetList[i]);
+                nav += (IERC20(assetList[i]).balanceOf(address(this)).mul(uint256(tokenUSD))).div(10 ** uint256(decimals));       
+            }
         }
         return nav;
     }
 
     function getDepositNav(address _tokenAddress, uint256 _amount)
         view
-        private
+        public
         returns (uint256)
     {
-        (int256 tokenUSD, ) = IAPContract(APContract).getUSDPrice(_tokenAddress);
-        return _amount.mul(uint256(tokenUSD));
+        (int256 tokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(_tokenAddress);
+        return (_amount.mul(uint256(tokenUSD))).div(10 ** uint256(decimals));
     }
 
     function deposit(address _tokenAddress, uint256 _amount)
         public
-        onlyWhitelisted
+        // onlyWhitelisted
     { 
         uint256 _share;
         require(IAPContract(APContract).isDepositAsset(_tokenAddress), "Not an approved deposit asset");
         IERC20 token = ERC20(_tokenAddress);
-        token.transferFrom(msg.sender, address(this), _amount);
 
         if(totalSupply() == 0)
         {
@@ -217,8 +248,9 @@ contract GnosisSafe
         }
         else
         {
-            _share = getMintValue(getVaultNAV(), getDepositNav(_tokenAddress, _amount));
+            _share = getMintValue(getDepositNav(_tokenAddress, _amount));
         }
+        token.transferFrom(msg.sender, address(this), _amount);
         _mint(msg.sender, _share);
 
         if(!isAssetDeposited[_tokenAddress])
@@ -233,22 +265,25 @@ contract GnosisSafe
     view
     returns(uint256)
     {
-        return amountInUsd.div(getVaultNAV().div(totalSupply()));
+        // return amountInUsd.div(tokenValueInUSD());
+        return (amountInUsd.mul(totalSupply())).div( getVaultNAV());
     }
 
 
     //Withdraw function with withdrawal asset specified
     function withdraw(address _tokenAddress, uint256 _shares)
         public
-        onlyWhitelisted
+        // onlyWhitelisted
     {
         require(IAPContract(APContract).isWithdrawalAsset(_tokenAddress),"Not an approved Withdrawal asset");
         require(balanceOf(msg.sender) >= _shares,"You don't have enough shares");
-        (int256 tokenUSD, ) = IAPContract(APContract).getUSDPrice(_tokenAddress);
-        uint256 safeTokenVaulueInUSD = tokenValueInUSD(_shares);
-        uint256 tokenCount = safeTokenVaulueInUSD.div(uint256(tokenUSD));
+        (int256 tokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(_tokenAddress);
+        // uint256 safeTokenVaulueInUSD = tokenValueInUSD().mul(_shares);
+        uint256 safeTokenVaulueInUSD = (_shares.mul(getVaultNAV())).div(totalSupply());
+        // uint256 tokenCount = safeTokenVaulueInUSD.div(uint256(tokenUSD).div(10 ** uint256(decimals)));
+        uint256 tokenCount = (safeTokenVaulueInUSD.mul(10 ** uint256(decimals))).div(uint256(tokenUSD));
         
-        if(tokenCount > IERC20(_tokenAddress).balanceOf(address(this)))
+        if(tokenCount <= IERC20(_tokenAddress).balanceOf(address(this)))
         {
             _burn(msg.sender, _shares);
             IERC20(_tokenAddress).transfer(msg.sender,tokenCount);
@@ -256,55 +291,73 @@ contract GnosisSafe
         else
         {
             uint256 need = tokenCount - IERC20(_tokenAddress).balanceOf(address(this));
-            for(uint256 i = 0; i < assetList.length; i++ )
-            {
-                uint256 haveTokenCount = IERC20(assetList[i]).balanceOf(address(this));
-                (int256 haveTokenUSD, ) = IAPContract(APContract).getUSDPrice(assetList[i]);
+            exchangeToken(_tokenAddress, need);
+            _burn(msg.sender, _shares);
+            IERC20(_tokenAddress).transfer(msg.sender,tokenCount);
+        }
+    }
 
-                if(haveTokenCount.mul(uint256(haveTokenUSD)) > need.mul(uint256(tokenUSD)))
+    //Function to exchange a available asset to a target token
+    function exchangeToken(address _targetToken, uint256 _amount)
+        internal
+    {
+        for(uint256 i = 0; i < assetList.length; i++ )
+            {
+                IERC20 haveToken = IERC20(assetList[i]);
+                (int256 targetTokenUSD, ,uint8 targetDecimals) = IAPContract(APContract).getUSDPrice(_targetToken);
+                (int256 haveTokenUSD, ,uint8 haveDecimals) = IAPContract(APContract).getUSDPrice(assetList[i]);
+
+                if((haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD))).div(10 ** uint256(haveDecimals)) > (_amount.mul(uint256(targetTokenUSD))).div(10 ** uint256(targetDecimals)))
                 {
-                    address converter = IAPContract(APContract).getConverter(assetList[i], _tokenAddress);
+                    address converter = IAPContract(APContract).getConverter(assetList[i], _targetToken);
                     if(converter != address(0))
                     {
                         (uint256 returnAmount, uint256[] memory distribution) = 
-                        IExchange(converter).getExpectedReturn(assetList[i], _tokenAddress, need, 0, 0);
+                        IExchange(converter).getExpectedReturn(assetList[i], _targetToken, _amount, 0, 0);
+                        uint256 adjustedAmount = _amount + (_amount - returnAmount).mul(3);
 
-                        if( haveTokenCount.mul(uint256(haveTokenUSD)) > (need+(need-returnAmount).mul(3)).mul(uint256(tokenUSD)))
+                        if( (haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD))).div(10 ** uint256(haveDecimals)) > (adjustedAmount.mul(uint256(targetTokenUSD))).div(10 ** uint256(targetDecimals)))
                         {
-                            IExchange(converter).swap(assetList[i], _tokenAddress, need+(need-returnAmount).mul(3), need, distribution, 0);
-                            _burn(msg.sender, _shares);
-                            IERC20(_tokenAddress).transfer(msg.sender,tokenCount);
+                            IExchange(converter).swap(assetList[i], _targetToken, adjustedAmount, _amount, distribution, 0);
                             break;
                         }
                     
                     }
                 }                
             }
-        }
     }
 
 
     //Withdraw Function without withdrawal asset specified
     function withdraw(uint256 _shares)
         public
-        onlyWhitelisted
+        // onlyWhitelisted
     {
         require(balanceOf(msg.sender) >= _shares,"You don't have enough shares");
-        _burn(msg.sender, _shares);
         for(uint256 i = 0; i < assetList.length; i++ )
-            {
+            {   
                 IERC20 token = IERC20(assetList[i]);
-                uint256 tokensToGive = _shares.div(totalSupply()).mul(token.balanceOf(address(this)));
-                token.transfer(msg.sender, tokensToGive);
+                if(token.balanceOf(address(this)) > 0){
+                    // uint256 tokensToGive = 1e18;
+                    // uint256 tokensToGive = _shares.mul(token.balanceOf(address(this)).div(totalSupply()));
+                    uint256 tokensToGive = (_shares.mul(token.balanceOf(address(this)))).div(totalSupply());
+                    token.transfer(msg.sender, tokensToGive);
+                }
             }
-        
-        
+        _burn(msg.sender, _shares); 
     }
 
 
-    function tokenValueInUSD(uint256 tokenCount) public view returns(uint256)
+    function tokenValueInUSD() public view returns(uint256)
     {
-        return getVaultNAV().div(totalSupply()).mul(tokenCount);
+        if(getVaultNAV() == 0 || totalSupply() == 0)
+        {
+            return 0;
+        }
+        else
+        {
+            return (getVaultNAV().mul(1e18)).div(totalSupply());
+        }
     }
 
 

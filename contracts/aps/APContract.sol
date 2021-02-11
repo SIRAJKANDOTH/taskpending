@@ -199,7 +199,6 @@ contract APContract is ChainlinkService{
     function addVault(
         address[] memory _vaultDepositAssets,
         address[] memory _vaultWithdrawalAssets,
-        address[] memory _vaultEnabledStrategies,
         address _vaultAPSManager,
         address _vaultStrategyManager,
         string[] memory _whitelistGroup,
@@ -231,24 +230,16 @@ contract APContract is ChainlinkService{
             vaults[msg.sender].vaultAssets[asset] = true;
             vaults[msg.sender].vaultWithdrawalAssets[asset] = true;
         }
-        for (uint256 i = 0; i < _vaultEnabledStrategies.length; i++) {
-            address strategy = _vaultEnabledStrategies[i];
-            require(strategies[strategy].created, "Strategy not present");
-            vaults[msg.sender].vaultEnabledStrategy[strategy] = true;
-        }
-
     }
 
     function setVaultActiveStrategy(
-        address _vaultAddress,
         address _strategyAddress
     )
-    external
+    public
     {
-        require(vaults[_vaultAddress].created, "Vault not present");
+        require(vaults[msg.sender].created, "Vault not present");
         require(strategies[_strategyAddress].created, "Strategy not present");
-        require(vaults[_vaultAddress].vaultAPSManager == msg.sender, "Only the vault Manager can perform this operation");
-        vaultActiveStrategy[_vaultAddress] = _strategyAddress;
+        vaultActiveStrategy[msg.sender] = _strategyAddress;
     }
 
     function getVaultActiveStrategy(address _vaultAddress)
@@ -262,19 +253,36 @@ contract APContract is ChainlinkService{
 
     function setVaultStrategyAndProtocol(
         address _vaultStrategy,
-        address[] calldata _strategyProtocols
+        address[] memory _enabledStrategyProtocols,
+        address[] memory _disabledStrategyProtocols
     )
-    external
+    public
     {
         require(vaults[msg.sender].created, "Vault not present");
         require(strategies[_vaultStrategy].created, "Strategy not present");
         vaults[msg.sender].vaultEnabledStrategy[_vaultStrategy] = true;
 
-        for (uint256 i = 0; i < _strategyProtocols.length; i++) {
-            address protocol = _strategyProtocols[i];
+        for (uint256 i = 0; i < _enabledStrategyProtocols.length; i++) {
+            address protocol = _enabledStrategyProtocols[i];
             require(_isProtocolPresent(protocol), "Protocol not supported by Yieldster");
             vaultStrategyEnabledProtocols[msg.sender][_vaultStrategy][protocol] = true;
         }
+
+        for (uint256 i = 0; i < _disabledStrategyProtocols.length; i++) {
+            address protocol = _disabledStrategyProtocols[i];
+            require(_isProtocolPresent(protocol), "Protocol not supported by Yieldster");
+            vaultStrategyEnabledProtocols[msg.sender][_vaultStrategy][protocol] = false;
+        }
+
+    }
+
+    function disableVaultStrategy(address _strategyAddress)
+        public
+    {
+        require(vaults[msg.sender].created, "Vault not present");
+        require(strategies[_strategyAddress].created, "Strategy not present");
+        vaults[msg.sender].vaultEnabledStrategy[_strategyAddress] = false;
+
     }
 
     function setvaultStrategyActiveProtocol(
@@ -346,10 +354,30 @@ contract APContract is ChainlinkService{
 
     }
 
+    //Use this function in testing environment other than rinkeby
+    // function getUSDPrice(address _tokenAddress) 
+    //     public view
+    //     returns(int, uint, uint8)
+    // {
+    //     require(_isAssetPresent(_tokenAddress),"Asset not present!");
+    //     if(_tokenAddress == 0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa)
+    //     return(100173255,1612935434,8);
+    //     else if(_tokenAddress == 0x01BE23585060835E02B77ef475b0Cc51aA1e0709)
+    //     return(2447000000,1612762790,8);
+    //     else if(_tokenAddress == 0x4DBCdF9B62e891a7cec5A2568C3F4FAF9E8Abe2b)
+    //     return(100000000,1612935389,8);
+    //     else if(_tokenAddress == 0xbF7A7169562078c96f0eC1A8aFD6aE50f12e5A99)
+    //     return(43465888,1612935374,8);
+    //     else if(_tokenAddress == 0x030b0a08eCaDdE5Ac33859a48d87416946C966A1)
+    //     return(12932580607,1612935494,8);
+    //     else if(_tokenAddress == 0xd729A77e319E059B4467C402e173c552E63A6c55)
+    //     return(23195708,1612934474,8);
+    //      return(24470000,1612762790,8);
+    // }
 
     function getUSDPrice(address _tokenAddress) 
         public view
-        returns(int,uint)
+        returns(int, uint, uint8)
     {
         require(_isAssetPresent(_tokenAddress),"Asset not present!");
         return getLatestPrice(assets[_tokenAddress].feedAddress);

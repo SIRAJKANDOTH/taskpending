@@ -18,6 +18,8 @@ module.exports = {
         return new HDWalletProvider(mnemonic, token)
       },
       gasPrice: 25000000000, // 25 Gwei
+      networkCheckTimeout: 10000000,
+      skipDryRun: true
     },
     goerli: {
       provider: () => {
@@ -67,7 +69,8 @@ module.exports = {
       version: package.dependencies.solc,
       settings: {
         optimizer: {
-          enabled: true
+          enabled: true,
+          runs:200
         },
         evmVersion: "petersburg"
       }

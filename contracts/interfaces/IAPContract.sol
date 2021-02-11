@@ -13,13 +13,13 @@ interface IAPContract{
     
     function getAssetDetails(address ) external view returns(string memory,address ,string memory);
 
-    function getUSDPrice(address ) external view returns(int,uint);
+    function getUSDPrice(address ) external view returns(int,uint, uint8);
 
     function addProtocol(string calldata ,string calldata ,address) external;
 
     function removeProtocol(address) external;
 
-    function addVault(address[] calldata, address[] calldata, address[] calldata, address, address, string[] calldata, address) external;
+    function addVault(address[] calldata, address[] calldata, address, address, string[] calldata, address) external;
 
     function createVault(address, address) external;
 
@@ -27,7 +27,11 @@ interface IAPContract{
 
     function changeVaultAPSManager(address) external;
 
-    function setVaultStrategyAndProtocol(address _vaultStrategy, address[] calldata _strategyProtocols) external;
+    function setVaultStrategyAndProtocol(address , address[] calldata , address[] calldata ) external;
+
+    function setVaultActiveStrategy(address) external;
+
+    function disableVaultStrategy(address) external;
 
     function getwhitelistModule() view external returns(address);
 

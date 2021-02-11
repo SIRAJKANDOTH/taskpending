@@ -15,11 +15,12 @@ contract ChainlinkService{
 
      // Feed address - https://docs.chain.link/docs/ethereum-addresses
      
-    function getLatestPrice(address feedAddress) public view returns (int,uint) {
+    function getLatestPrice(address feedAddress) public view returns (int,uint, uint8) {
          AggregatorV3Interface priceFeed = AggregatorV3Interface(feedAddress);
         (
             ,int price,,uint timeStamp,
         ) = priceFeed.latestRoundData();
-        return (price,timeStamp);
+        uint8 decimal = priceFeed.decimals();
+        return (price,timeStamp, decimal);
     }
 }

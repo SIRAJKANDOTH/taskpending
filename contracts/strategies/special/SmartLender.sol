@@ -1,12 +1,13 @@
 pragma solidity >=0.5.0 <0.7.0;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../../GnosisSafe.sol";
-import "../interfaces/ISmartLender.sol";
-contract SmartLender is ISmartLender
-{
+// import "@openzeppelin/contracts/math/SafeMath.sol";
+// import "@openzeppelin/contracts/utils/Address.sol";
+// import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+// import "../../GnosisSafe.sol";
+// import "../interfaces/IStrategy.sol";
+// import "../interfaces/ISmartLender.sol";
+// contract SmartLender is IStrategy,ISmartLender
+// {
 //     using SafeMath for uint256;
 //     using Address for address;
 //     address strategyManager;
