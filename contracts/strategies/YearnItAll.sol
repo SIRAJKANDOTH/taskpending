@@ -12,6 +12,7 @@ contract YearnItAll is ERC20,ERC20Detailed {
 
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
+    
 // yearn vault - need to confirm address
 
     address usdc=0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB;
@@ -38,6 +39,8 @@ contract YearnItAll is ERC20,ERC20Detailed {
         _mint(msg.sender, _amount);
     }
 
+
+
     function withdraw(uint256 _amount) external{
         IVault(safeEnabledProtocols[msg.sender]).withdraw(_amount);
     }
@@ -51,7 +54,7 @@ contract YearnItAll is ERC20,ERC20Detailed {
 
     // Withdraw all Protocl balance to Strategy
     function withdrawAll() external returns (uint256){
-        IVault(safeEnabledProtocols[msg.sender]).withdraw(IERC20(IVault(safeEnabledProtocols[msg.sender]).token()).balanceOf(msg.sender));
+        _withdrawAllSafeBalance();
     }
 
     // Withdraw all protocol assets to safe
@@ -59,7 +62,7 @@ contract YearnItAll is ERC20,ERC20Detailed {
         uint256 SafeBalance=_getProtoColBalanceforSafe();
         _withdrawAllSafeBalance();
         _burn(msg.sender, IERC20(address(this)).balanceOf(msg.sender));
-        IERC20(address(this)).transfer(msg.sender,SafeBalance);
+        IERC20(IVault(safeEnabledProtocols[msg.sender]).token()).transfer(msg.sender,SafeBalance);
     }
 
     function want() external view returns (address)
