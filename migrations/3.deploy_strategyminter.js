@@ -4,5 +4,5 @@ var YearnItAll=artifacts.require("./strategies/YearnItAll.sol");
 
 module.exports = async (deployer) => {
 	await deployer.deploy(StrategyMinter);
-	await deployer.deploy(YearnItAll);
+	// await deployer.deploy(YearnItAll);
 };

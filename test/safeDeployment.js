@@ -4,6 +4,8 @@ const APContract = artifacts.require("./aps/APContract.sol");
 const Whitelist = artifacts.require("./whitelist/Whitelist.sol");
 const ProxyFactory = artifacts.require("./GnosisSafeProxyFactory.sol");
 const StrategyMinter = artifacts.require("./strategies/StrategyMinter.sol");
+const YearnItAll = artifacts.require("./strategies/YearnItAll.sol");
+const IERC = artifacts.require("@openzeppelin/contracts/token/ERC20/IERC20.sol");
 var abi = require('ethereumjs-abi');
 
 contract(" APContract", function (accounts) {
@@ -15,8 +17,11 @@ contract(" APContract", function (accounts) {
   let whitelist;
   let proxyFactory;
   let strategyMinter;
+  let yearnItAll;
+  let yrt
 
   beforeEach(async function () {
+    yrt = await IERC.at("0x35874F6De93638F53F2C5696c0a22f130486bB7d");
     whitelist = await Whitelist.new();
     strategyMinter = await StrategyMinter.new();
     gnosisSafeMasterCopy = await utils.deployContract(
@@ -33,23 +38,29 @@ contract(" APContract", function (accounts) {
       apContract.address
     );
 
+    yearnItAll=await YearnItAll.new(apContract.address,["0x72aff7C29C28D659c571b5776c4e4c73eD8355Fb","0xf14f2e832AA11bc4bF8c66A456e2Cb1EaE70BcE9","0xf9a1522387Be6A2f3d442246f5984C508aa98F4e"]
+    );
+
     await apContract.addProxyFactory(proxyFactory.address);
+    await apContract.addAsset("YRT", "YRT Coin", accounts[5], "0x35874F6De93638F53F2C5696c0a22f130486bB7d");
 
-    await apContract.addAsset("DEX", "DEX Coin", accounts[5], accounts[3]);
-    await apContract.addAsset("DAI", "DAI Coin", accounts[5], accounts[4]);
     await apContract.addProtocol(
-      "Protocol DEX",
-      "Protocol DEX Coin",
-      accounts[3]
+      "crvComp",
+      "crvComp Token",
+      "0x72aff7C29C28D659c571b5776c4e4c73eD8355Fb"
     );
     await apContract.addProtocol(
-      "Protocol DAI",
-      "Protocol DAI Coin",
-      accounts[4]
+      "crvGUSD",
+      "crvGUSD Token",
+      "0xf14f2e832AA11bc4bF8c66A456e2Cb1EaE70BcE9"
+    );
+    await apContract.addProtocol(
+      "CrvBUSD",
+      "CrvBUSD Token",
+      "0xf9a1522387Be6A2f3d442246f5984C508aa98F4e"
     );
 
-    await apContract.addStrategy("Yearn It All", accounts[5], [accounts[4]]);
-    await apContract.addStrategy("Benos Strategy", accounts[6], [accounts[3]]);
+    await apContract.addStrategy("Yearn It All", yearnItAll.address, ["0x72aff7C29C28D659c571b5776c4e4c73eD8355Fb","0xf14f2e832AA11bc4bF8c66A456e2Cb1EaE70BcE9","0xf9a1522387Be6A2f3d442246f5984C508aa98F4e"]);
   });
 
   it("should add safe to APS", async () => {
@@ -61,7 +72,7 @@ contract(" APContract", function (accounts) {
         accounts[0],
         accounts[1],
         apContract.address,
-        ["group 1", "group 2"]
+        []
       )
       .encodeABI();
 
@@ -82,30 +93,56 @@ contract(" APContract", function (accounts) {
     );
 
     await newGnosisSafe.registerVaultWithAPS(
-      [accounts[3], accounts[4]],
-      [accounts[3], accounts[4]],
-      [accounts[5], accounts[6]]
+      ["0x35874F6De93638F53F2C5696c0a22f130486bB7d"],
+      ["0x35874F6De93638F53F2C5696c0a22f130486bB7d"],
     );
-
-    console.log("Safe Name", await newGnosisSafe.vaultName());
+    await newGnosisSafe.setVaultStrategyAndProtocol(yearnItAll.address,["0x72aff7C29C28D659c571b5776c4e4c73eD8355Fb","0xf14f2e832AA11bc4bF8c66A456e2Cb1EaE70BcE9","0xf9a1522387Be6A2f3d442246f5984C508aa98F4e"],[])
     assert.equal(await newGnosisSafe.vaultName(), "Liva One", "Names match");
 
     // testing strategy minter listner
+    await newGnosisSafe.setVaultActiveStrategy(yearnItAll.address)
+    console.log("Safe Name", await newGnosisSafe.vaultName(),yearnItAll.address);
+    await newGnosisSafe.setStrategyActiveProtocol('0x72aff7C29C28D659c571b5776c4e4c73eD8355Fb');
+    await yrt.approve(newGnosisSafe.address,10);
+    // let yrtInitial=await yrt.balanceOf(newGnosisSafe.address);
 
-    console.log("Strateg minter", strategyMinter.address);
-    console.log("before minting 11555", await apContract.test());
+    // Deposit to safe
+    console.log("yrt before deposit",(await yrt.balanceOf(newGnosisSafe.address)).toString())
+    await newGnosisSafe.deposit("0x35874F6De93638F53F2C5696c0a22f130486bB7d",10);
+    console.log("yrt after deposit",(await yrt.balanceOf(newGnosisSafe.address)).toString())
+
+
+    // Deposit to Strategy
+    console.log("Safe yearn-it-all balance before earning", (await yearnItAll.balanceOf(newGnosisSafe.address)).toString());
+
     await strategyMinter.mintStrategy(
       newGnosisSafe.address,
-      abi.simpleEncode('testCall()').toString('hex')
+      abi.simpleEncode('earn(uint256)',10).toString('hex'),0
     );
-    console.log("after minting 11555", await apContract.test());
+    console.log("Safe yearn-it-all balance after earning", (await yearnItAll.balanceOf(newGnosisSafe.address)).toString());
+
+
+
+
+
+
+
+    console.log("Strategy minter", strategyMinter.address);
+    console.log("before minting 11555", (await apContract.test()).toString());
     await strategyMinter.mintStrategy(
       newGnosisSafe.address,
-      abi.simpleEncode('testWithParameter(string)', 'With param').toString('hex'),1
+      abi.simpleEncode('testCall()').toString('hex'),1
     );
-    console.log("after minting 11555 with params", await apContract.test());
+    console.log("after minting 11555", (await apContract.test()).toString());
+    console.log("encoded",abi.simpleEncode('testWithParameter(uint256)',155).toString('hex'), "***")
+    await strategyMinter.mintStrategy(
+      newGnosisSafe.address,
+      abi.simpleEncode('testWithParameter(uint256)',255).toString('hex'),1
+    );
+    console.log("after minting 11555 with params", (await apContract.test()).toString());
 
     assert.ok(newGnosisSafe.address);
+  
 
     // apContract.VaultCreation((err, result) => {
     // 	if (err) console.log("error");

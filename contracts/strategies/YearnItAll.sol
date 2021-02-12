@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../interfaces/IAPContract.sol";
 import "../interfaces/yearn/IVault.sol";
 import "../interfaces/IExchange.sol";
 
@@ -15,34 +16,113 @@ contract YearnItAll is ERC20,ERC20Detailed {
     
 // yearn vault - need to confirm address
 
-    address usdc=0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB;
-    address oneInch=0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB;
+    address usdc = 0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB;
+    address oneInch = 0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB;
+    address APContract;
 
-    mapping(address=>bool) private protocols;
-    mapping(address=>address) private safeEnabledProtocols;
-    mapping(address=>address) private ChainLinkFeed;
+    address[] public protocolList;
+    mapping(address => bool) private protocols;
+    mapping(address => address) private safeEnabledProtocols;
+    mapping(address => address) private ChainLinkFeed;
 
-    constructor() public ERC20Detailed("Yearn it all","YRNITALL",18){
+    constructor(address _APContract, address[] memory _protocols) public ERC20Detailed("YRNITALL","Yearn it all",18){
+        APContract = _APContract;
         
-        protocols[0x5b1869D9A4C187F2EAa108f3062412ecf0526b24]=true;
         // initialise yearn vaults;
-
+        for (uint256 i = 0; i < _protocols.length; i++) 
+        {
+            protocols[_protocols[i]] = true;
+            protocolList.push(_protocols[i]);
+        }
+        // protocols[0x72aff7C29C28D659c571b5776c4e4c73eD8355Fb] = true;
+        // protocols[0xf14f2e832AA11bc4bF8c66A456e2Cb1EaE70BcE9] = true;
+        // protocols[0xf9a1522387Be6A2f3d442246f5984C508aa98F4e] = true;
     }
+
+event Expose(address);
     
 
    function deposit(uint256 _amount) external {
     //    Should we use transfer/ or approve directly
-        IERC20(safeEnabledProtocols[msg.sender]).approve(safeEnabledProtocols[msg.sender],_amount);
+        uint256 _shares;
+        address _tokenAddress = IVault(safeEnabledProtocols[msg.sender]).token();
+        IERC20 _token = IERC20(IVault(safeEnabledProtocols[msg.sender]).token());
+        if(totalSupply() == 0)
+        {
+            _shares = _amount;
+        }
+        else
+        {
+            _shares = getMintValue(getDepositNav(_tokenAddress, _amount));
+        }
+        _token.transferFrom(msg.sender, address(this), _amount);
+        _token.approve(safeEnabledProtocols[msg.sender], _amount);
         IVault(safeEnabledProtocols[msg.sender]).deposit(_amount);
-
         // Need to add NAV logic to the vault
-        _mint(msg.sender, _amount);
+        _mint(msg.sender, _shares);
+
+        emit Expose(msg.sender);
+    }
+
+    //Function to find the Token to be minted for a deposit
+    function getMintValue(uint256 depositNAV)
+        public
+        view
+        returns (uint256)
+    {
+        // return depositNAV.div(tokenValueInUSD());
+        return (depositNAV.mul(totalSupply())).div(getStrategyNAV());
+    }
+
+     //Function to get the NAV of the vault
+    function getStrategyNAV() 
+        public 
+        view 
+        returns (uint256) 
+    {
+        uint256 strategyNAV = 0;
+        for (uint256 i = 0; i < protocolList.length; i++) 
+        {
+            if(IERC20(protocolList[i]).balanceOf(address(this)) > 0)
+            {
+                (int256 tokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(protocolList[i]);
+                strategyNAV += (IERC20(protocolList[i]).balanceOf(address(this)).mul(uint256(tokenUSD))).div(10 ** uint256(decimals));       
+            }
+        }
+        return strategyNAV;
+    }
+
+    function getDepositNav(address _tokenAddress, uint256 _amount)
+        view
+        public
+        returns (uint256)
+    {
+        (int256 tokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(_tokenAddress);
+        return (_amount.mul(uint256(tokenUSD))).div(10 ** uint256(decimals));
     }
 
 
 
-    function withdraw(uint256 _amount) external{
-        IVault(safeEnabledProtocols[msg.sender]).withdraw(_amount);
+    function withdraw(uint256 _shares) external{
+        require(balanceOf(msg.sender) >= _shares,"You don't have enough shares");
+
+        address _tokenAddress = IVault(safeEnabledProtocols[msg.sender]).token();
+        IERC20 _token = IERC20(IVault(safeEnabledProtocols[msg.sender]).token());
+
+        address _protocolAddress = safeEnabledProtocols[msg.sender];
+
+        (int256 tokenUSD, ,uint8 tokenDecimal) = IAPContract(APContract).getUSDPrice(_tokenAddress);
+        uint256 strategyTokenValueInUSD = (_shares.mul(getStrategyNAV())).div(totalSupply());
+
+        uint256 tokenCount = (strategyTokenValueInUSD.mul(10 ** uint256(tokenDecimal))).div(uint256(tokenUSD));
+
+        (int256 protocolTokenUSD, ,uint8 protocolDecimal) = IAPContract(APContract).getUSDPrice(_protocolAddress);
+
+        uint256 _protocolShares = (strategyTokenValueInUSD.mul(10 ** uint256(protocolDecimal))).div(uint256(protocolTokenUSD));
+
+        IVault(safeEnabledProtocols[msg.sender]).withdraw(_protocolShares);
+        _burn(msg.sender, _shares);
+        _token.transfer(msg.sender, tokenCount);
     }
 
 
@@ -53,7 +133,7 @@ contract YearnItAll is ERC20,ERC20Detailed {
 
 
     // Withdraw all Protocl balance to Strategy
-    function withdrawAll() external returns (uint256){
+    function withdrawAll() external {
         _withdrawAllSafeBalance();
     }
 
@@ -105,6 +185,11 @@ contract YearnItAll is ERC20,ERC20Detailed {
             this.deposit(_balance);
             
         }
+    }
+    function setSafeActiveProtocol(address _protocol)
+    public
+    {
+        safeEnabledProtocols[msg.sender] = _protocol;
     }
 
 }

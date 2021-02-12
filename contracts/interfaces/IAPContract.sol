@@ -40,4 +40,6 @@ interface IAPContract{
     function isWithdrawalAsset(address ) external view returns(bool);
 
     function getConverter( address , address) external view returns(address);
+
+    function getVaultActiveStrategy(address)external view returns(address);
 }

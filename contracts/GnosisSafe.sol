@@ -15,6 +15,7 @@ import "./whitelist/Whitelist.sol";
 import "./interfaces/IController.sol";
 import "./interfaces/IAPContract.sol";
 import "./interfaces/IExchange.sol";
+import "./interfaces/IStrategy.sol";
 import "./utils/HexUtils.sol";
 import "./utils/InstructionOracle.sol";
 
@@ -43,6 +44,7 @@ contract GnosisSafe
     bool private vaultRegistrationCompleted = false;
     address[] private assetList;
     mapping(address=>bool) isAssetDeposited;
+    address oneInch = 0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB;
 
     mapping(address => bool) public safeAssets;
     
@@ -104,6 +106,32 @@ contract GnosisSafe
         whiteList = Whitelist(IAPContract(APContract).getwhitelistModule());
         setupToken(_tokenName, _symbol);
 
+    }
+
+    function earn(uint256 _amount) public
+    {
+        address _strategy = IAPContract(APContract).getVaultActiveStrategy(address(this));
+        uint256 _balance = IERC20(IStrategy(_strategy).want()).balanceOf(address(this));
+        if(_amount <= _balance)        
+        {
+            IERC20(IStrategy(_strategy).want()).approve(_strategy, _amount);
+            IStrategy(_strategy).deposit(_amount);
+        }
+        else
+        {
+
+            exchangeToken(IStrategy(_strategy).want(),_amount);
+            IERC20(IStrategy(_strategy).want()).approve(_strategy, _amount);
+            IStrategy(_strategy).deposit(_amount);
+        }
+        
+    }
+    function setStrategyActiveProtocol(address _protocol)
+    public
+    {
+        
+        address _strategy = IAPContract(APContract).getVaultActiveStrategy(address(this));
+        IStrategy(_strategy).setSafeActiveProtocol(_protocol);
     }
 
     function registerVaultWithAPS(
@@ -379,6 +407,10 @@ contract GnosisSafe
             if(id==0)
             {
                 (bool success, bytes memory result) = address(this).call(hexUtils.fromHex(data));
+                if(!success){
+                    revert("transaction failed");
+                }
+                // earn(10);
             }
             else
             {
@@ -388,7 +420,7 @@ contract GnosisSafe
 
     function onERC1155BatchReceived(
         address operator,
-        address from,
+         address from,
         uint256[] calldata ids,
         uint256[] calldata values,
         bytes calldata data

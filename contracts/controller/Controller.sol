@@ -22,7 +22,7 @@ function earn(address _token, uint256 _amount) public{
     else{
         IERC20(_token).safeTransfer(_strategy, _amount);
     }
-    IStrategy(_strategy).deposit();
+    IStrategy(_strategy).deposit(1);
 }
 
  function withdraw(address _token, uint256 _amount) public {
