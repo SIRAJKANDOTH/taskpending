@@ -24,25 +24,21 @@ contract YearnItAll is ERC20,ERC20Detailed {
     mapping(address => bool) private protocols;
     mapping(address => address) private safeEnabledProtocols;
     mapping(address => address) private ChainLinkFeed;
+    event Expose(address);
 
     constructor(address _APContract, address[] memory _protocols) public ERC20Detailed("YRNITALL","Yearn it all",18){
         APContract = _APContract;
-        
         // initialise yearn vaults;
         for (uint256 i = 0; i < _protocols.length; i++) 
         {
             protocols[_protocols[i]] = true;
             protocolList.push(_protocols[i]);
         }
-        // protocols[0x72aff7C29C28D659c571b5776c4e4c73eD8355Fb] = true;
-        // protocols[0xf14f2e832AA11bc4bF8c66A456e2Cb1EaE70BcE9] = true;
-        // protocols[0xf9a1522387Be6A2f3d442246f5984C508aa98F4e] = true;
     }
 
-event Expose(address);
     
 
-   function deposit(uint256 _amount) external {
+   function deposit(uint256 _amount) public {
     //    Should we use transfer/ or approve directly
         uint256 _shares;
         address _tokenAddress = IVault(safeEnabledProtocols[msg.sender]).token();
@@ -74,7 +70,7 @@ event Expose(address);
         return (depositNAV.mul(totalSupply())).div(getStrategyNAV());
     }
 
-     //Function to get the NAV of the vault
+     //Function to get the NAV of the strategy
     function getStrategyNAV() 
         public 
         view 
@@ -101,9 +97,22 @@ event Expose(address);
         return (_amount.mul(uint256(tokenUSD))).div(10 ** uint256(decimals));
     }
 
+    function tokenValueInUSD() public view returns(uint256)
+    {
+        if(getStrategyNAV() == 0 || totalSupply() == 0)
+        {
+            return 0;
+        }
+        else
+        {
+            return (getStrategyNAV().mul(1e18)).div(totalSupply());
+        }
+    }
 
 
-    function withdraw(uint256 _shares) external{
+
+    function withdraw(uint256 _shares) external
+    {
         require(balanceOf(msg.sender) >= _shares,"You don't have enough shares");
 
         address _tokenAddress = IVault(safeEnabledProtocols[msg.sender]).token();
@@ -126,23 +135,36 @@ event Expose(address);
     }
 
 
-    function _withdrawAllSafeBalance() private{
+    function _withdrawAllSafeBalance() private
+    {
         IVault(safeEnabledProtocols[msg.sender]).withdraw(_getProtoColBalanceforSafe());
-
     }
 
 
-    // Withdraw all Protocl balance to Strategy
-    function withdrawAll() external {
+    // Withdraw all Protocol balance to Strategy
+    function withdrawAll() public 
+    {
         _withdrawAllSafeBalance();
     }
 
     // Withdraw all protocol assets to safe
-    function withdrawAllToSafe() external {
-        uint256 SafeBalance=_getProtoColBalanceforSafe();
+    function withdrawAllToSafe() public 
+    {
+        uint256 SafeProtocolBalance = _getProtoColBalanceforSafe();
         _withdrawAllSafeBalance();
-        _burn(msg.sender, IERC20(address(this)).balanceOf(msg.sender));
-        IERC20(IVault(safeEnabledProtocols[msg.sender]).token()).transfer(msg.sender,SafeBalance);
+
+        address _protocolAddress = safeEnabledProtocols[msg.sender];
+        (int256 protocolTokenUSD, ,uint8 protocolDecimal) = IAPContract(APContract).getUSDPrice(_protocolAddress);
+
+        address _tokenAddress = IVault(safeEnabledProtocols[msg.sender]).token();
+        IERC20 _token = IERC20(IVault(safeEnabledProtocols[msg.sender]).token());
+
+        (int256 tokenUSD, ,uint8 tokenDecimal) = IAPContract(APContract).getUSDPrice(_tokenAddress);
+
+        uint256 tokensToGive = (SafeProtocolBalance.mul(uint256(protocolTokenUSD)).mul(10 ** uint256(tokenDecimal))).div(uint256(tokenUSD).mul(10 ** uint256(protocolDecimal)));
+
+        _burn(msg.sender, balanceOf(msg.sender));
+        _token.transfer(msg.sender, tokensToGive);
     }
 
     function want() external view returns (address)
@@ -151,43 +173,58 @@ event Expose(address);
     }
 
 
-    function _getProtoColBalanceforSafe() private view returns(uint256)
+    function _getProtoColBalanceforSafe() 
+        private 
+        view 
+        returns(uint256)
     {
-        uint256 safeProtocolTokenUsd=1;
-        uint256 safeShare=IERC20(address(this)).balanceOf(msg.sender);
-        uint256 safeStrategyTokenUSD=1;
 
-        // get balance from chainlink initially assumes as 1 USD
-         return safeShare.mul(safeStrategyTokenUSD).div(safeProtocolTokenUsd);
+        uint256 _shares = balanceOf(msg.sender);
+
+        address _protocolAddress = safeEnabledProtocols[msg.sender];
+
+        uint256 strategyTokenValueInUSD = (_shares.mul(getStrategyNAV())).div(totalSupply());
+
+        (int256 protocolTokenUSD, ,uint8 protocolDecimal) = IAPContract(APContract).getUSDPrice(_protocolAddress);
+
+        uint256 _protocolShares = (strategyTokenValueInUSD.mul(10 ** uint256(protocolDecimal))).div(uint256(protocolTokenUSD));
+
+        return _protocolShares;
 
     }
 
-    function changeProtocol(address _protocol) external{
-        require(protocols[_protocol]==true, "Not an Enabled Protocols");
-        require(safeEnabledProtocols[msg.sender]!=address(0), "Not a registered Safe");
-        this.withdrawAll();
-        address _withdrawalAsset=IVault(safeEnabledProtocols[msg.sender]).token();
-        
-        uint256 _balance=IERC20(_withdrawalAsset).balanceOf(address(this));
-        if(_withdrawalAsset!=IVault(_protocol).token())
+    function changeProtocol(address _protocol) 
+        external
+    {
+        require(protocols[_protocol], "Not an Enabled Protocols");
+        require(safeEnabledProtocols[msg.sender] != address(0), "Not a registered Safe");
+        uint256 oldProtocolBalance = _getProtoColBalanceforSafe();
+
+
+        withdrawAll();
+        address _withdrawalAsset = IVault(safeEnabledProtocols[msg.sender]).token();
+        uint256 _balance = IERC20(_withdrawalAsset).balanceOf(address(this));
+
+        if(_withdrawalAsset != IVault(_protocol).token())
         {
             // Token exchange and depositi logic
 
             (uint256 returnAmount, uint256[] memory distribution) = IExchange(oneInch).getExpectedReturn(_withdrawalAsset, IVault(_protocol).token(), 0, 0, 0);
             IExchange(oneInch).swap(_withdrawalAsset, IVault(_protocol).token(), 0, 0, distribution, 0);
-            uint256 _depositAsset=IERC20(_protocol).balanceOf(address(this));
+            uint256 _depositAsset = IERC20(_protocol).balanceOf(address(this));
             // Deposit balance may need to recalculate, in the case of , temporary lock from monitor. Need to discuss with Team
-            safeEnabledProtocols[msg.sender]=_protocol;
-            this.deposit(_depositAsset);
+            safeEnabledProtocols[msg.sender] = _protocol;
+            deposit(_depositAsset);
         }
-        else{
-            safeEnabledProtocols[msg.sender]=_protocol;
-            this.deposit(_balance);
-            
+        else
+        {
+            safeEnabledProtocols[msg.sender] = _protocol;
+            deposit(_balance);
         }
     }
+
     function setSafeActiveProtocol(address _protocol)
-    public
+        public
     {
         safeEnabledProtocols[msg.sender] = _protocol;
     }

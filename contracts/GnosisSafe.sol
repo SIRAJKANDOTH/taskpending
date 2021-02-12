@@ -241,6 +241,25 @@ contract GnosisSafe
         view 
         returns (uint256) 
     {
+        address _strategy = IAPContract(APContract).getVaultActiveStrategy(address(this));
+        uint256 nav = 0;
+        for (uint256 i = 0; i < assetList.length; i++) 
+        {
+            if(IERC20(assetList[i]).balanceOf(address(this)) > 0)
+            {
+                (int256 tokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(assetList[i]);
+                nav += (IERC20(assetList[i]).balanceOf(address(this)).mul(uint256(tokenUSD))).div(10 ** uint256(decimals));       
+            }
+        }
+        uint256 _strategyBalance = IERC20(_strategy).balanceOf(address(this));
+        uint256 strategyTokenUsd = IStrategy(_strategy).tokenValueInUSD();
+        return nav + (_strategyBalance.mul(strategyTokenUsd)).div(1e18);
+    }
+    function getVaultNAVWithoutStrategyToken() 
+        public 
+        view 
+        returns (uint256) 
+    {
         uint256 nav = 0;
         for (uint256 i = 0; i < assetList.length; i++) 
         {
@@ -337,20 +356,16 @@ contract GnosisSafe
 
                 if((haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD))).div(10 ** uint256(haveDecimals)) > (_amount.mul(uint256(targetTokenUSD))).div(10 ** uint256(targetDecimals)))
                 {
-                    address converter = IAPContract(APContract).getConverter(assetList[i], _targetToken);
-                    if(converter != address(0))
-                    {
                         (uint256 returnAmount, uint256[] memory distribution) = 
-                        IExchange(converter).getExpectedReturn(assetList[i], _targetToken, _amount, 0, 0);
+                        IExchange(oneInch).getExpectedReturn(assetList[i], _targetToken, _amount, 0, 0);
                         uint256 adjustedAmount = _amount + (_amount - returnAmount).mul(3);
 
                         if( (haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD))).div(10 ** uint256(haveDecimals)) > (adjustedAmount.mul(uint256(targetTokenUSD))).div(10 ** uint256(targetDecimals)))
                         {
-                            IExchange(converter).swap(assetList[i], _targetToken, adjustedAmount, _amount, distribution, 0);
+                            IExchange(oneInch).swap(assetList[i], _targetToken, adjustedAmount, _amount, distribution, 0);
                             break;
                         }
                     
-                    }
                 }                
             }
     }
