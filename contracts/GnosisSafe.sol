@@ -251,9 +251,16 @@ contract GnosisSafe
                 nav += (IERC20(assetList[i]).balanceOf(address(this)).mul(uint256(tokenUSD))).div(10 ** uint256(decimals));       
             }
         }
-        uint256 _strategyBalance = IERC20(_strategy).balanceOf(address(this));
-        uint256 strategyTokenUsd = IStrategy(_strategy).tokenValueInUSD();
-        return nav + (_strategyBalance.mul(strategyTokenUsd)).div(1e18);
+        if(_strategy == address(0))
+        {
+            return nav;
+        }
+        else
+        {
+            uint256 _strategyBalance = IERC20(_strategy).balanceOf(address(this));
+            uint256 strategyTokenUsd = IStrategy(_strategy).tokenValueInUSD();
+            return nav + (_strategyBalance.mul(strategyTokenUsd)).div(1e18);
+        }
     }
     function getVaultNAVWithoutStrategyToken() 
         public 

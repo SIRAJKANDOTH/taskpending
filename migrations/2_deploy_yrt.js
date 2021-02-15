@@ -121,16 +121,18 @@ module.exports = async (deployer) => {
     "Smart Deposit",
     "0x2bA49Aaa16E6afD2a993473cfB70Fa8559B523cF",
     [
-      "0x95b58a6bff3d14b7db2f5cb5f0ad413dc2940658",
-      "0x7d66cde53cc0a169cae32712fc48934e610aef14",
+      "0xd27Dc2D8ceF541f94FbA737079F2DFeA39B2EEf8",
+      "0xD8052918CAd9a8B3a564d7Aa4e680a0dc156380e",
+      "0x3662ABD754eE1d8CB6f5F1D4E315932b36e9955B",
     ]
   );
   await apContract.addStrategy(
     "Smart Withdraw",
     "0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB",
     [
-      "0x95b58a6bff3d14b7db2f5cb5f0ad413dc2940658",
-      "0x7d66cde53cc0a169cae32712fc48934e610aef14",
+      "0xd27Dc2D8ceF541f94FbA737079F2DFeA39B2EEf8",
+      "0xD8052918CAd9a8B3a564d7Aa4e680a0dc156380e",
+      "0x3662ABD754eE1d8CB6f5F1D4E315932b36e9955B",
     ]
   );
 };
