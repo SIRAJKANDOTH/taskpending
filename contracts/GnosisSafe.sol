@@ -19,10 +19,6 @@ import "./interfaces/IStrategy.sol";
 import "./utils/HexUtils.sol";
 import "./utils/InstructionOracle.sol";
 
-/// @title Gnosis Safe - A multisignature wallet with support for confirmations using signed messages based on ERC191.
-/// @author Stefan George - <stefan@gnosis.io>
-/// @author Richard Meissner - <richard@gnosis.io>
-/// @author Ricardo Guilherme Schmidt - (Status Research & Development GmbH) - Gas Token Payment
 contract GnosisSafe
     is 
     MasterCopy, 
@@ -119,7 +115,7 @@ contract GnosisSafe
 
     }
 
-    //Have to confirm who is autherized to call these functions
+    //Have to confirm who is authorized to call these functions
     //Function to enable a strategy and enable or disable corresponding protocol
     function setVaultStrategyAndProtocol(
         address _vaultStrategy,
@@ -137,6 +133,11 @@ contract GnosisSafe
         public
     {
         require(msg.sender == owner, "This operation can only be perfomed by Owner");
+        if(getVaultActiveStrategy() == _strategyAddress)
+        {
+            IStrategy(getVaultActiveStrategy()).withdrawAllToSafe();
+            IStrategy(getVaultActiveStrategy()).deRegisterSafe();
+        }
         IAPContract(APContract).disableVaultStrategy(_strategyAddress);
     }
 
@@ -148,6 +149,7 @@ contract GnosisSafe
         require(IAPContract(APContract)._isStrategyEnabled(address(this), _activeVaultStrategy) ,"This strategy is not enabled");
         if(getVaultActiveStrategy() != address(0))
         {
+            IStrategy(getVaultActiveStrategy()).withdrawAllToSafe();
             IStrategy(getVaultActiveStrategy()).deRegisterSafe();
         }
 
@@ -232,7 +234,6 @@ contract GnosisSafe
         view
         returns (uint256)
     {
-        // return depositNAV.div(tokenValueInUSD());
         return (depositNAV.mul(totalSupply())).div( getVaultNAV());
     }
 
@@ -321,7 +322,6 @@ contract GnosisSafe
         view
         returns(uint256)
     {
-        // return amountInUsd.div(tokenValueInUSD());
         return (amountInUsd.mul(totalSupply())).div( getVaultNAV());
     }
 
@@ -334,9 +334,7 @@ contract GnosisSafe
         require(IAPContract(APContract).isWithdrawalAsset(_tokenAddress),"Not an approved Withdrawal asset");
         require(balanceOf(msg.sender) >= _shares,"You don't have enough shares");
         (int256 tokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(_tokenAddress);
-        // uint256 safeTokenVaulueInUSD = tokenValueInUSD().mul(_shares);
         uint256 safeTokenVaulueInUSD = (_shares.mul(getVaultNAV())).div(totalSupply());
-        // uint256 tokenCount = safeTokenVaulueInUSD.div(uint256(tokenUSD).div(10 ** uint256(decimals)));
         uint256 tokenCount = (safeTokenVaulueInUSD.mul(10 ** uint256(decimals))).div(uint256(tokenUSD));
         
         if(tokenCount <= IERC20(_tokenAddress).balanceOf(address(this)))
@@ -390,8 +388,6 @@ contract GnosisSafe
             {   
                 IERC20 token = IERC20(assetList[i]);
                 if(token.balanceOf(address(this)) > 0){
-                    // uint256 tokensToGive = 1e18;
-                    // uint256 tokensToGive = _shares.mul(token.balanceOf(address(this)).div(totalSupply()));
                     uint256 tokensToGive = (_shares.mul(token.balanceOf(address(this)))).div(totalSupply());
                     token.transfer(msg.sender, tokensToGive);
                 }
