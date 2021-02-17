@@ -138,7 +138,6 @@ contract GnosisSafe
     {
         require(msg.sender == owner, "This operation can only be perfomed by Owner");
         IAPContract(APContract).disableVaultStrategy(_strategyAddress);
-
     }
 
     //Function to set the vaults active strategy
@@ -146,8 +145,13 @@ contract GnosisSafe
         public
     {
         require(msg.sender == owner, "This operation can only be perfomed by Owner");
-        IAPContract(APContract).setVaultActiveStrategy(_activeVaultStrategy);
+        require(IAPContract(APContract)._isStrategyEnabled(address(this), _activeVaultStrategy) ,"This strategy is not enabled");
+        if(getVaultActiveStrategy() != address(0))
+        {
+            IStrategy(getVaultActiveStrategy()).deRegisterSafe();
+        }
 
+        IAPContract(APContract).setVaultActiveStrategy(_activeVaultStrategy);        
     }
 
     function getVaultActiveStrategy()
@@ -162,9 +166,19 @@ contract GnosisSafe
         public
     {
         address _strategy = IAPContract(APContract).getVaultActiveStrategy(address(this));
-        IStrategy(_strategy).setSafeActiveProtocol(_protocol);
+        require( _strategy != address(0), "No strategy is active at the moment");
+        IStrategy(_strategy).setActiveProtocol(_protocol);
     }
 
+    function getStrategyActiveProtocol()
+        public
+        view
+        returns(address)
+    {
+        address _strategy = IAPContract(APContract).getVaultActiveStrategy(address(this));
+        require( _strategy != address(0), "No strategy is active at the moment");
+        return IStrategy(_strategy).getActiveProtocol();
+    }
 
 
     //Function to get APS manager of the vault

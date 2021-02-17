@@ -48,6 +48,21 @@ contract YearnItAll
         safeActiveProtocol[msg.sender] = _protocol;
     }
 
+    function getActiveProtocol()
+        public
+        view 
+        returns(address)
+    {
+        return safeActiveProtocol[msg.sender];
+    }
+
+    function deRegisterSafe()
+        public
+    {
+        require(safeActiveProtocol[msg.sender] != address(0), "Not a registered Safe");
+        safeActiveProtocol[msg.sender] = address(0);
+    }
+
     function deposit(uint256 _amount) 
         public 
     {

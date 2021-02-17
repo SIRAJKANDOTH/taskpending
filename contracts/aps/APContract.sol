@@ -321,8 +321,8 @@ contract APContract
     {
         require(vaults[msg.sender].created, "Vault not present");
         require(strategies[_strategyAddress].created, "Strategy not present");
+        require(vaults[msg.sender].vaultEnabledStrategy[_strategyAddress], "Strategy was not enabled");
         vaults[msg.sender].vaultEnabledStrategy[_strategyAddress] = false;
-
     }
 
     function _isStrategyProtocolEnabled(
@@ -340,6 +340,27 @@ contract APContract
             protocols[_protocolAddress].created &&
             vaults[_vaultAddress].vaultEnabledStrategy[_strategyAddress] &&
             vaultStrategyEnabledProtocols[_vaultAddress][_strategyAddress][_protocolAddress]
+        )
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    function _isStrategyEnabled(
+        address _vaultAddress, 
+        address _strategyAddress
+    )
+    public
+    view
+    returns(bool)
+    {
+        if(
+            vaults[_vaultAddress].created &&
+            strategies[_strategyAddress].created &&
+            vaults[_vaultAddress].vaultEnabledStrategy[_strategyAddress]
         )
         {
             return true;

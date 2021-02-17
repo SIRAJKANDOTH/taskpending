@@ -44,4 +44,6 @@ interface IAPContract{
     function getVaultActiveStrategy(address)external view returns(address);
 
     function _isStrategyProtocolEnabled(address, address, address) external view returns(bool);
+
+    function _isStrategyEnabled( address , address )external view returns(bool);
 }

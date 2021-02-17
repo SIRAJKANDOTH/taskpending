@@ -20,7 +20,15 @@ interface IStrategy {
     function balanceOf() external view returns (uint256);
 
     function changeProtocol(address) external;
+
     function withdrawAllToSafe() external;
-    function setSafeActiveProtocol(address ) external;
-     function tokenValueInUSD() external view returns(uint256);
+
+    function setActiveProtocol(address) external;
+
+    function getActiveProtocol() external view returns(address);
+
+    function tokenValueInUSD() external view returns(uint256);
+
+    function deRegisterSafe() external;
+
 }
