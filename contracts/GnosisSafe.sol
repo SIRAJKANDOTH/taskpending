@@ -135,7 +135,10 @@ contract GnosisSafe
         require(msg.sender == owner, "This operation can only be perfomed by Owner");
         if(getVaultActiveStrategy() == _strategyAddress)
         {
-            IStrategy(getVaultActiveStrategy()).withdrawAllToSafe();
+            if(IERC20(_strategyAddress).balanceOf(address(this)) > 0)
+            {
+                IStrategy(getVaultActiveStrategy()).withdrawAllToSafe();
+            }
             IStrategy(getVaultActiveStrategy()).deRegisterSafe();
         }
         IAPContract(APContract).disableVaultStrategy(_strategyAddress);
@@ -149,7 +152,10 @@ contract GnosisSafe
         require(IAPContract(APContract)._isStrategyEnabled(address(this), _activeVaultStrategy) ,"This strategy is not enabled");
         if(getVaultActiveStrategy() != address(0))
         {
-            IStrategy(getVaultActiveStrategy()).withdrawAllToSafe();
+            if(IERC20(getVaultActiveStrategy()).balanceOf(address(this)) > 0)
+            {
+                IStrategy(getVaultActiveStrategy()).withdrawAllToSafe();
+            }
             IStrategy(getVaultActiveStrategy()).deRegisterSafe();
         }
 
