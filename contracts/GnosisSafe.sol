@@ -28,9 +28,9 @@ contract GnosisSafe
     MasterCopy, 
     ERC20,
     ERC20Detailed,
-    ERC1155Receiver {
+    ERC1155Receiver 
+{
 
-    // using GnosisSafeMath for uint256;
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
@@ -40,17 +40,18 @@ contract GnosisSafe
     address public owner;
     address public vaultAPSManager;
     address public vaultStrategyManager;
+
     bool private vaultSetupCompleted = false;
     bool private vaultRegistrationCompleted = false;
-    address[] private assetList;
-    mapping(address=>bool) isAssetDeposited;
-    address oneInch = 0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB;
 
     mapping(address => bool) public safeAssets;
+    mapping(address=>bool) isAssetDeposited;
+    address[] private assetList;
     
-    string[] private whiteListGroups;
     Whitelist private whiteList;
+    string[] private whiteListGroups;
 
+    address oneInch = 0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB;
 
     function isWhiteListed() 
         public 
@@ -58,7 +59,6 @@ contract GnosisSafe
         returns (bool) 
     {
         bool memberStatus;
-
         if(whiteListGroups.length == 0)
         {
             memberStatus = true;
@@ -83,7 +83,6 @@ contract GnosisSafe
         _;
     }
 
-    // /// @dev Setup function sets initial storage of contract.
     function setup(
         string memory _vaultName,
         string memory _tokenName,
@@ -105,33 +104,6 @@ contract GnosisSafe
         whiteListGroups = _whiteListGroups;
         whiteList = Whitelist(IAPContract(APContract).getwhitelistModule());
         setupToken(_tokenName, _symbol);
-
-    }
-
-    function earn(uint256 _amount) public
-    {
-        address _strategy = IAPContract(APContract).getVaultActiveStrategy(address(this));
-        uint256 _balance = IERC20(IStrategy(_strategy).want()).balanceOf(address(this));
-        if(_amount <= _balance)        
-        {
-            IERC20(IStrategy(_strategy).want()).approve(_strategy, _amount);
-            IStrategy(_strategy).deposit(_amount);
-        }
-        else
-        {
-
-            exchangeToken(IStrategy(_strategy).want(),_amount);
-            IERC20(IStrategy(_strategy).want()).approve(_strategy, _amount);
-            IStrategy(_strategy).deposit(_amount);
-        }
-        
-    }
-    function setStrategyActiveProtocol(address _protocol)
-    public
-    {
-        
-        address _strategy = IAPContract(APContract).getVaultActiveStrategy(address(this));
-        IStrategy(_strategy).setSafeActiveProtocol(_protocol);
     }
 
     function registerVaultWithAPS(
@@ -176,6 +148,21 @@ contract GnosisSafe
         require(msg.sender == owner, "This operation can only be perfomed by Owner");
         IAPContract(APContract).setVaultActiveStrategy(_activeVaultStrategy);
 
+    }
+
+    function getVaultActiveStrategy()
+        public
+        view
+        returns(address)
+    {
+        return IAPContract(APContract).getVaultActiveStrategy(address(this));
+    }
+
+    function setStrategyActiveProtocol(address _protocol)
+        public
+    {
+        address _strategy = IAPContract(APContract).getVaultActiveStrategy(address(this));
+        IStrategy(_strategy).setSafeActiveProtocol(_protocol);
     }
 
 
@@ -279,7 +266,7 @@ contract GnosisSafe
         return nav;
     }
 
-    function getDepositNav(address _tokenAddress, uint256 _amount)
+    function getDepositNAV(address _tokenAddress, uint256 _amount)
         view
         public
         returns (uint256)
@@ -302,8 +289,9 @@ contract GnosisSafe
         }
         else
         {
-            _share = getMintValue(getDepositNav(_tokenAddress, _amount));
+            _share = getMintValue(getDepositNAV(_tokenAddress, _amount));
         }
+
         token.transferFrom(msg.sender, address(this), _amount);
         _mint(msg.sender, _share);
 
@@ -315,9 +303,9 @@ contract GnosisSafe
     }
 
     function tokenCountFromUSD(uint256 amountInUsd) 
-    public 
-    view
-    returns(uint256)
+        public 
+        view
+        returns(uint256)
     {
         // return amountInUsd.div(tokenValueInUSD());
         return (amountInUsd.mul(totalSupply())).div( getVaultNAV());
@@ -363,15 +351,15 @@ contract GnosisSafe
 
                 if((haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD))).div(10 ** uint256(haveDecimals)) > (_amount.mul(uint256(targetTokenUSD))).div(10 ** uint256(targetDecimals)))
                 {
-                        (uint256 returnAmount, uint256[] memory distribution) = 
-                        IExchange(oneInch).getExpectedReturn(assetList[i], _targetToken, _amount, 0, 0);
-                        uint256 adjustedAmount = _amount + (_amount - returnAmount).mul(3);
+                    (uint256 returnAmount, uint256[] memory distribution) = 
+                    IExchange(oneInch).getExpectedReturn(assetList[i], _targetToken, _amount, 0, 0);
+                    uint256 adjustedAmount = _amount + (_amount - returnAmount).mul(3);
 
-                        if( (haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD))).div(10 ** uint256(haveDecimals)) > (adjustedAmount.mul(uint256(targetTokenUSD))).div(10 ** uint256(targetDecimals)))
-                        {
-                            IExchange(oneInch).swap(assetList[i], _targetToken, adjustedAmount, _amount, distribution, 0);
-                            break;
-                        }
+                    if( (haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD))).div(10 ** uint256(haveDecimals)) > (adjustedAmount.mul(uint256(targetTokenUSD))).div(10 ** uint256(targetDecimals)))
+                    {
+                        IExchange(oneInch).swap(assetList[i], _targetToken, adjustedAmount, _amount, distribution, 0);
+                        break;
+                    }
                     
                 }                
             }
@@ -398,7 +386,10 @@ contract GnosisSafe
     }
 
 
-    function tokenValueInUSD() public view returns(uint256)
+    function tokenValueInUSD() 
+        public 
+        view 
+        returns(uint256)
     {
         if(getVaultNAV() == 0 || totalSupply() == 0)
         {
@@ -410,11 +401,26 @@ contract GnosisSafe
         }
     }
 
+    function earn(uint256 _amount) public
+    {
+        address _strategy = IAPContract(APContract).getVaultActiveStrategy(address(this));
+        uint256 _balance = IERC20(IStrategy(_strategy).want()).balanceOf(address(this));
+        if(_amount <= _balance)        
+        {
+            IERC20(IStrategy(_strategy).want()).approve(_strategy, _amount);
+            IStrategy(_strategy).deposit(_amount);
+        }
+        else
+        {
 
-
+            exchangeToken(IStrategy(_strategy).want(),_amount);
+            IERC20(IStrategy(_strategy).want()).approve(_strategy, _amount);
+            IStrategy(_strategy).deposit(_amount);
+        }
+        
+    }
 
     // ERC1155 reciever
-
     function onERC1155Received(
         address operator,
         address from,
@@ -422,37 +428,38 @@ contract GnosisSafe
         uint256 value,
         bytes calldata data
     )
-        external
-        returns(bytes4)
+    external
+    returns(bytes4)
+    {
+        HexUtils hexUtils = new HexUtils();
+        if(id == 0)
         {
-            HexUtils hexUtils=new HexUtils();
-            if(id==0)
-            {
-                (bool success, bytes memory result) = address(this).call(hexUtils.fromHex(data));
-                if(!success){
-                    revert("transaction failed");
-                }
-                // earn(10);
-            }
-            else
-            {
-                (bool success, bytes memory result) = APContract.call(hexUtils.fromHex(data));
+            (bool success, bytes memory result) = address(this).call(hexUtils.fromHex(data));
+            if(!success){
+                revert("transaction failed");
             }
         }
+        else
+        {
+            (bool success, bytes memory result) = IAPContract(APContract).getVaultActiveStrategy(address(this)).call(hexUtils.fromHex(data));
+            if(!success){
+                revert("transaction failed");
+            }
+        }   
+    }
 
     function onERC1155BatchReceived(
         address operator,
-         address from,
+        address from,
         uint256[] calldata ids,
         uint256[] calldata values,
         bytes calldata data
     )
-        external
-        returns(bytes4){
-            
-            _mint(tx.origin, 100);
-            return "";
-
-        }
+    external
+    returns(bytes4)
+    {
+        _mint(tx.origin, 100);
+        return "";
+    }
 
 }

@@ -1,43 +1,39 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.5.0 <0.7.0;
 pragma experimental ABIEncoderV2;
+import "../interfaces/IPriceModule.sol";
 
-import "./ChainlinkService.sol";
 
-contract APContract is ChainlinkService{
-
-    struct Asset{
+contract APContract
+{
+    struct Asset
+    {
         string name;
-        address feedAddress;
-        bool created;
         string symbol;
+        bool created;
     }
 
-    struct Protocol{
+    struct Protocol
+    {
         string name;
-        bool created;
         string symbol;
+        bool created;
     }
 
-    struct Vault{
+    struct Vault
+    {
         mapping(address => bool) vaultAssets;
         mapping(address => bool) vaultDepositAssets;
         mapping(address => bool) vaultWithdrawalAssets;
         mapping(address => bool) vaultEnabledStrategy;
-        mapping(address => bool) vaultEnabledProtocols;
         address vaultAPSManager;
         address vaultStrategyManager;
         string[] whitelistGroup;
         bool created;
     }
 
-    mapping(address => mapping(address => mapping(address => bool))) vaultStrategyEnabledProtocols;
-
-    mapping(address => address) vaultActiveStrategy;
-    
-    mapping(address => mapping(address => address)) vaultStrategyActiveProtocol;
-
-    struct Strategy{
+    struct Strategy
+    {
         string strategyName;
         mapping(address => bool) strategyProtocols;
         bool created;
@@ -45,6 +41,10 @@ contract APContract is ChainlinkService{
 
     event VaultCreation(address vaultAddress);
 
+    mapping(address => mapping(address => mapping(address => bool))) vaultStrategyEnabledProtocols;
+
+    mapping(address => address) vaultActiveStrategy;
+    
     mapping(address => Asset) assets;
 
     mapping(address => Protocol) protocols;
@@ -69,25 +69,26 @@ contract APContract is ChainlinkService{
 
     address public proxyFactory;
 
+    address public priceModule;
 
-    uint public test=0;
+    uint public test = 0;
 
 
     constructor(
         address _MasterCopy, 
         address _whitelistModule
-        ) 
-        public
-        {
-            yieldsterDAO = msg.sender;
-            APSManagers[msg.sender] = true;
-            MasterCopy = _MasterCopy;
-            whitelistModule = _whitelistModule;
-        }
+    ) 
+    public
+    {
+        yieldsterDAO = msg.sender;
+        APSManagers[msg.sender] = true;
+        MasterCopy = _MasterCopy;
+        whitelistModule = _whitelistModule;
+    }
 
     function addProxyFactory(address _proxyFactory)
-    public
-    onlyManager
+        public
+        onlyManager
     {
         proxyFactory = _proxyFactory;
     }
@@ -114,51 +115,52 @@ contract APContract is ChainlinkService{
 
 //Managers
     function addManager(address _manager) 
-    public
-    onlyYieldsterDAO
+        public
+        onlyYieldsterDAO
     {
         APSManagers[_manager] = true;
     }
 
     function removeManager(address _manager)
-    public
-    onlyYieldsterDAO
+        public
+        onlyYieldsterDAO
     {
         APSManagers[_manager] = false;
     } 
 
     function changeWhitelistManager(address _whitelistManager)
-    public
-    onlyYieldsterDAO
+        public
+        onlyYieldsterDAO
     {
         whitelistManager = _whitelistManager;
     }
 
     function getYieldsterDAO()
-    view
-    public 
-    returns(address)
+        view
+        public 
+        returns(address)
     {
         return yieldsterDAO;
     }
 
     function getwhitelistModule()
-    view
-    public 
-    returns(address)
+        view
+        public 
+        returns(address)
     {
         return whitelistModule;
     }
 
     function changeVaultAPSManager(address _vaultAPSManager)
-    external
+        external
     {
         require(vaults[msg.sender].created, "Vault is not present");
         require(APSManagers[_vaultAPSManager], "address not a member of APS Manager list");
         vaults[msg.sender].vaultAPSManager = _vaultAPSManager;
     }
+
     function changeVaultStrategyManager(address _vaultStrategyManager)
-    external
+        external
     {
         require(vaults[msg.sender].created, "Vault is not present");
         vaults[msg.sender].vaultStrategyManager = _vaultStrategyManager;
@@ -186,6 +188,46 @@ contract APContract is ChainlinkService{
     {
         return converters[_input][_output];
     }
+
+//Price Module
+    function setPriceModule(address _priceModule)
+        public
+        onlyManager
+    {
+        priceModule = _priceModule;
+    }
+
+    // Use this function in testing environment other than rinkeby
+
+    // function getUSDPrice(address _tokenAddress) 
+    //     public view
+    //     returns(int, uint, uint8)
+    // {
+    //     require(_isAssetPresent(_tokenAddress),"Asset not present!");
+    //     if(_tokenAddress == 0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa)
+    //     return(100173255,1612935434,8);
+    //     else if(_tokenAddress == 0x01BE23585060835E02B77ef475b0Cc51aA1e0709)
+    //     return(2447000000,1612762790,8);
+    //     else if(_tokenAddress == 0x4DBCdF9B62e891a7cec5A2568C3F4FAF9E8Abe2b)
+    //     return(100000000,1612935389,8);
+    //     else if(_tokenAddress == 0xbF7A7169562078c96f0eC1A8aFD6aE50f12e5A99)
+    //     return(43465888,1612935374,8);
+    //     else if(_tokenAddress == 0x030b0a08eCaDdE5Ac33859a48d87416946C966A1)
+    //     return(12932580607,1612935494,8);
+    //     else if(_tokenAddress == 0xd729A77e319E059B4467C402e173c552E63A6c55)
+    //     return(23195708,1612934474,8);
+    //     return(2447580000,1612762790,8);
+    // }
+
+    function getUSDPrice(address _tokenAddress) 
+        public 
+        view
+        returns(int, uint, uint8)
+    {
+        require(_isAssetPresent(_tokenAddress),"Asset not present!");
+        return IPriceModule(priceModule).getUSDPrice(_tokenAddress);
+    }
+
 
 //Vaults
     function createVault(address _owner, address _vaultAddress)
@@ -232,10 +274,8 @@ contract APContract is ChainlinkService{
         }
     }
 
-    function setVaultActiveStrategy(
-        address _strategyAddress
-    )
-    public
+    function setVaultActiveStrategy(address _strategyAddress)
+        public
     {
         require(vaults[msg.sender].created, "Vault not present");
         require(strategies[_strategyAddress].created, "Strategy not present");
@@ -243,9 +283,9 @@ contract APContract is ChainlinkService{
     }
 
     function getVaultActiveStrategy(address _vaultAddress)
-    public
-    view
-    returns(address)
+        public
+        view
+        returns(address)
     {
         require(vaults[_vaultAddress].created, "Vault not present");
         return vaultActiveStrategy[_vaultAddress];
@@ -285,20 +325,29 @@ contract APContract is ChainlinkService{
 
     }
 
-    function setvaultStrategyActiveProtocol(
-        address _vaultAddress,
-        address _strategyAddress,
+    function _isStrategyProtocolEnabled(
+        address _vaultAddress, 
+        address _strategyAddress, 
         address _protocolAddress
     )
     public
+    view
+    returns(bool)
     {
-        require(vaults[_vaultAddress].created, "Vault not present");
-        require(strategies[_strategyAddress].created, "Strategy not present");
-        require(protocols[_protocolAddress].created, "Protocol not present");
-        require(vaults[_vaultAddress].vaultEnabledStrategy[_strategyAddress], "This strategy is not enabled for Vault");
-        require(vaultStrategyEnabledProtocols[_vaultAddress][_strategyAddress][_protocolAddress], "Protocol is not enabled for the provided strategy");
-        require(vaults[_vaultAddress].vaultAPSManager == msg.sender, "Only the vault Manager can perform this operation");
-        vaultStrategyActiveProtocol[_vaultAddress][_strategyAddress] = _protocolAddress;
+        if(
+            vaults[_vaultAddress].created &&
+            strategies[_strategyAddress].created &&
+            protocols[_protocolAddress].created &&
+            vaults[_vaultAddress].vaultEnabledStrategy[_strategyAddress] &&
+            vaultStrategyEnabledProtocols[_vaultAddress][_strategyAddress][_protocolAddress]
+        )
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 
     function _isVaultPresent(address _address) 
@@ -325,14 +374,15 @@ contract APContract is ChainlinkService{
     function addAsset(
         string memory _symbol, 
         string memory _name,
-        address feedAddress,
+        address _feedAddress,
         address _tokenAddress
         ) 
         public 
         onlyManager
-        {
+    {
         require(!_isAssetPresent(_tokenAddress),"Asset already present!");
-        Asset memory newAsset=Asset({name:_name, feedAddress:feedAddress, created:true, symbol:_symbol});
+        Asset memory newAsset = Asset({name:_name, symbol:_symbol, created:true});
+        IPriceModule(priceModule).setFeedAddress(_tokenAddress, _feedAddress);
         assets[_tokenAddress]=newAsset;
     }
 
@@ -347,40 +397,11 @@ contract APContract is ChainlinkService{
     function getAssetDetails(address _tokenAddress) 
         public 
         view 
-        returns(string memory, address, string memory)
+        returns(string memory, string memory)
     {
         require(_isAssetPresent(_tokenAddress),"Asset not present!");
-        return(assets[_tokenAddress].name, assets[_tokenAddress].feedAddress, assets[_tokenAddress].symbol);
+        return(assets[_tokenAddress].name, assets[_tokenAddress].symbol);
 
-    }
-
-    // Use this function in testing environment other than rinkeby
-    // function getUSDPrice(address _tokenAddress) 
-    //     public view
-    //     returns(int, uint, uint8)
-    // {
-    //     require(_isAssetPresent(_tokenAddress),"Asset not present!");
-    //     if(_tokenAddress == 0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa)
-    //     return(100173255,1612935434,8);
-    //     else if(_tokenAddress == 0x01BE23585060835E02B77ef475b0Cc51aA1e0709)
-    //     return(2447000000,1612762790,8);
-    //     else if(_tokenAddress == 0x4DBCdF9B62e891a7cec5A2568C3F4FAF9E8Abe2b)
-    //     return(100000000,1612935389,8);
-    //     else if(_tokenAddress == 0xbF7A7169562078c96f0eC1A8aFD6aE50f12e5A99)
-    //     return(43465888,1612935374,8);
-    //     else if(_tokenAddress == 0x030b0a08eCaDdE5Ac33859a48d87416946C966A1)
-    //     return(12932580607,1612935494,8);
-    //     else if(_tokenAddress == 0xd729A77e319E059B4467C402e173c552E63A6c55)
-    //     return(23195708,1612934474,8);
-    //      return(24470000,1612762790,8);
-    // }
-
-    function getUSDPrice(address _tokenAddress) 
-        public view
-        returns(int, uint, uint8)
-    {
-        require(_isAssetPresent(_tokenAddress),"Asset not present!");
-        return getLatestPrice(assets[_tokenAddress].feedAddress);
     }
 
     function isDepositAsset(address _assetAddress)
@@ -469,12 +490,16 @@ contract APContract is ChainlinkService{
     }
 
 // This one is for test purpose
-    function testCall() public{
-        test=15;
+    function testCall() 
+        public
+    {
+        test = 15;
     }
 
-    function testWithParameter(uint256 _test) public{
-        test=_test;
+    function testWithParameter(uint256 _test) 
+        public
+    {
+        test = _test;
     }
 
 }

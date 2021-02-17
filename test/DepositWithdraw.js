@@ -2,6 +2,7 @@ const utils = require("./utils/general");
 const GnosisSafe = artifacts.require("./GnosisSafe.sol");
 const APContract = artifacts.require("./aps/APContract.sol");
 const Whitelist = artifacts.require("./whitelist/Whitelist.sol");
+const PriceModule = artifacts.require("./price/PriceModule.sol");
 const ProxyFactory = artifacts.require("./GnosisSafeProxyFactory.sol");
 const YRToken = artifacts.require("./yrToken.sol");
 const AishToken = artifacts.require("./aishToken.sol");
@@ -17,6 +18,7 @@ contract(" Deposit", function (accounts) {
 	let gnosisSafeMasterCopy;
 	let apContract;
 	let whitelist;
+	let priceModule;
 	let proxyFactory;
 	let yrtToken;
 	let aishToken;
@@ -31,6 +33,10 @@ contract(" Deposit", function (accounts) {
 			gnosisSafeMasterCopy.address,
 			whitelist.address
 		);
+
+		priceModule = await PriceModule.new(apContract.address);
+
+		await apContract.setPriceModule(priceModule.address);
 
 		proxyFactory = await ProxyFactory.new(
 			gnosisSafeMasterCopy.address,
@@ -273,7 +279,7 @@ contract(" Deposit", function (accounts) {
 			web3.utils.fromWei(safeNAV.toString(), "ether")
 		);
 		let safeTokenValue = await newGnosisSafe.tokenValueInUSD();
-		console.log("token value usd ", safeTokenValue.toString());
+		console.log("token value usd ", web3.utils.fromWei(safeTokenValue.toString(),"ether"));
 
 		let totalSupply = await newGnosisSafe.totalSupply();
 		console.log(
@@ -281,7 +287,7 @@ contract(" Deposit", function (accounts) {
 			web3.utils.fromWei(totalSupply.toString(), "ether")
 		);
 
-		let depositNAV = await newGnosisSafe.getDepositNav(
+		let depositNAV = await newGnosisSafe.getDepositNAV(
 			yrtToken.address,
 			token("1")
 		);
@@ -365,7 +371,7 @@ contract(" Deposit", function (accounts) {
 			web3.utils.fromWei(safeNAV.toString(), "ether")
 		);
 		safeTokenValue = await newGnosisSafe.tokenValueInUSD();
-		console.log("token value usd ", safeTokenValue.toString());
+		console.log("token value usd ", web3.utils.fromWei(safeTokenValue.toString(),"ether"));
 
 		totalSupply = await newGnosisSafe.totalSupply();
 		console.log(
@@ -373,7 +379,7 @@ contract(" Deposit", function (accounts) {
 			web3.utils.fromWei(totalSupply.toString(), "ether")
 		);
 
-		depositNAV = await newGnosisSafe.getDepositNav(
+		depositNAV = await newGnosisSafe.getDepositNAV(
 			yrtToken.address,
 			token("1")
 		);
