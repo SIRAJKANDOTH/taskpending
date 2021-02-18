@@ -144,6 +144,8 @@ contract GnosisSafe
         IAPContract(APContract).disableVaultStrategy(_strategyAddress);
     }
 
+    
+
     //Function to set the vaults active strategy
     function setVaultActiveStrategy(address _activeVaultStrategy)
         public
@@ -160,6 +162,20 @@ contract GnosisSafe
         }
 
         IAPContract(APContract).setVaultActiveStrategy(_activeVaultStrategy);        
+    }
+
+    function deactivateVaultStrategy(address _strategyAddress)
+        public
+    {
+        require(msg.sender == owner, "This operation can only be perfomed by Owner");
+        require(IAPContract(APContract)._isStrategyEnabled(address(this), _strategyAddress) ,"This strategy is not enabled");
+        require(getVaultActiveStrategy() == _strategyAddress, "This strategy is not active right now");
+        if(IERC20(_strategyAddress).balanceOf(address(this)) > 0)
+        {
+            IStrategy(getVaultActiveStrategy()).withdrawAllToSafe();
+        }
+        IStrategy(getVaultActiveStrategy()).deRegisterSafe();
+        IAPContract(APContract).deactivateVaultStrategy(_strategyAddress);        
     }
 
     function getVaultActiveStrategy()
@@ -263,13 +279,15 @@ contract GnosisSafe
         {
             return nav;
         }
-        else
+        else if(IERC20(_strategy).balanceOf(address(this)) > 0)
         {
             uint256 _strategyBalance = IERC20(_strategy).balanceOf(address(this));
             uint256 strategyTokenUsd = IStrategy(_strategy).tokenValueInUSD();
             return nav + (_strategyBalance.mul(strategyTokenUsd)).div(1e18);
         }
+        return nav;
     }
+    
     function getVaultNAVWithoutStrategyToken() 
         public 
         view 

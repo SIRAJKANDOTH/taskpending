@@ -31,6 +31,9 @@ interface IAPContract{
 
     function setVaultActiveStrategy(address) external;
 
+    function deactivateVaultStrategy(address ) external;
+        
+
     function disableVaultStrategy(address) external;
 
     function getwhitelistModule() view external returns(address);

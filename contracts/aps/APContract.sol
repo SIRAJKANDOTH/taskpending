@@ -260,6 +260,14 @@ contract APContract
         vaultActiveStrategy[msg.sender] = _strategyAddress;
     }
 
+    function deactivateVaultStrategy(address _strategyAddress)
+        public
+    {
+        require(vaults[msg.sender].created, "Vault not present");
+        require(vaultActiveStrategy[msg.sender] == _strategyAddress, "Provided strategy is not active");
+        vaultActiveStrategy[msg.sender] = address(0);
+    }
+
     function getVaultActiveStrategy(address _vaultAddress)
         public
         view
