@@ -357,6 +357,16 @@ contract APContract
         }
     }
 
+    function _isVaultAsset(address cleanUpAsset)
+        public
+        view
+        returns(bool)
+    {
+        require(vaults[msg.sender].created, "Vault is not present");
+        return ! vaults[msg.sender].vaultAssets[cleanUpAsset];
+
+    }
+
     function _isVaultPresent(address _address) 
         private 
         view 

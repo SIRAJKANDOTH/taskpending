@@ -27,6 +27,14 @@ contract YearnItAll
     address[] public protocolList;
     mapping(address => bool) private protocols;
     mapping(address => address) private safeActiveProtocol;
+    mapping(address => bool) isRegistered;
+
+    modifier onlyRegisteredSafe
+    {
+        require( isRegistered[msg.sender], "Not a registered Safe");
+        _;
+    }
+
 
     constructor(address _APContract, address[] memory _protocols) 
     public 
@@ -41,6 +49,7 @@ contract YearnItAll
     }
 
     function setActiveProtocol(address _protocol)
+        onlyRegisteredSafe
         public
     {
         require(protocols[_protocol], "This protocol is not present in the strategy");
@@ -56,14 +65,24 @@ contract YearnItAll
         return safeActiveProtocol[msg.sender];
     }
 
-    function deRegisterSafe()
+    function registerSafe()
         public
     {
-        require(safeActiveProtocol[msg.sender] != address(0), "Not a registered Safe");
-        safeActiveProtocol[msg.sender] = address(0);
+        isRegistered[msg.sender] = true;
     }
 
+    function deRegisterSafe()
+        onlyRegisteredSafe
+        public
+    {
+        safeActiveProtocol[msg.sender] = address(0);
+        isRegistered[msg.sender] = false;
+    }
+
+
+
     function deposit(uint256 _amount) 
+        onlyRegisteredSafe
         public 
     {
         uint256 _shares;
@@ -134,7 +153,9 @@ contract YearnItAll
 
 
 
-    function withdraw(uint256 _shares) external
+    function withdraw(uint256 _shares) 
+        onlyRegisteredSafe
+        external
     {
         require(balanceOf(msg.sender) >= _shares,"You don't have enough shares");
 
@@ -171,7 +192,9 @@ contract YearnItAll
     }
 
     // Withdraw all protocol assets to safe
-    function withdrawAllToSafe() public 
+    function withdrawAllToSafe() 
+        public 
+        onlyRegisteredSafe
     {
         uint256 SafeProtocolBalance = _getProtocolBalanceForSafe();
         _withdrawAllSafeBalance();
@@ -196,12 +219,12 @@ contract YearnItAll
     }
 
 
-    function _getProtocolBalanceForSafe() 
+    function _getProtocolBalanceForSafe()
+        onlyRegisteredSafe 
         private 
         view 
         returns(uint256)
     {
-
         uint256 _shares = balanceOf(msg.sender);
 
         address _protocolAddress = safeActiveProtocol[msg.sender];
@@ -217,10 +240,10 @@ contract YearnItAll
     }
 
     function changeProtocol(address _protocol) 
+        onlyRegisteredSafe
         external
     {
         require(protocols[_protocol], "Not an Enabled Protocols");
-        require(safeActiveProtocol[msg.sender] != address(0), "Not a registered Safe");
         require(IAPContract(APContract)._isStrategyProtocolEnabled(msg.sender, address(this), _protocol), "This protocol is not enabled for this safe");
 
         uint256 oldProtocolBalance = _getProtocolBalanceForSafe();

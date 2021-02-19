@@ -29,6 +29,8 @@ interface IStrategy {
 
     function tokenValueInUSD() external view returns(uint256);
 
+    function registerSafe() external;
+
     function deRegisterSafe() external;
 
 }

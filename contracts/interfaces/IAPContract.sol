@@ -33,6 +33,7 @@ interface IAPContract{
 
     function deactivateVaultStrategy(address ) external;
         
+    function _isVaultAsset(address) external view returns(bool);
 
     function disableVaultStrategy(address) external;
 

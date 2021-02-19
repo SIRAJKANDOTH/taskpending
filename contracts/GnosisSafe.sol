@@ -48,6 +48,7 @@ contract GnosisSafe
     string[] private whiteListGroups;
 
     address oneInch = 0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB;
+    address yieldsterTreasury = 0x5091aF48BEB623b3DA0A53F726db63E13Ff91df9;
 
     function isWhiteListed() 
         public 
@@ -140,6 +141,7 @@ contract GnosisSafe
                 IStrategy(getVaultActiveStrategy()).withdrawAllToSafe();
             }
             IStrategy(getVaultActiveStrategy()).deRegisterSafe();
+            IAPContract(APContract).deactivateVaultStrategy(_strategyAddress);
         }
         IAPContract(APContract).disableVaultStrategy(_strategyAddress);
     }
@@ -161,7 +163,8 @@ contract GnosisSafe
             IStrategy(getVaultActiveStrategy()).deRegisterSafe();
         }
 
-        IAPContract(APContract).setVaultActiveStrategy(_activeVaultStrategy);        
+        IAPContract(APContract).setVaultActiveStrategy(_activeVaultStrategy);
+        IStrategy(_activeVaultStrategy).registerSafe();        
     }
 
     function deactivateVaultStrategy(address _strategyAddress)
@@ -287,7 +290,7 @@ contract GnosisSafe
         }
         return nav;
     }
-    
+
     function getVaultNAVWithoutStrategyToken() 
         public 
         view 
@@ -446,13 +449,30 @@ contract GnosisSafe
         }
         else
         {
-
             exchangeToken(IStrategy(_strategy).want(),_amount);
             IERC20(IStrategy(_strategy).want()).approve(_strategy, _amount);
             IStrategy(_strategy).deposit(_amount);
         }
         
     }
+
+    function safeCleanUp(address[] memory cleanUpList)
+        public
+    {
+        for (uint256 i = 0; i < cleanUpList.length; i++) 
+        {
+            if(IAPContract(APContract)._isVaultAsset(cleanUpList[i]))
+            {
+                uint256 _amount = IERC20(cleanUpList[i]).balanceOf(address(this));
+                if(_amount > 0)
+                {
+                    IERC20(cleanUpList[i]).transfer(yieldsterTreasury, _amount);
+                }
+            }
+        }
+        
+    }
+
 
     // ERC1155 reciever
     function onERC1155Received(
