@@ -25,6 +25,8 @@ interface IAPContract{
 
     function getYieldsterDAO() view external returns(address);
 
+    function getYieldsterTreasury() view public returns(address);
+
     function changeVaultAPSManager(address) external;
 
     function setVaultStrategyAndProtocol(address , address[] calldata , address[] calldata ) external;

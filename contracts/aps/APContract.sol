@@ -57,13 +57,15 @@ contract APContract
 
     mapping(address => address) safeOwner;
 
-    address private MasterCopy;
+    address public MasterCopy;
 
-    address private yieldsterDAO;
+    address public yieldsterDAO;
+
+    address public yieldsterTreasury;
 
     mapping(address => bool) APSManagers;
 
-    address private whitelistModule;
+    address public whitelistModule;
 
     address public whitelistManager;
 
@@ -81,6 +83,7 @@ contract APContract
     public
     {
         yieldsterDAO = msg.sender;
+        yieldsterTreasury = msg.sender;
         APSManagers[msg.sender] = true;
         MasterCopy = _MasterCopy;
         whitelistModule = _whitelistModule;
@@ -141,6 +144,14 @@ contract APContract
         returns(address)
     {
         return yieldsterDAO;
+    }
+
+    function getYieldsterTreasury()
+        view
+        public
+        returns(address)
+    {
+        return yieldsterTreasury;
     }
 
     function getwhitelistModule()
