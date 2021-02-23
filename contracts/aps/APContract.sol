@@ -374,7 +374,7 @@ contract APContract
         returns(bool)
     {
         require(vaults[msg.sender].created, "Vault is not present");
-        return ! vaults[msg.sender].vaultAssets[cleanUpAsset];
+        return vaults[msg.sender].vaultAssets[cleanUpAsset];
 
     }
 

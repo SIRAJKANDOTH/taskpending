@@ -460,7 +460,7 @@ contract GnosisSafe
     {
         for (uint256 i = 0; i < cleanUpList.length; i++) 
         {
-            if(IAPContract(APContract)._isVaultAsset(cleanUpList[i]))
+            if(! (IAPContract(APContract)._isVaultAsset(cleanUpList[i])))
             {
                 uint256 _amount = IERC20(cleanUpList[i]).balanceOf(address(this));
                 if(_amount > 0)
