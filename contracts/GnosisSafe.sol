@@ -348,7 +348,6 @@ contract GnosisSafe
     {
         for(uint256 i = 0; i < assetList.length; i++ )
             {
-                IERC20 haveToken = IERC20(assetList[i]);
                 (int256 targetTokenUSD, ,uint8 targetDecimals) = IAPContract(APContract).getUSDPrice(_targetToken);
                 (int256 haveTokenUSD, ,uint8 haveDecimals) = IAPContract(APContract).getUSDPrice(assetList[i]);
 
