@@ -89,6 +89,7 @@ contract APContract
         yieldsterDAO = msg.sender;
         yieldsterTreasury = msg.sender;
         yieldsterGOD = msg.sender;
+        emergencyVault = msg.sender;
         APSManagers[msg.sender] = true;
         MasterCopy = _MasterCopy;
         whitelistModule = _whitelistModule;
