@@ -394,5 +394,38 @@ contract(" Deposit", function (accounts) {
 		// 	"Investor 2 after withdrawal",
 		// 	web3.utils.fromWei(investor2YrtBalance.toString(), "ether")
 		// );
+
+		console.log("After direct deposit")
+
+		await yrtToken.transfer(newGnosisSafe.address, token("100"), {
+			from: accounts[1],
+		});
+
+		yrtBalance = await yrtToken.balanceOf(newGnosisSafe.address);
+		console.log(
+			"Safe YRT Balance",
+			web3.utils.fromWei(yrtBalance.toString(), "ether")
+		);
+
+		aishBalance = await aishToken.balanceOf(newGnosisSafe.address);
+		console.log(
+			"Safe AISH Balance",
+			web3.utils.fromWei(aishBalance.toString(), "ether")
+		);
+
+		safeNAV = await newGnosisSafe.getVaultNAV();
+		console.log("Safe NAV", safeNAV.toString());
+		console.log(
+			"Safe NAV from WEI",
+			web3.utils.fromWei(safeNAV.toString(), "ether")
+		);
+		safeTokenValue = await newGnosisSafe.tokenValueInUSD();
+		console.log("token value usd ", web3.utils.fromWei(safeTokenValue.toString(),"ether"));
+
+		totalSupply = await newGnosisSafe.totalSupply();
+		console.log(
+			"safe total supply ",
+			web3.utils.fromWei(totalSupply.toString(), "ether")
+		);
 	});
 });
