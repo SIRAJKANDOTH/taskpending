@@ -244,14 +244,22 @@ contract GnosisSafe
     {
         require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Only yieldster GOD can perform this operation");
         emergencyExit = true;
-        for(uint256 i = 0; i < assetList.length; i++ )
-        {   
-            IERC20 token = IERC20(assetList[i]);
-            uint256 tokenBalance = token.balanceOf(address(this));
-            if(tokenBalance > 0)
-            {
-                token.transfer(IAPContract(APContract).getEmergencyVault(), tokenBalance);
+        address vaultActiveStrategy = getVaultActiveStrategy();
+        if(vaultActiveStrategy != address(0))
+        {
+            IStrategy(getVaultActiveStrategy()).withdrawAllToSafe();
+            IStrategy(getVaultActiveStrategy()).deRegisterSafe();
+
+            for(uint256 i = 0; i < assetList.length; i++ )
+            {   
+                IERC20 token = IERC20(assetList[i]);
+                uint256 tokenBalance = token.balanceOf(address(this));
+                if(tokenBalance > 0)
+                {
+                    token.transfer(IAPContract(APContract).getEmergencyVault(), tokenBalance);
+                }
             }
+
         }
         emit EmergencyExitEnabled();
     }
