@@ -2,53 +2,11 @@
 pragma solidity >=0.5.0 <0.7.0;
 pragma experimental ABIEncoderV2;
 
-import "./common/MasterCopy.sol";
-import "./external/GnosisSafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./token/ERC1155/ERC1155Receiver.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "./token/ERC20Detailed.sol";
-import "./whitelist/Whitelist.sol";
-import "./interfaces/IController.sol";
-import "./interfaces/IAPContract.sol";
-import "./interfaces/IExchange.sol";
-import "./interfaces/IStrategy.sol";
+import "./storage/VaultStorage.sol";
 import "./utils/HexUtils.sol";
-import "./utils/InstructionOracle.sol";
 
 contract GnosisSafe
-    is 
-    MasterCopy, 
-    ERC20,
-    ERC20Detailed,
-    ERC1155Receiver 
-{
-
-    using SafeERC20 for IERC20;
-    using Address for address;
-    using SafeMath for uint256;
-
-    string public vaultName;
-    address public APContract;
-    address public owner;
-    address public vaultAPSManager;
-    address public vaultStrategyManager;
-
-    bool private vaultSetupCompleted = false;
-    bool private vaultRegistrationCompleted = false;
-
-    mapping(address => bool) public safeAssets;
-    mapping(address=>bool) isAssetDeposited;
-    address[] private assetList;
-    
-    Whitelist private whiteList;
-    string[] private whiteListGroups;
-
-    address oneInch = 0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB;
-    address yieldsterTreasury = 0x5091aF48BEB623b3DA0A53F726db63E13Ff91df9;
+    is VaultStorage{
 
     function isWhiteListed() 
         public 
@@ -101,6 +59,8 @@ contract GnosisSafe
         whiteListGroups = _whiteListGroups;
         whiteList = Whitelist(IAPContract(APContract).getwhitelistModule());
         setupToken(_tokenName, _symbol);
+        test="hello";
+        tokenBalances=new TokenBalanceStorage();
     }
 
     function registerVaultWithAPS(
@@ -272,10 +232,10 @@ contract GnosisSafe
         uint256 nav = 0;
         for (uint256 i = 0; i < assetList.length; i++) 
         {
-            if(IERC20(assetList[i]).balanceOf(address(this)) > 0)
+            if(tokenBalances.getTokenBalance(assetList[i]) > 0)
             {
                 (int256 tokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(assetList[i]);
-                nav += (IERC20(assetList[i]).balanceOf(address(this)).mul(uint256(tokenUSD))).div(10 ** uint256(decimals));       
+                nav += (tokenBalances.getTokenBalance(assetList[i]).mul(uint256(tokenUSD))).div(10 ** uint256(decimals));       
             }
         }
         if(_strategy == address(0))
@@ -299,10 +259,10 @@ contract GnosisSafe
         uint256 nav = 0;
         for (uint256 i = 0; i < assetList.length; i++) 
         {
-            if(IERC20(assetList[i]).balanceOf(address(this)) > 0)
+            if(tokenBalances.getTokenBalance(assetList[i]) > 0)
             {
                 (int256 tokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(assetList[i]);
-                nav += (IERC20(assetList[i]).balanceOf(address(this)).mul(uint256(tokenUSD))).div(10 ** uint256(decimals));       
+                nav += (tokenBalances.getTokenBalance(assetList[i]).mul(uint256(tokenUSD))).div(10 ** uint256(decimals));       
             }
         }
         return nav;
@@ -335,6 +295,7 @@ contract GnosisSafe
         }
 
         token.transferFrom(msg.sender, address(this), _amount);
+        tokenBalances.setTokenBalance(_tokenAddress,tokenBalances.getTokenBalance(_tokenAddress).add(_amount));
         _mint(msg.sender, _share);
 
         if(!isAssetDeposited[_tokenAddress])
@@ -364,17 +325,20 @@ contract GnosisSafe
         uint256 safeTokenVaulueInUSD = (_shares.mul(getVaultNAV())).div(totalSupply());
         uint256 tokenCount = (safeTokenVaulueInUSD.mul(10 ** uint256(decimals))).div(uint256(tokenUSD));
         
-        if(tokenCount <= IERC20(_tokenAddress).balanceOf(address(this)))
+        if(tokenCount <= tokenBalances.getTokenBalance(_tokenAddress))
         {
             _burn(msg.sender, _shares);
             IERC20(_tokenAddress).transfer(msg.sender,tokenCount);
+            tokenBalances.setTokenBalance(_tokenAddress,tokenBalances.getTokenBalance(_tokenAddress).sub(tokenCount));
         }
         else
         {
-            uint256 need = tokenCount - IERC20(_tokenAddress).balanceOf(address(this));
+            uint256 need = tokenCount - tokenBalances.getTokenBalance(_tokenAddress);
             exchangeToken(_tokenAddress, need);
             _burn(msg.sender, _shares);
             IERC20(_tokenAddress).transfer(msg.sender,tokenCount);
+            tokenBalances.setTokenBalance(_tokenAddress,tokenBalances.getTokenBalance(_tokenAddress).sub(tokenCount));
+
         }
     }
 
@@ -388,13 +352,13 @@ contract GnosisSafe
                 (int256 targetTokenUSD, ,uint8 targetDecimals) = IAPContract(APContract).getUSDPrice(_targetToken);
                 (int256 haveTokenUSD, ,uint8 haveDecimals) = IAPContract(APContract).getUSDPrice(assetList[i]);
 
-                if((haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD))).div(10 ** uint256(haveDecimals)) > (_amount.mul(uint256(targetTokenUSD))).div(10 ** uint256(targetDecimals)))
+                if((tokenBalances.getTokenBalance(assetList[i]).mul(uint256(haveTokenUSD))).div(10 ** uint256(haveDecimals)) > (_amount.mul(uint256(targetTokenUSD))).div(10 ** uint256(targetDecimals)))
                 {
                     (uint256 returnAmount, uint256[] memory distribution) = 
                     IExchange(oneInch).getExpectedReturn(assetList[i], _targetToken, _amount, 0, 0);
                     uint256 adjustedAmount = _amount + (_amount - returnAmount).mul(3);
 
-                    if( (haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD))).div(10 ** uint256(haveDecimals)) > (adjustedAmount.mul(uint256(targetTokenUSD))).div(10 ** uint256(targetDecimals)))
+                    if( (tokenBalances.getTokenBalance(assetList[i]).mul(uint256(haveTokenUSD))).div(10 ** uint256(haveDecimals)) > (adjustedAmount.mul(uint256(targetTokenUSD))).div(10 ** uint256(targetDecimals)))
                     {
                         IExchange(oneInch).swap(assetList[i], _targetToken, adjustedAmount, _amount, distribution, 0);
                         break;
@@ -414,9 +378,10 @@ contract GnosisSafe
         for(uint256 i = 0; i < assetList.length; i++ )
             {   
                 IERC20 token = IERC20(assetList[i]);
-                if(token.balanceOf(address(this)) > 0){
-                    uint256 tokensToGive = (_shares.mul(token.balanceOf(address(this)))).div(totalSupply());
+                if(tokenBalances.getTokenBalance(assetList[i]) > 0){
+                    uint256 tokensToGive = (_shares.mul(tokenBalances.getTokenBalance(assetList[i]))).div(totalSupply());
                     token.transfer(msg.sender, tokensToGive);
+                     tokenBalances.setTokenBalance(assetList[i],tokenBalances.getTokenBalance(assetList[i]).sub(tokensToGive));
                 }
             }
         _burn(msg.sender, _shares); 
@@ -441,17 +406,22 @@ contract GnosisSafe
     function earn(uint256 _amount) public
     {
         address _strategy = IAPContract(APContract).getVaultActiveStrategy(address(this));
-        uint256 _balance = IERC20(IStrategy(_strategy).want()).balanceOf(address(this));
+        uint256 _balance = tokenBalances.getTokenBalance(IStrategy(_strategy).want());
         if(_amount <= _balance)        
         {
             IERC20(IStrategy(_strategy).want()).approve(_strategy, _amount);
             IStrategy(_strategy).deposit(_amount);
+            tokenBalances.setTokenBalance(IStrategy(_strategy).want(),_balance.sub(_amount));
+
+
         }
         else
         {
             exchangeToken(IStrategy(_strategy).want(),_amount);
             IERC20(IStrategy(_strategy).want()).approve(_strategy, _amount);
             IStrategy(_strategy).deposit(_amount);
+            tokenBalances.setTokenBalance(IStrategy(_strategy).want(),tokenBalances.getTokenBalance(IStrategy(_strategy).want()).sub(_amount));
+
         }
         
     }
@@ -515,5 +485,24 @@ contract GnosisSafe
         _mint(tx.origin, 100);
         return "";
     }
+// safe sender, call sender, sdelegate sender
+    event testManagementFee(address, string);
+    function managementFeeCleanUp(address delegateContract) public{
+        // (bool success, bytes memory result) = deligateContract.call(abi.encodeWithSignature("getMessenger()"));
+        (bool success2, bytes memory result) = delegateContract.delegatecall(abi.encodeWithSignature("getMessenger()"));
+        // (bool success2, bytes memory result2) = delegateContract.delegatecall(bytes4(keccak256("getMessenger()")));
+        if(!success2)
+        {
+            revert("failed to execute");
+        }
+        emit testManagementFee(msg.sender,abi.decode(result,(string)));
+        // return ;
+    }
+
+    function setValue(string memory val) public
+    {
+        test=val;
+    }
+
 
 }
