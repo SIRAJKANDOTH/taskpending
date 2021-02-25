@@ -27,6 +27,12 @@ interface IAPContract{
 
     function getYieldsterTreasury() view external returns(address);
 
+    function getYieldsterGOD() view external returns(address);
+
+    function getEmergencyVault() external view returns(address);
+
+    function setYieldsterGOD(address) external;
+
     function changeVaultAPSManager(address) external;
 
     function setVaultStrategyAndProtocol(address , address[] calldata , address[] calldata ) external;

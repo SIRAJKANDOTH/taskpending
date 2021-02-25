@@ -63,6 +63,10 @@ contract APContract
 
     address public yieldsterTreasury;
 
+    address public yieldsterGOD;
+
+    address public emergencyVault;
+
     mapping(address => bool) APSManagers;
 
     address public whitelistModule;
@@ -84,6 +88,7 @@ contract APContract
     {
         yieldsterDAO = msg.sender;
         yieldsterTreasury = msg.sender;
+        yieldsterGOD = msg.sender;
         APSManagers[msg.sender] = true;
         MasterCopy = _MasterCopy;
         whitelistModule = _whitelistModule;
@@ -154,6 +159,44 @@ contract APContract
         return yieldsterTreasury;
     }
 
+    function getYieldsterGOD()
+        view
+        public
+        returns(address)
+    {
+        return yieldsterGOD;
+    }
+
+    function setYieldsterGOD(address _yieldsterGOD)
+        public
+    {
+        require(msg.sender == yieldsterGOD, "Only Yieldster GOD can perform this operation");
+        yieldsterGOD = _yieldsterGOD;
+    }
+
+    function disableYieldsterGOD()
+        public
+    {
+        require(msg.sender == yieldsterGOD, "Only Yieldster GOD can perform this operation");
+        yieldsterGOD = address(0);
+    }
+
+    function getEmergencyVault()
+        public
+        view
+        returns(address)
+    {
+        return emergencyVault;
+    }
+
+    function setEmergencyVault(address _emergencyVault)
+        onlyYieldsterDAO
+        public
+    {
+        emergencyVault = _emergencyVault;
+    }
+
+    
     function getwhitelistModule()
         view
         public 

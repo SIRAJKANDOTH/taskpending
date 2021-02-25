@@ -47,9 +47,16 @@ contract GnosisSafe
     Whitelist private whiteList;
     string[] private whiteListGroups;
 
-    address oneInch = 0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB;
+    bool public emergencyExit;
+    bool public emergencyBreak;
 
-    function isWhiteListed() 
+    event EmergencyExitEnabled();
+    event EmergencyBreakEnabled();
+    event EmergencyBreakDisabled();
+
+    address public oneInch;
+
+    function isWhiteListed()
         public 
         view 
         returns (bool) 
@@ -99,6 +106,9 @@ contract GnosisSafe
         owner = tx.origin;
         whiteListGroups = _whiteListGroups;
         whiteList = Whitelist(IAPContract(APContract).getwhitelistModule());
+
+        oneInch = 0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB;
+
         setupToken(_tokenName, _symbol);
     }
 
@@ -106,6 +116,7 @@ contract GnosisSafe
         address[] memory _vaultDepositAssets,
         address[] memory _vaultWithdrawalAssets
     )
+    onlyNormalMode
     public
     {
         require(msg.sender == owner, "Only owner can perform this operation");
@@ -122,6 +133,7 @@ contract GnosisSafe
         address[] memory _enabledStrategyProtocols,
         address[] memory _disabledStrategyProtocols
     )
+    onlyNormalMode
     public
     {
         require(msg.sender == owner, "This operation can only be perfomed by Owner");
@@ -130,6 +142,7 @@ contract GnosisSafe
 
     //Function to disable a vault strategy
     function disableVaultStrategy(address _strategyAddress)
+        onlyNormalMode
         public
     {
         require(msg.sender == owner, "This operation can only be perfomed by Owner");
@@ -149,6 +162,7 @@ contract GnosisSafe
 
     //Function to set the vaults active strategy
     function setVaultActiveStrategy(address _activeVaultStrategy)
+        onlyNormalMode
         public
     {
         require(msg.sender == owner, "This operation can only be perfomed by Owner");
@@ -167,6 +181,7 @@ contract GnosisSafe
     }
 
     function deactivateVaultStrategy(address _strategyAddress)
+        onlyNormalMode
         public
     {
         require(msg.sender == owner, "This operation can only be perfomed by Owner");
@@ -189,6 +204,7 @@ contract GnosisSafe
     }
 
     function setStrategyActiveProtocol(address _protocol)
+        onlyNormalMode
         public
     {
         address _strategy = IAPContract(APContract).getVaultActiveStrategy(address(this));
@@ -206,6 +222,48 @@ contract GnosisSafe
         return IStrategy(_strategy).getActiveProtocol();
     }
 
+    //Emergency Functions 
+    function enableEmergencyBreak()
+        public
+    {
+        require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Only yieldster GOD can perform this operation");
+        emergencyBreak = true;
+        emit EmergencyBreakEnabled();
+    }
+
+    function disableEmergencyBreak()
+        public
+    {
+        require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Only yieldster GOD can perform this operation");
+        emergencyBreak = false;
+        emit EmergencyBreakDisabled();
+    }
+
+    function enableEmergencyExit()
+        public
+    {
+        require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Only yieldster GOD can perform this operation");
+        emergencyExit = true;
+        for(uint256 i = 0; i < assetList.length; i++ )
+        {   
+            IERC20 token = IERC20(assetList[i]);
+            uint256 tokenBalance = token.balanceOf(address(this));
+            if(tokenBalance > 0)
+            {
+                token.transfer(IAPContract(APContract).getEmergencyVault(), tokenBalance);
+            }
+        }
+        emit EmergencyExitEnabled();
+    }
+
+    modifier onlyNormalMode
+    {
+        if(emergencyBreak)
+        {
+            require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Only yieldster GOD can perform this operation");
+        }
+        _;
+    }
 
     //Function to get APS manager of the vault
     function getAPSManager()
@@ -218,6 +276,7 @@ contract GnosisSafe
 
     //Function to change the strategy manager of the vault
     function changeAPSManager(address _vaultAPSManager)
+        onlyNormalMode
         public
     {
         require(IAPContract(APContract).getYieldsterDAO() == msg.sender, "This operation can only be perfomed by yieldster DAO");
@@ -245,6 +304,7 @@ contract GnosisSafe
 
     //Function to change the strategy manager of the vault
     function changeStrategyManager(address _strategyManager)
+        onlyNormalMode
         public
     {
         require(IAPContract(APContract).getYieldsterDAO() == msg.sender, "This operation can only be perfomed by yieldster DAO");
@@ -317,6 +377,7 @@ contract GnosisSafe
     }
 
     function deposit(address _tokenAddress, uint256 _amount)
+        onlyNormalMode
         public
         // onlyWhitelisted
     { 
@@ -354,6 +415,7 @@ contract GnosisSafe
 
     //Withdraw function with withdrawal asset specified
     function withdraw(address _tokenAddress, uint256 _shares)
+        onlyNormalMode
         public
         // onlyWhitelisted
     {
@@ -406,6 +468,7 @@ contract GnosisSafe
 
     //Withdraw Function without withdrawal asset specified
     function withdraw(uint256 _shares)
+        onlyNormalMode
         public
         // onlyWhitelisted
     {
@@ -437,7 +500,9 @@ contract GnosisSafe
         }
     }
 
-    function earn(uint256 _amount) public
+    function earn(uint256 _amount) 
+        onlyNormalMode
+        public
     {
         address _strategy = IAPContract(APContract).getVaultActiveStrategy(address(this));
         uint256 _balance = IERC20(IStrategy(_strategy).want()).balanceOf(address(this));
@@ -456,6 +521,7 @@ contract GnosisSafe
     }
 
     function safeCleanUp(address[] memory cleanUpList)
+        onlyNormalMode
         public
     {
         for (uint256 i = 0; i < cleanUpList.length; i++) 
