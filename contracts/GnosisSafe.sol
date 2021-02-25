@@ -95,7 +95,7 @@ contract GnosisSafe
         vaultName = _vaultName;
         vaultAPSManager = _vaultAPSManager;
         vaultStrategyManager = _vaultStrategyManager;
-        APContract = _APContract;
+        APContract = _APContract; //hardcode APContract address here before deploy to mainnet
         owner = tx.origin;
         whiteListGroups = _whiteListGroups;
         whiteList = Whitelist(IAPContract(APContract).getwhitelistModule());
