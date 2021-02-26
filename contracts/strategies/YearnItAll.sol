@@ -123,8 +123,8 @@ contract YearnItAll
         {
             if(IERC20(protocolList[i]).balanceOf(address(this)) > 0)
             {
-                (int256 tokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(protocolList[i]);
-                strategyNAV += (IERC20(protocolList[i]).balanceOf(address(this)).mul(uint256(tokenUSD))).div(10 ** uint256(decimals));       
+                uint256 tokenUSD = IAPContract(APContract).getUSDPrice(protocolList[i]);
+                strategyNAV += (IERC20(protocolList[i]).balanceOf(address(this)).mul(uint256(tokenUSD)));       
             }
         }
         return strategyNAV;
@@ -135,8 +135,8 @@ contract YearnItAll
         public
         returns (uint256)
     {
-        (int256 tokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(_tokenAddress);
-        return (_amount.mul(uint256(tokenUSD))).div(10 ** uint256(decimals));
+        uint256 tokenUSD = IAPContract(APContract).getUSDPrice(_tokenAddress);
+        return (_amount.mul(uint256(tokenUSD)));
     }
 
     function tokenValueInUSD() public view returns(uint256)
@@ -164,14 +164,14 @@ contract YearnItAll
 
         address _protocolAddress = safeActiveProtocol[msg.sender];
 
-        (int256 tokenUSD, ,uint8 tokenDecimal) = IAPContract(APContract).getUSDPrice(_tokenAddress);
+        uint256 tokenUSD = IAPContract(APContract).getUSDPrice(_tokenAddress);
         uint256 strategyTokenValueInUSD = (_shares.mul(getStrategyNAV())).div(totalSupply());
 
-        uint256 tokenCount = (strategyTokenValueInUSD.mul(10 ** uint256(tokenDecimal))).div(uint256(tokenUSD));
+        uint256 tokenCount = (strategyTokenValueInUSD).div(uint256(tokenUSD));
 
-        (int256 protocolTokenUSD, ,uint8 protocolDecimal) = IAPContract(APContract).getUSDPrice(_protocolAddress);
+        uint256 protocolTokenUSD = IAPContract(APContract).getUSDPrice(_protocolAddress);
 
-        uint256 _protocolShares = (strategyTokenValueInUSD.mul(10 ** uint256(protocolDecimal))).div(uint256(protocolTokenUSD));
+        uint256 _protocolShares = (strategyTokenValueInUSD).div(uint256(protocolTokenUSD));
 
         IVault(safeActiveProtocol[msg.sender]).withdraw(_protocolShares);
         _burn(msg.sender, _shares);
@@ -200,14 +200,14 @@ contract YearnItAll
         _withdrawAllSafeBalance();
 
         address _protocolAddress = safeActiveProtocol[msg.sender];
-        (int256 protocolTokenUSD, ,uint8 protocolDecimal) = IAPContract(APContract).getUSDPrice(_protocolAddress);
+        uint256 protocolTokenUSD = IAPContract(APContract).getUSDPrice(_protocolAddress);
 
         address _tokenAddress = IVault(safeActiveProtocol[msg.sender]).token();
         IERC20 _token = IERC20(IVault(safeActiveProtocol[msg.sender]).token());
 
-        (int256 tokenUSD, ,uint8 tokenDecimal) = IAPContract(APContract).getUSDPrice(_tokenAddress);
+        uint256 tokenUSD = IAPContract(APContract).getUSDPrice(_tokenAddress);
 
-        uint256 tokensToGive = (SafeProtocolBalance.mul(uint256(protocolTokenUSD)).mul(10 ** uint256(tokenDecimal))).div(uint256(tokenUSD).mul(10 ** uint256(protocolDecimal)));
+        uint256 tokensToGive = (SafeProtocolBalance.mul(uint256(protocolTokenUSD))).div(uint256(tokenUSD));
 
         _burn(msg.sender, balanceOf(msg.sender));
         _token.transfer(msg.sender, tokensToGive);
@@ -231,9 +231,9 @@ contract YearnItAll
 
         uint256 strategyTokenValueInUSD = (_shares.mul(getStrategyNAV())).div(totalSupply());
 
-        (int256 protocolTokenUSD, ,uint8 protocolDecimal) = IAPContract(APContract).getUSDPrice(_protocolAddress);
+        uint256 protocolTokenUSD = IAPContract(APContract).getUSDPrice(_protocolAddress);
 
-        uint256 _protocolShares = (strategyTokenValueInUSD.mul(10 ** uint256(protocolDecimal))).div(uint256(protocolTokenUSD));
+        uint256 _protocolShares = (strategyTokenValueInUSD).div(uint256(protocolTokenUSD));
 
         return _protocolShares;
 

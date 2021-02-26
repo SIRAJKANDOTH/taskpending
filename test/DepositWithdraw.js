@@ -279,7 +279,10 @@ contract(" Deposit", function (accounts) {
 			web3.utils.fromWei(safeNAV.toString(), "ether")
 		);
 		let safeTokenValue = await newGnosisSafe.tokenValueInUSD();
-		console.log("token value usd ", web3.utils.fromWei(safeTokenValue.toString(),"ether"));
+		console.log(
+			"token value usd ",
+			web3.utils.fromWei(safeTokenValue.toString(), "ether")
+		);
 
 		let totalSupply = await newGnosisSafe.totalSupply();
 		console.log(
@@ -371,7 +374,10 @@ contract(" Deposit", function (accounts) {
 			web3.utils.fromWei(safeNAV.toString(), "ether")
 		);
 		safeTokenValue = await newGnosisSafe.tokenValueInUSD();
-		console.log("token value usd ", web3.utils.fromWei(safeTokenValue.toString(),"ether"));
+		console.log(
+			"token value usd ",
+			web3.utils.fromWei(safeTokenValue.toString(), "ether")
+		);
 
 		totalSupply = await newGnosisSafe.totalSupply();
 		console.log(
@@ -387,6 +393,31 @@ contract(" Deposit", function (accounts) {
 			"Deposit NAV",
 			web3.utils.fromWei(depositNAV.toString(), "ether")
 		);
+
+		await newGnosisSafe.deposit(yrtToken.address, token("10"), {
+			from: accounts[1],
+		});
+
+		// await newGnosisSafe.enableEmergencyBreak();
+		// await newGnosisSafe.disableEmergencyBreak();
+		// await newGnosisSafe.deposit(yrtToken.address, token("1"), {
+		// 	from: accounts[1],
+		// });
+
+		console.log(
+			"emergency vault YRT",
+			web3.utils.fromWei((await yrtToken.balanceOf(accounts[0])), "ether")
+		);
+
+		// await newGnosisSafe.enableEmergencyExit();
+
+		console.log(
+			"emergency vault YRT",
+			web3.utils.fromWei((await yrtToken.balanceOf(accounts[0])), "ether")
+		);
+		await newGnosisSafe.deposit(yrtToken.address, token("10"), {
+			from: accounts[1],
+		});
 
 		// await newGnosisSafe.withdraw(yrtToken.address, token("2"),{from:accounts[2]});
 		// investor2YrtBalance = await yrtToken.balanceOf(accounts[2]);
