@@ -39,6 +39,13 @@ contract APContract
         bool created;
     }
 
+    struct SmartStrategy
+    {
+        uint256 instructionId;
+        string smartStrategyName;
+        bool created;
+    }
+
     event VaultCreation(address vaultAddress);
 
     mapping(address => mapping(address => mapping(address => bool))) vaultStrategyEnabledProtocols;
@@ -52,6 +59,10 @@ contract APContract
     mapping(address => Vault) vaults;
 
     mapping(address => Strategy) strategies;
+
+    mapping(address => SmartStrategy) smartStrategies;
+
+    mapping(uint256 => address) strategyInstructionId;
 
     mapping(address => mapping(address => address)) public converters;
 
@@ -390,6 +401,7 @@ contract APContract
             return false;
         }
     }
+
     function _isStrategyEnabled(
         address _vaultAddress, 
         address _strategyAddress
@@ -530,6 +542,56 @@ contract APContract
         require(_isStrategyPresent(_strategyAddress),"Strategy not present!");
         delete strategies[_strategyAddress];
     }
+
+//Smart Strategy
+
+    function _isSmartStrategyPresent(address _address) 
+        private 
+        view 
+        returns(bool)
+    {
+        return smartStrategies[_address].created;
+    }
+
+    function addSmartStrategy(
+        string memory _smartStrategyName,
+        address _smartStrategyAddress,
+        uint256 _instructionId
+        ) 
+        public 
+        onlyManager
+    {
+        require(!_isSmartStrategyPresent(_smartStrategyAddress),"Smart Strategy already present!");
+        require(strategyInstructionId[_instructionId] == address(0), "This instruction Id is already taken");
+        SmartStrategy memory newSmartStrategy = SmartStrategy
+            ({ 
+                smartStrategyName : _smartStrategyName,
+                instructionId : _instructionId, 
+                created : true 
+            });
+        smartStrategies[_smartStrategyAddress] = newSmartStrategy;
+        strategyInstructionId[_instructionId] = _smartStrategyAddress;
+    }
+
+    function removeSmartStrategy(address _smartStrategyAddress) 
+        public 
+        onlyManager
+    {
+        require(!_isSmartStrategyPresent(_smartStrategyAddress),"Smart Strategy already present!");
+        delete strategyInstructionId[smartStrategies[_smartStrategyAddress].instructionId];
+        delete smartStrategies[_smartStrategyAddress];
+    }
+
+//Strategy Instruction Ids
+    function getStrategyInstructionId(uint256 _instructionId)
+        public
+        returns(address)
+    {
+        require(strategyInstructionId[_instructionId] != address(0), "This instruction id is not present");
+        return strategyInstructionId[_instructionId];
+    }
+
+
 
 // Protocols
     function _isProtocolPresent(address _address) 

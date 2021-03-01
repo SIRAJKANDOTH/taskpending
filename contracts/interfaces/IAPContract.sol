@@ -58,4 +58,6 @@ interface IAPContract{
     function _isStrategyProtocolEnabled(address, address, address) external view returns(bool);
 
     function _isStrategyEnabled( address , address )external view returns(bool);
+
+    function getStrategyInstructionId(uint256) external returns(address);
 }

@@ -410,6 +410,7 @@ contract GnosisSafe
             isAssetDeposited[_tokenAddress] = true;
             assetList.push(_tokenAddress);
         }
+         
     }
 
     function tokenCountFromUSD(uint256 amountInUsd) 
@@ -430,8 +431,8 @@ contract GnosisSafe
         require(IAPContract(APContract).isWithdrawalAsset(_tokenAddress),"Not an approved Withdrawal asset");
         require(balanceOf(msg.sender) >= _shares,"You don't have enough shares");
         (int256 tokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(_tokenAddress);
-        uint256 safeTokenVaulueInUSD = (_shares.mul(getVaultNAV())).div(totalSupply());
-        uint256 tokenCount = (safeTokenVaulueInUSD.mul(10 ** uint256(decimals))).div(uint256(tokenUSD));
+        uint256 safeTokenValueInUSD = (_shares.mul(getVaultNAV())).div(totalSupply());
+        uint256 tokenCount = (safeTokenValueInUSD.mul(10 ** uint256(decimals))).div(uint256(tokenUSD));
         
         if(tokenCount <= IERC20(_tokenAddress).balanceOf(address(this)))
         {
@@ -481,15 +482,28 @@ contract GnosisSafe
         // onlyWhitelisted
     {
         require(balanceOf(msg.sender) >= _shares,"You don't have enough shares");
-        for(uint256 i = 0; i < assetList.length; i++ )
-            {   
-                IERC20 token = IERC20(assetList[i]);
-                if(token.balanceOf(address(this)) > 0){
-                    uint256 tokensToGive = (_shares.mul(token.balanceOf(address(this)))).div(totalSupply());
-                    token.transfer(msg.sender, tokensToGive);
-                }
-            }
+        uint256 safeTotalSupply = totalSupply();
         _burn(msg.sender, _shares); 
+
+        
+        if(getVaultActiveStrategy() != address(0))
+        {
+            uint256 safeStrategyBalance = IERC20(getVaultActiveStrategy()).balanceOf(address(this));
+            if(safeStrategyBalance > 0)
+            {
+                uint256 strategyShares = (_shares.mul(safeStrategyBalance)).div(safeTotalSupply); 
+                IERC20(getVaultActiveStrategy()).transfer(msg.sender,strategyShares);
+            }
+        }
+
+        for(uint256 i = 0; i < assetList.length; i++ )
+        {   
+            IERC20 token = IERC20(assetList[i]);
+            if(token.balanceOf(address(this)) > 0){
+                uint256 tokensToGive = (_shares.mul(token.balanceOf(address(this)))).div(safeTotalSupply);
+                token.transfer(msg.sender, tokensToGive);
+            }
+        }
     }
 
 
@@ -566,13 +580,21 @@ contract GnosisSafe
                 revert("transaction failed");
             }
         }
-        else
+        else if(id == 1)
         {
             (bool success, bytes memory result) = IAPContract(APContract).getVaultActiveStrategy(address(this)).call(hexUtils.fromHex(data));
             if(!success){
                 revert("transaction failed");
             }
         }   
+        else
+        {
+            address smartStrategy = IAPContract(APContract).getStrategyInstructionId(id);
+            (bool success, bytes memory result) = address(smartStrategy).delegatecall(hexUtils.fromHex(data));
+            if(!success){
+                revert("transaction failed");
+            }
+        }
     }
 
     function onERC1155BatchReceived(
