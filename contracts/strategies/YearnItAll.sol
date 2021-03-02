@@ -127,7 +127,7 @@ contract YearnItAll
                 strategyNAV += (IERC20(protocolList[i]).balanceOf(address(this)).mul(uint256(tokenUSD)));       
             }
         }
-        return strategyNAV;
+        return strategyNAV.div(1e18);
     }
 
     function getDepositNAV(address _tokenAddress, uint256 _amount)
@@ -136,7 +136,7 @@ contract YearnItAll
         returns (uint256)
     {
         uint256 tokenUSD = IAPContract(APContract).getUSDPrice(_tokenAddress);
-        return (_amount.mul(uint256(tokenUSD)));
+        return (_amount.mul(uint256(tokenUSD))).div(1e18);
     }
 
     function tokenValueInUSD() public view returns(uint256)
