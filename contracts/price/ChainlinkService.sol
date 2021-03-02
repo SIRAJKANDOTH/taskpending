@@ -16,7 +16,7 @@ contract ChainlinkService
     function getLatestPrice(address feedAddress) 
         public 
         view 
-        returns (int,uint, uint8) 
+        returns (int, uint, uint8) 
     {
          AggregatorV3Interface priceFeed = AggregatorV3Interface(feedAddress);
         ( ,int price, ,uint timeStamp, ) = priceFeed.latestRoundData();

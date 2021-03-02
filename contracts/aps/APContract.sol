@@ -266,7 +266,7 @@ contract APContract
     function getUSDPrice(address _tokenAddress) 
         public 
         view
-        returns(int, uint, uint8)
+        returns(uint256)
     {
         require(_isAssetPresent(_tokenAddress),"Asset not present!");
         return IPriceModule(priceModule).getUSDPrice(_tokenAddress);
@@ -584,6 +584,7 @@ contract APContract
 
 //Strategy Instruction Ids
     function getStrategyInstructionId(uint256 _instructionId)
+        view
         public
         returns(address)
     {
