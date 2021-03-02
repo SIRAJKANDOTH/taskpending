@@ -57,12 +57,13 @@ contract YearnItAll
         safeActiveProtocol[msg.sender] = _protocol;
     }
 
-    function getActiveProtocol()
+    function getActiveProtocol(address _safeAddress)
         public
         view 
         returns(address)
     {
-        return safeActiveProtocol[msg.sender];
+        require( isRegistered[_safeAddress], "Not a registered Safe");
+        return safeActiveProtocol[_safeAddress];
     }
 
     function registerSafe()

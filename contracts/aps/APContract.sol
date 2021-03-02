@@ -28,7 +28,7 @@ contract APContract
         mapping(address => bool) vaultEnabledStrategy;
         address vaultAPSManager;
         address vaultStrategyManager;
-        string[] whitelistGroup;
+        uint256[] whitelistGroup;
         bool created;
     }
 
@@ -283,17 +283,14 @@ contract APContract
 
 
     function addVault(
-        address[] memory _vaultDepositAssets,
-        address[] memory _vaultWithdrawalAssets,
         address _vaultAPSManager,
         address _vaultStrategyManager,
-        string[] memory _whitelistGroup,
+        uint256[] memory _whitelistGroup,
         address _owner
     )
     public
     {   
         require(safeOwner[msg.sender] == _owner, "Only owner can call this function");
-        require(APSManagers[_vaultAPSManager], "Invalid APS Manager provided");
         Vault memory newVault = Vault(
             {
             vaultAPSManager:_vaultAPSManager, 
@@ -301,20 +298,45 @@ contract APContract
             whitelistGroup:_whitelistGroup, 
             created:true
             });
-
         vaults[msg.sender] = newVault;
+    }
 
-        for (uint256 i = 0; i < _vaultDepositAssets.length; i++) {
-            address asset = _vaultDepositAssets[i];
+     function setVaultAssets(
+        address[] memory _enabledDepositAsset,
+        address[] memory _enabledWithdrawalAsset,
+        address[] memory _disabledDepositAsset,
+        address[] memory _disabledWithdrawalAsset
+    )
+    public
+    {
+        require(vaults[msg.sender].created, "Vault not present");
+
+        for (uint256 i = 0; i < _enabledDepositAsset.length; i++) {
+            address asset = _enabledDepositAsset[i];
             require(_isAssetPresent(asset), "Asset not supported by Yieldster");
             vaults[msg.sender].vaultAssets[asset] = true;
             vaults[msg.sender].vaultDepositAssets[asset] = true;
         }
-        for (uint256 i = 0; i < _vaultWithdrawalAssets.length; i++) {
-            address asset = _vaultWithdrawalAssets[i];
+
+        for (uint256 i = 0; i < _enabledWithdrawalAsset.length; i++) {
+            address asset = _enabledWithdrawalAsset[i];
             require(_isAssetPresent(asset), "Asset not supported by Yieldster");
             vaults[msg.sender].vaultAssets[asset] = true;
             vaults[msg.sender].vaultWithdrawalAssets[asset] = true;
+        }
+
+        for (uint256 i = 0; i < _disabledDepositAsset.length; i++) {
+            address asset = _disabledDepositAsset[i];
+            require(_isAssetPresent(asset), "Asset not supported by Yieldster");
+            vaults[msg.sender].vaultAssets[asset] = false;
+            vaults[msg.sender].vaultDepositAssets[asset] = false;
+        }
+
+        for (uint256 i = 0; i < _disabledWithdrawalAsset.length; i++) {
+            address asset = _disabledWithdrawalAsset[i];
+            require(_isAssetPresent(asset), "Asset not supported by Yieldster");
+            vaults[msg.sender].vaultAssets[asset] = false;
+            vaults[msg.sender].vaultWithdrawalAssets[asset] = false;
         }
     }
 
@@ -346,7 +368,8 @@ contract APContract
     function setVaultStrategyAndProtocol(
         address _vaultStrategy,
         address[] memory _enabledStrategyProtocols,
-        address[] memory _disabledStrategyProtocols
+        address[] memory _disabledStrategyProtocols,
+        address[] memory _assetsToBeEnabled
     )
     public
     {
@@ -366,15 +389,31 @@ contract APContract
             vaultStrategyEnabledProtocols[msg.sender][_vaultStrategy][protocol] = false;
         }
 
+        for (uint256 i = 0; i < _assetsToBeEnabled.length; i++) {
+            address asset = _assetsToBeEnabled[i];
+            require(_isAssetPresent(asset), "Asset not supported by Yieldster");
+            vaults[msg.sender].vaultAssets[asset] = true;
+            vaults[msg.sender].vaultDepositAssets[asset] = true;
+            vaults[msg.sender].vaultWithdrawalAssets[asset] = true;
+        }
+
     }
 
-    function disableVaultStrategy(address _strategyAddress)
+    function disableVaultStrategy(address _strategyAddress, address[] memory _assetsToBeDisabled)
         public
     {
         require(vaults[msg.sender].created, "Vault not present");
         require(strategies[_strategyAddress].created, "Strategy not present");
         require(vaults[msg.sender].vaultEnabledStrategy[_strategyAddress], "Strategy was not enabled");
         vaults[msg.sender].vaultEnabledStrategy[_strategyAddress] = false;
+
+        for (uint256 i = 0; i < _assetsToBeDisabled.length; i++) {
+            address asset = _assetsToBeDisabled[i];
+            require(_isAssetPresent(asset), "Asset not supported by Yieldster");
+            vaults[msg.sender].vaultAssets[asset] = false;
+            vaults[msg.sender].vaultDepositAssets[asset] = false;
+            vaults[msg.sender].vaultWithdrawalAssets[asset] = false;
+        }
     }
 
     function _isStrategyProtocolEnabled(

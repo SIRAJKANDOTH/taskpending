@@ -2,90 +2,99 @@
 pragma solidity >=0.5.0 <0.7.0;
 import "@openzeppelin/contracts/utils/Address.sol";
 
-
-
-contract Whitelist{
+contract Whitelist
+{
     using Address for address;
 
-    struct Role{
+    struct WhitelistGroup
+    {
         mapping(address => bool) members;
-        address admin;
-        address owner;
+        address whitelistGroupAdmin;
         bool created;
     }
     
+    uint256 groupId;
     address public whiteListManager;
-    mapping(string => Role) private whiteList;
-    mapping(address => mapping(string => bool)) private memberRoles;
+    mapping(uint256 => WhitelistGroup) private whitelistGroups;
 
-    modifier onlyOwner{
-         require(msg.sender == whiteListManager,"Only Whitelist manager can call this function.");
+    constructor() public
+    {
+        whiteListManager=msg.sender;
+    }
+
+    modifier onlyWhitelistManager{
+        require(msg.sender == whiteListManager, "Only Whitelist manager can call this function.");
         _;
     }
 
-    function _isRole(string memory _name) private view returns(bool){
-        return whiteList[_name].created;
-    }
-
-    constructor() public{
-        whiteListManager=msg.sender;
-
-        Role memory newRole= Role({admin:msg.sender,owner:msg.sender,created:true});
-        whiteList["GROUPA"]=newRole;
-        whiteList["GROUPA"].members[msg.sender]=true;
-
-
-
-        newRole= Role({admin:msg.sender,owner:msg.sender,created:true});
-        whiteList["GROUPB"]=newRole;
-        whiteList["GROUPB"].members[msg.sender]=true;
-
-
-        memberRoles[msg.sender]["GROUPA"]=true;
-        memberRoles[msg.sender]["GROUPB"]=true;
-    }
-
-
-    function createRole(string memory _name, address _admin) public onlyOwner{
-        require(!_isRole(_name),"Role already exist!");
-        Role memory newRole= Role({admin:_admin,owner:msg.sender,created:true});
-        whiteList[_name]=newRole;
-        whiteList[_name].members[_admin]=true;
-        whiteList[_name].members[msg.sender]=true;
-    }
-
-    function deleteRole(string memory _roleName) public onlyOwner{
-        require(_isRole(_roleName),"Role doesn't exist!");
-        delete whiteList[_roleName];
-
-    }
-
-    function _isGroupAdmin(string memory _roleName,address sender) private view returns(bool)
+    function changeManager(address _manager) 
+        public 
+        onlyWhitelistManager
     {
-        return whiteList[_roleName].admin==sender;
-    }
-
-    function addMembersToRole(string memory _roleName,address memberAddress) public{
-        require(_isRole(_roleName),"Role doesn't exist!");
-        require(_isGroupAdmin(_roleName,msg.sender),"Only goup admin is permitted for this operation");
-        whiteList[_roleName].members[memberAddress]=true;
-    }
-
-    function removeMembersFromRole(string memory _roleName,address memberAddress) public{
-        require(_isRole(_roleName),"Role doesn't exist!");
-        require(_isGroupAdmin(_roleName,msg.sender),"Only goup admin is permitted for this operation");
-        delete whiteList[_roleName].members[memberAddress];
-    }
-
-    function changeManager(address _manager) public onlyOwner{
         whiteListManager=_manager;
     }
 
-    function isMember(string memory _roleName,address member) public view returns(bool)
+    function _isGroup(uint256 _groupId) 
+        private 
+        view 
+        returns(bool)
     {
-        require(_isRole(_roleName),"Role doesn't exist!");
-        return memberRoles[member][_roleName];
+        return whitelistGroups[_groupId].created;
+    }
 
+    function _isGroupAdmin(uint256 _groupId) 
+        private 
+        view 
+        returns(bool)
+    {
+        return whitelistGroups[_groupId].whitelistGroupAdmin == msg.sender;
+    }
+
+    function createGroup(address _whitelistGroupAdmin) 
+        public
+        returns(uint256) 
+    {
+        groupId += 1;
+        require(!whitelistGroups[groupId].created, "Group already exists");
+        WhitelistGroup memory newGroup = 
+        WhitelistGroup({ whitelistGroupAdmin : _whitelistGroupAdmin, created : true });
+        whitelistGroups[groupId] = newGroup;
+        whitelistGroups[groupId].members[_whitelistGroupAdmin] = true;
+        whitelistGroups[groupId].members[msg.sender] = true;
+        return groupId;
+    }
+
+    function deleteGroup(uint256 _groupId) 
+        public 
+    {
+        require(_isGroup(_groupId), "Group doesn't exist!");
+        require(_isGroupAdmin(_groupId, msg.sender), "Only goup admin is permitted for this operation");
+        delete whitelistGroups[_groupId];
+    }
+
+    function addMembersToGroup(uint256 _groupId, address _memberAddress) 
+        public
+    {
+        require(_isGroup(_groupId), "Group doesn't exist!");
+        require(_isGroupAdmin(_groupId, msg.sender), "Only goup admin is permitted for this operation");
+        whitelistGroups[_groupId].members[_memberAddress] = true;
+    }
+
+    function removeMembersFromGroup(uint256 _groupId, address _memberAddress) 
+        public
+    {
+        require(_isGroup(_groupId), "Group doesn't exist!");
+        require(_isGroupAdmin(_groupId, msg.sender), "Only goup admin is permitted for this operation");
+        delete whitelistGroups[_groupId].members[_memberAddress];
+    }
+
+    function isMember(uint256 _groupId, address _memberAddress) 
+        public 
+        view 
+        returns(bool)
+    {
+        require(_isGroup(_groupId), "Group doesn't exist!");
+        return whitelistGroups[_groupId].members[_memberAddress];
     }
 
 }

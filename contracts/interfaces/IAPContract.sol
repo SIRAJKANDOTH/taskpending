@@ -19,7 +19,9 @@ interface IAPContract{
 
     function removeProtocol(address) external;
 
-    function addVault(address[] calldata, address[] calldata, address, address, string[] calldata, address) external;
+    function addVault(address, address, string[] calldata, address) external;
+
+    function setVaultAssets(address[] calldata, address[] calldata,address[] calldata,address[] calldata) external;
 
     function createVault(address, address) external;
 
@@ -35,7 +37,7 @@ interface IAPContract{
 
     function changeVaultAPSManager(address) external;
 
-    function setVaultStrategyAndProtocol(address , address[] calldata , address[] calldata ) external;
+    function setVaultStrategyAndProtocol(address , address[] calldata , address[] calldata, address[] calldata ) external;
 
     function setVaultActiveStrategy(address) external;
 
@@ -43,7 +45,7 @@ interface IAPContract{
         
     function _isVaultAsset(address) external view returns(bool);
 
-    function disableVaultStrategy(address) external;
+    function disableVaultStrategy(address, address[] calldata) external;
 
     function getwhitelistModule() view external returns(address);
 
