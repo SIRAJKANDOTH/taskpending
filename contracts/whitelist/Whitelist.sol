@@ -68,24 +68,32 @@ contract Whitelist
         public 
     {
         require(_isGroup(_groupId), "Group doesn't exist!");
-        require(_isGroupAdmin(_groupId, msg.sender), "Only goup admin is permitted for this operation");
+        require(_isGroupAdmin(_groupId), "Only goup admin is permitted for this operation");
         delete whitelistGroups[_groupId];
     }
 
-    function addMembersToGroup(uint256 _groupId, address _memberAddress) 
+    function addMembersToGroup(uint256 _groupId, address[] memory _memberAddress) 
         public
     {
         require(_isGroup(_groupId), "Group doesn't exist!");
-        require(_isGroupAdmin(_groupId, msg.sender), "Only goup admin is permitted for this operation");
-        whitelistGroups[_groupId].members[_memberAddress] = true;
+        require(_isGroupAdmin(_groupId), "Only goup admin is permitted for this operation");
+
+        for (uint256 i = 0; i < _memberAddress.length; i++) 
+        {
+            whitelistGroups[_groupId].members[_memberAddress[i]] = true;
+        }
     }
 
-    function removeMembersFromGroup(uint256 _groupId, address _memberAddress) 
+    function removeMembersFromGroup(uint256 _groupId, address[] memory _memberAddress) 
         public
     {
         require(_isGroup(_groupId), "Group doesn't exist!");
-        require(_isGroupAdmin(_groupId, msg.sender), "Only goup admin is permitted for this operation");
-        delete whitelistGroups[_groupId].members[_memberAddress];
+        require(_isGroupAdmin(_groupId), "Only goup admin is permitted for this operation");
+
+        for (uint256 i = 0; i < _memberAddress.length; i++) 
+        {
+            whitelistGroups[_groupId].members[_memberAddress[i]] = false;
+        }
     }
 
     function isMember(uint256 _groupId, address _memberAddress) 

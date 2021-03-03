@@ -192,7 +192,8 @@ contract(" Deposit", function (accounts) {
 			accounts[0]
 		);
 
-		await newGnosisSafe.registerVaultWithAPS(
+		await newGnosisSafe.registerVaultWithAPS();
+		await newGnosisSafe.setVaultAssets(
 			[
 				"0x4dbcdf9b62e891a7cec5a2568c3f4faf9e8abe2b",
 				"0x01be23585060835e02b77ef475b0cc51aa1e0709",
@@ -204,7 +205,9 @@ contract(" Deposit", function (accounts) {
 				"0x01be23585060835e02b77ef475b0cc51aa1e0709",
 				yrtToken.address,
 				aishToken.address,
-			]
+			],
+			[],
+			[]
 		);
 		console.log("YRT TOken", yrtToken.address);
 
@@ -412,14 +415,14 @@ contract(" Deposit", function (accounts) {
 
 		console.log(
 			"emergency vault YRT",
-			web3.utils.fromWei((await yrtToken.balanceOf(accounts[0])), "ether")
+			web3.utils.fromWei(await yrtToken.balanceOf(accounts[0]), "ether")
 		);
 
 		// await newGnosisSafe.enableEmergencyExit();
 
 		console.log(
 			"emergency vault YRT",
-			web3.utils.fromWei((await yrtToken.balanceOf(accounts[0])), "ether")
+			web3.utils.fromWei(await yrtToken.balanceOf(accounts[0]), "ether")
 		);
 		await newGnosisSafe.deposit(yrtToken.address, token("10"), {
 			from: accounts[1],

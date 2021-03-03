@@ -19,7 +19,7 @@ interface IAPContract{
 
     function removeProtocol(address) external;
 
-    function addVault(address, address, string[] calldata, address) external;
+    function addVault(address, address, uint256[] calldata, address) external;
 
     function setVaultAssets(address[] calldata, address[] calldata,address[] calldata,address[] calldata) external;
 

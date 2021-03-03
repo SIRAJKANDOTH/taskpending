@@ -40,7 +40,6 @@ contract GnosisSafe
     bool private vaultSetupCompleted = false;
     bool private vaultRegistrationCompleted = false;
 
-    mapping(address => bool) public safeAssets;
     mapping(address=>bool) isAssetDeposited;
     address[] private assetList;
     
@@ -51,10 +50,6 @@ contract GnosisSafe
 
     bool public emergencyExit;
     bool public emergencyBreak;
-
-    event EmergencyExitEnabled();
-    event EmergencyBreakEnabled();
-    event EmergencyBreakDisabled();
 
 
     // function isWhiteListed()
@@ -94,7 +89,7 @@ contract GnosisSafe
         address _vaultAPSManager,
         address _vaultStrategyManager,
         address _APContract, //Need to hardcode APContract address before deploying
-        string[] memory _whiteListGroups
+        uint256[] memory _whiteListGroups
     )
         public
     {
@@ -134,7 +129,6 @@ contract GnosisSafe
         IAPContract(APContract).setVaultAssets(_enabledDepositAsset, _enabledWithdrawalAsset, _disabledDepositAsset, _disabledWithdrawalAsset);
     }
 
-    // Have to confirm who is authorized to call these functions
     // Function to enable a strategy and enable or disable corresponding protocol
     function setVaultStrategyAndProtocol(
         address _vaultStrategy,
@@ -149,56 +143,56 @@ contract GnosisSafe
         IAPContract(APContract).setVaultStrategyAndProtocol(_vaultStrategy, _enabledStrategyProtocols, _disabledStrategyProtocols, _assetsToBeEnabled);
     }
 
-    // function disableVaultStrategy(address _strategyAddress, address[] memory _assetsToBeDisabled)
-    //     onlyNormalMode
-    //     public
-    // {
-    //     require(msg.sender == vaultStrategyManager, "This operation can only be perfomed by vaultStrategyManager");
-    //     if(getVaultActiveStrategy() == _strategyAddress)
-    //     {
-    //         if(IERC20(_strategyAddress).balanceOf(address(this)) > 0)
-    //         {
-    //             IStrategy(getVaultActiveStrategy()).withdrawAllToSafe();
-    //         }
-    //         IStrategy(getVaultActiveStrategy()).deRegisterSafe();
-    //         IAPContract(APContract).deactivateVaultStrategy(_strategyAddress);
-    //     }
-    //     IAPContract(APContract).disableVaultStrategy(_strategyAddress, _assetsToBeDisabled);
-    // }
+    function disableVaultStrategy(address _strategyAddress, address[] memory _assetsToBeDisabled)
+        onlyNormalMode
+        public
+    {
+        require(msg.sender == vaultStrategyManager, "This operation can only be perfomed by vaultStrategyManager");
+        if(getVaultActiveStrategy() == _strategyAddress)
+        {
+            if(IERC20(_strategyAddress).balanceOf(address(this)) > 0)
+            {
+                IStrategy(getVaultActiveStrategy()).withdrawAllToSafe();
+            }
+            IStrategy(getVaultActiveStrategy()).deRegisterSafe();
+            IAPContract(APContract).deactivateVaultStrategy(_strategyAddress);
+        }
+        IAPContract(APContract).disableVaultStrategy(_strategyAddress, _assetsToBeDisabled);
+    }
 
     
-    // function setVaultActiveStrategy(address _activeVaultStrategy)
-    //     onlyNormalMode
-    //     public
-    // {
-    //     require(msg.sender == vaultStrategyManager, "This operation can only be perfomed by vaultStrategyManager");
-    //     require(IAPContract(APContract)._isStrategyEnabled(address(this), _activeVaultStrategy) ,"This strategy is not enabled");
-    //     if(getVaultActiveStrategy() != address(0))
-    //     {
-    //         if(IERC20(getVaultActiveStrategy()).balanceOf(address(this)) > 0)
-    //         {
-    //             IStrategy(getVaultActiveStrategy()).withdrawAllToSafe();
-    //         }
-    //         IStrategy(getVaultActiveStrategy()).deRegisterSafe();
-    //     }
-    //     IAPContract(APContract).setVaultActiveStrategy(_activeVaultStrategy);
-    //     IStrategy(_activeVaultStrategy).registerSafe();        
-    // }
+    function setVaultActiveStrategy(address _activeVaultStrategy)
+        onlyNormalMode
+        public
+    {
+        require(msg.sender == vaultStrategyManager, "This operation can only be perfomed by vaultStrategyManager");
+        require(IAPContract(APContract)._isStrategyEnabled(address(this), _activeVaultStrategy) ,"This strategy is not enabled");
+        if(getVaultActiveStrategy() != address(0))
+        {
+            if(IERC20(getVaultActiveStrategy()).balanceOf(address(this)) > 0)
+            {
+                IStrategy(getVaultActiveStrategy()).withdrawAllToSafe();
+            }
+            IStrategy(getVaultActiveStrategy()).deRegisterSafe();
+        }
+        IAPContract(APContract).setVaultActiveStrategy(_activeVaultStrategy);
+        IStrategy(_activeVaultStrategy).registerSafe();        
+    }
 
-    // function deactivateVaultStrategy(address _strategyAddress)
-    //     onlyNormalMode
-    //     public
-    // {
-    //     require(msg.sender == vaultStrategyManager, "This operation can only be perfomed by vaultStrategyManager");
-    //     require(IAPContract(APContract)._isStrategyEnabled(address(this), _strategyAddress) ,"This strategy is not enabled");
-    //     require(getVaultActiveStrategy() == _strategyAddress, "This strategy is not active right now");
-    //     if(IERC20(_strategyAddress).balanceOf(address(this)) > 0)
-    //     {
-    //         IStrategy(getVaultActiveStrategy()).withdrawAllToSafe();
-    //     }
-    //     IStrategy(getVaultActiveStrategy()).deRegisterSafe();
-    //     IAPContract(APContract).deactivateVaultStrategy(_strategyAddress);        
-    // }
+    function deactivateVaultStrategy(address _strategyAddress)
+        onlyNormalMode
+        public
+    {
+        require(msg.sender == vaultStrategyManager, "This operation can only be perfomed by vaultStrategyManager");
+        require(IAPContract(APContract)._isStrategyEnabled(address(this), _strategyAddress) ,"This strategy is not enabled");
+        require(getVaultActiveStrategy() == _strategyAddress, "This strategy is not active right now");
+        if(IERC20(_strategyAddress).balanceOf(address(this)) > 0)
+        {
+            IStrategy(getVaultActiveStrategy()).withdrawAllToSafe();
+        }
+        IStrategy(getVaultActiveStrategy()).deRegisterSafe();
+        IAPContract(APContract).deactivateVaultStrategy(_strategyAddress);        
+    }
 
     function getVaultActiveStrategy()
         public
@@ -214,7 +208,6 @@ contract GnosisSafe
     {
         require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Only yieldster GOD can perform this operation");
         emergencyBreak = true;
-        emit EmergencyBreakEnabled();
     }
 
     function disableEmergencyBreak()
@@ -222,7 +215,6 @@ contract GnosisSafe
     {
         require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Only yieldster GOD can perform this operation");
         emergencyBreak = false;
-        emit EmergencyBreakDisabled();
     }
 
     function enableEmergencyExit()
@@ -245,7 +237,6 @@ contract GnosisSafe
                 token.transfer(IAPContract(APContract).getEmergencyVault(), tokenBalance);
             }
         }
-        emit EmergencyExitEnabled();
     }
 
     modifier onlyNormalMode
@@ -266,7 +257,7 @@ contract GnosisSafe
         onlyNormalMode
         public
     {
-        require(IAPContract(APContract).getYieldsterDAO() == msg.sender, "This operation can only be perfomed by yieldster DAO");
+        require(IAPContract(APContract).getYieldsterDAO() == msg.sender || vaultAPSManager == msg.sender, "This operation can only be perfomed by  existing APS Manager of the vault or yieldster DAO");
         IAPContract(APContract).changeVaultAPSManager(_vaultAPSManager);
         vaultAPSManager = _vaultAPSManager;
     }
@@ -286,7 +277,7 @@ contract GnosisSafe
         onlyNormalMode
         public
     {
-        require(IAPContract(APContract).getYieldsterDAO() == msg.sender, "This operation can only be perfomed by yieldster DAO");
+        require(IAPContract(APContract).getYieldsterDAO() == msg.sender || vaultStrategyManager == msg.sender, "This operation can only be perfomed by existing Strategy Manager of the vault or yieldster DAO");
         IAPContract(APContract).changeVaultAPSManager(_strategyManager);
         vaultStrategyManager = _strategyManager;
     }
