@@ -202,8 +202,9 @@ contract APContract
         view
         returns(int, uint, uint8)
     {
-        require(_isAssetPresent(_tokenAddress),"Asset not present!");
-        return IPriceModule(priceModule).getUSDPrice(_tokenAddress);
+        // require(_isAssetPresent(_tokenAddress),"Asset not present!");
+        // return IPriceModule(priceModule).getUSDPrice(_tokenAddress);
+        return(int(1),uint(1000000000),uint8(8));
     }
 
 
@@ -274,10 +275,12 @@ contract APContract
         returns(address)
     {
         require(vaults[_vaultAddress].created, "Vault not present");
+       
         return vaultActiveStrategy[_vaultAddress];
     }
 
     function setVaultStrategyAndProtocol(
+
         address _vaultStrategy,
         address[] memory _enabledStrategyProtocols,
         address[] memory _disabledStrategyProtocols
@@ -506,17 +509,5 @@ contract APContract
         delete protocols[_protocolAddress];
     }
 
-// This one is for test purpose
-    function testCall() 
-        public
-    {
-        test = 15;
-    }
-
-    function testWithParameter(uint256 _test) 
-        public
-    {
-        test = _test;
-    }
 
 }

@@ -59,7 +59,6 @@ contract GnosisSafe
         whiteListGroups = _whiteListGroups;
         whiteList = Whitelist(IAPContract(APContract).getwhitelistModule());
         setupToken(_tokenName, _symbol);
-        test="hello";
         tokenBalances=new TokenBalanceStorage();
     }
 
@@ -223,60 +222,7 @@ contract GnosisSafe
     }
 
     //Function to get the NAV of the vault
-    function getVaultNAV() 
-        public 
-        view 
-        returns (uint256) 
-    {
-        address _strategy = IAPContract(APContract).getVaultActiveStrategy(address(this));
-        uint256 nav = 0;
-        for (uint256 i = 0; i < assetList.length; i++) 
-        {
-            if(tokenBalances.getTokenBalance(assetList[i]) > 0)
-            {
-                (int256 tokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(assetList[i]);
-                nav += (tokenBalances.getTokenBalance(assetList[i]).mul(uint256(tokenUSD))).div(10 ** uint256(decimals));       
-            }
-        }
-        if(_strategy == address(0))
-        {
-            return nav;
-        }
-        else if(IERC20(_strategy).balanceOf(address(this)) > 0)
-        {
-            uint256 _strategyBalance = IERC20(_strategy).balanceOf(address(this));
-            uint256 strategyTokenUsd = IStrategy(_strategy).tokenValueInUSD();
-            return nav + (_strategyBalance.mul(strategyTokenUsd)).div(1e18);
-        }
-        return nav;
-    }
-
-    function getVaultNAVWithoutStrategyToken() 
-        public 
-        view 
-        returns (uint256) 
-    {
-        uint256 nav = 0;
-        for (uint256 i = 0; i < assetList.length; i++) 
-        {
-            if(tokenBalances.getTokenBalance(assetList[i]) > 0)
-            {
-                (int256 tokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(assetList[i]);
-                nav += (tokenBalances.getTokenBalance(assetList[i]).mul(uint256(tokenUSD))).div(10 ** uint256(decimals));       
-            }
-        }
-        return nav;
-    }
-
-    function getDepositNAV(address _tokenAddress, uint256 _amount)
-        view
-        public
-        returns (uint256)
-    {
-        (int256 tokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(_tokenAddress);
-        return (_amount.mul(uint256(tokenUSD))).div(10 ** uint256(decimals));
-    }
-
+    
     function deposit(address _tokenAddress, uint256 _amount)
         public
         // onlyWhitelisted
@@ -305,13 +251,7 @@ contract GnosisSafe
         }
     }
 
-    function tokenCountFromUSD(uint256 amountInUsd) 
-        public 
-        view
-        returns(uint256)
-    {
-        return (amountInUsd.mul(totalSupply())).div( getVaultNAV());
-    }
+  
 
 
     //Withdraw function with withdrawal asset specified
@@ -398,7 +338,7 @@ contract GnosisSafe
         }
         else
         {
-            return (getVaultNAV().mul(1e18)).div(totalSupply());
+            return (getVaultNAV().mul(1e18)).div(totalSupply().add(tokenBalances.getTokenToBeMinted()));
         }
     }
 
@@ -485,23 +425,15 @@ contract GnosisSafe
         return "";
     }
 // safe sender, call sender, sdelegate sender
-    event testManagementFee(address, string);
+    event testManagementFee(uint256, string);
     function managementFeeCleanUp(address delegateContract) public{
         // (bool success, bytes memory result) = deligateContract.call(abi.encodeWithSignature("getMessenger()"));
-        (bool success2, bytes memory result) = delegateContract.delegatecall(abi.encodeWithSignature("getMessenger()"));
+        (bool success2, bytes memory result) = delegateContract.delegatecall(abi.encodeWithSignature("executeSafeCleanUp()"));
         // (bool success2, bytes memory result2) = delegateContract.delegatecall(bytes4(keccak256("getMessenger()")));
         if(!success2)
         {
             revert("failed to execute");
         }
-        emit testManagementFee(msg.sender,abi.decode(result,(string)));
-        // return ;
+        // test= abi.decode(result,(uint256));
     }
-
-    function setValue(string memory val) public
-    {
-        test=val;
-    }
-
-
 }

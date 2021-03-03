@@ -6,6 +6,7 @@ const PriceModule = artifacts.require("./price/PriceModule.sol");
 const ProxyFactory = artifacts.require("./GnosisSafeProxyFactory.sol");
 const YRToken = artifacts.require("./yrToken.sol");
 const AishToken = artifacts.require("./aishToken.sol");
+const ManagementFee=artifacts.require("./delegateContracts/ManagementFee.sol");
 
 function token(n) {
 	return web3.utils.toWei(n, "ether");
@@ -25,6 +26,7 @@ contract(" Deposit", function (accounts) {
 
 	beforeEach(async function () {
 		whitelist = await Whitelist.new();
+		managementFee = await ManagementFee.new();
 		gnosisSafeMasterCopy = await utils.deployContract(
 			"deploying Gnosis Safe Mastercopy",
 			GnosisSafe
@@ -215,6 +217,7 @@ contract(" Deposit", function (accounts) {
 		let safeNAVInitial = await newGnosisSafe.getVaultNAV();
 		console.log("Safe NAV Initial", safeNAVInitial.toString());
 
+
 		let safeTokenValueInitial = await newGnosisSafe.tokenValueInUSD();
 		console.log("token value usd Initial", safeTokenValueInitial.toString());
 
@@ -274,6 +277,9 @@ contract(" Deposit", function (accounts) {
 		// );
 		let safeNAV = await newGnosisSafe.getVaultNAV();
 		console.log("Safe NAV", safeNAV.toString());
+		let deleigateresult= await newGnosisSafe.managementFeeCleanUp(managementFee.address);
+		console.log("Safe NAV wth delegate", deleigateresult);
+		console.log("Safe NAV wth delegate", (await newGnosisSafe.test()).toString());
 		console.log(
 			"Safe NAV from WEI",
 			web3.utils.fromWei(safeNAV.toString(), "ether")

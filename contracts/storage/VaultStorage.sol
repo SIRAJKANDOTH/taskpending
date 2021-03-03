@@ -32,8 +32,6 @@ contract VaultStorage is
     address public owner;
     address public vaultAPSManager;
     address public vaultStrategyManager;
-    string public test="hi";
-
     bool internal vaultSetupCompleted = false;
     bool internal vaultRegistrationCompleted = false;
 
@@ -49,5 +47,73 @@ contract VaultStorage is
 
     // Token balance storage keeps track of tokens that are deposited to safe without worrying direct depoited assets affesting the NAV;
     TokenBalanceStorage tokenBalances;
+    uint public result;
+    uint public currentBlockDifference;
+    uint public currentNav;
+
+    // Moved here for delegate purpose
+    function getVaultNAV() 
+        public 
+        view 
+        returns (uint256) 
+    {
+        address _strategy = IAPContract(APContract).getVaultActiveStrategy(address(this));
+        uint256 nav = 0;
+        for (uint256 i = 0; i < assetList.length; i++) 
+        {
+           
+            if(tokenBalances.getTokenBalance(assetList[i]) > 0)
+            {
+                (int256 tokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(assetList[i]);
+                nav += (tokenBalances.getTokenBalance(assetList[i]).mul(uint256(tokenUSD))).div(10 ** uint256(decimals));       
+            }
+        }
+        if(_strategy == address(0))
+        {
+            return nav;
+        }
+        else if(IERC20(_strategy).balanceOf(address(this)) > 0)
+        {
+            uint256 _strategyBalance = IERC20(_strategy).balanceOf(address(this));
+            uint256 strategyTokenUsd = IStrategy(_strategy).tokenValueInUSD();
+            return nav + (_strategyBalance.mul(strategyTokenUsd)).div(1e18);
+        }
+        return nav;
+    }
+
+    function getVaultNAVWithoutStrategyToken() 
+        public 
+        view 
+        returns (uint256) 
+    {
+        uint256 nav = 0;
+        for (uint256 i = 0; i < assetList.length; i++) 
+        {
+            if(tokenBalances.getTokenBalance(assetList[i]) > 0)
+            {
+                (int256 tokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(assetList[i]);
+                nav += (tokenBalances.getTokenBalance(assetList[i]).mul(uint256(tokenUSD))).div(10 ** uint256(decimals));       
+            }
+        }
+        return nav;
+    }
+
+    function getDepositNAV(address _tokenAddress, uint256 _amount)
+        view
+        public
+        returns (uint256)
+    {
+        (int256 tokenUSD, ,uint8 decimals) = IAPContract(APContract).getUSDPrice(_tokenAddress);
+        return (_amount.mul(uint256(tokenUSD))).div(10 ** uint256(decimals));
+    }
+    
+      function tokenCountFromUSD(uint256 amountInUsd) 
+        public 
+        view
+        returns(uint256)
+    {
+        return (amountInUsd.mul(totalSupply().add(tokenBalances.getTokenToBeMinted()))).div( getVaultNAV());
+    }
+
    
 }
