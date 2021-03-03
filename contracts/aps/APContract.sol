@@ -301,7 +301,7 @@ contract APContract
         vaults[msg.sender] = newVault;
     }
 
-     function setVaultAssets(
+    function setVaultAssets(
         address[] memory _enabledDepositAsset,
         address[] memory _enabledWithdrawalAsset,
         address[] memory _disabledDepositAsset,

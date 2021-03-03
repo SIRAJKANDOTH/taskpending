@@ -75,5 +75,6 @@ module.exports = {
         evmVersion: "petersburg"
       }
     }
-  }
+  },
+  plugins: ["truffle-contract-size"]
 };

@@ -78,7 +78,7 @@ contract GnosisSafe
 
     // modifier onlyWhitelisted
     // {
-    //     require(isWhiteListed(),"Only Whitelisted members can perform this operation");
+    //     require(isWhiteListed(),"Only Whitelisted");
     //     _;
     // }
 
@@ -125,7 +125,7 @@ contract GnosisSafe
     onlyNormalMode
     public
     {
-        require(msg.sender == vaultAPSManager, "Only vaultAPSManager can perform this operation");
+        require(msg.sender == vaultAPSManager, "Sender not Authorized");
         IAPContract(APContract).setVaultAssets(_enabledDepositAsset, _enabledWithdrawalAsset, _disabledDepositAsset, _disabledWithdrawalAsset);
     }
 
@@ -139,7 +139,7 @@ contract GnosisSafe
     onlyNormalMode
     public
     {
-        require(msg.sender == vaultStrategyManager, "This operation can only be perfomed by vaultStrategyManager");
+        require(msg.sender == vaultStrategyManager, "Sender not Authorized");
         IAPContract(APContract).setVaultStrategyAndProtocol(_vaultStrategy, _enabledStrategyProtocols, _disabledStrategyProtocols, _assetsToBeEnabled);
     }
 
@@ -147,7 +147,7 @@ contract GnosisSafe
         onlyNormalMode
         public
     {
-        require(msg.sender == vaultStrategyManager, "This operation can only be perfomed by vaultStrategyManager");
+        require(msg.sender == vaultStrategyManager, "Sender not Authorized");
         if(getVaultActiveStrategy() == _strategyAddress)
         {
             if(IERC20(_strategyAddress).balanceOf(address(this)) > 0)
@@ -165,7 +165,7 @@ contract GnosisSafe
         onlyNormalMode
         public
     {
-        require(msg.sender == vaultStrategyManager, "This operation can only be perfomed by vaultStrategyManager");
+        require(msg.sender == vaultStrategyManager, "Sender not Authorized");
         require(IAPContract(APContract)._isStrategyEnabled(address(this), _activeVaultStrategy) ,"This strategy is not enabled");
         if(getVaultActiveStrategy() != address(0))
         {
@@ -183,7 +183,7 @@ contract GnosisSafe
         onlyNormalMode
         public
     {
-        require(msg.sender == vaultStrategyManager, "This operation can only be perfomed by vaultStrategyManager");
+        require(msg.sender == vaultStrategyManager, "Sender not Authorized");
         require(IAPContract(APContract)._isStrategyEnabled(address(this), _strategyAddress) ,"This strategy is not enabled");
         require(getVaultActiveStrategy() == _strategyAddress, "This strategy is not active right now");
         if(IERC20(_strategyAddress).balanceOf(address(this)) > 0)
@@ -206,21 +206,21 @@ contract GnosisSafe
     function enableEmergencyBreak()
         public
     {
-        require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Only yieldster GOD can perform this operation");
+        require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Sender not Authorized");
         emergencyBreak = true;
     }
 
     function disableEmergencyBreak()
         public
     {
-        require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Only yieldster GOD can perform this operation");
+        require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Sender not Authorized");
         emergencyBreak = false;
     }
 
     function enableEmergencyExit()
         public
     {
-        require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Only yieldster GOD can perform this operation");
+        require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Sender not Authorized");
         emergencyExit = true;
         address vaultActiveStrategy = getVaultActiveStrategy();
         if(vaultActiveStrategy != address(0))
@@ -243,7 +243,7 @@ contract GnosisSafe
     {
         if(emergencyBreak)
         {
-            require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Only yieldster GOD can perform this operation");
+            require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Sender not Authorized");
         }
         else if(emergencyExit)
         {
@@ -257,7 +257,7 @@ contract GnosisSafe
         onlyNormalMode
         public
     {
-        require(IAPContract(APContract).getYieldsterDAO() == msg.sender || vaultAPSManager == msg.sender, "This operation can only be perfomed by  existing APS Manager of the vault or yieldster DAO");
+        require(IAPContract(APContract).getYieldsterDAO() == msg.sender || vaultAPSManager == msg.sender, "Sender not Authorized");
         IAPContract(APContract).changeVaultAPSManager(_vaultAPSManager);
         vaultAPSManager = _vaultAPSManager;
     }
@@ -267,7 +267,7 @@ contract GnosisSafe
         onlyNormalMode
         public
     {
-        require(IAPContract(APContract).getYieldsterDAO() == msg.sender || vaultStrategyManager == msg.sender, "This operation can only be perfomed by existing Strategy Manager of the vault or yieldster DAO");
+        require(IAPContract(APContract).getYieldsterDAO() == msg.sender || vaultStrategyManager == msg.sender, "Sender not Authorized");
         IAPContract(APContract).changeVaultAPSManager(_strategyManager);
         vaultStrategyManager = _strategyManager;
     }
