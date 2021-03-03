@@ -262,16 +262,6 @@ contract GnosisSafe
         vaultAPSManager = _vaultAPSManager;
     }
 
-    //Function to get whitelist Manager
-    function getWhitelistManager()
-        public
-        view
-        returns(address)
-    {
-        return whiteList.whiteListManager();
-    }
-
-
     //Function to change the strategy manager of the vault
     function changeStrategyManager(address _strategyManager)
         onlyNormalMode

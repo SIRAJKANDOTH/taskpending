@@ -68,7 +68,7 @@ contract Whitelist
         public 
     {
         require(_isGroup(_groupId), "Group doesn't exist!");
-        require(_isGroupAdmin(_groupId), "Only goup admin is permitted for this operation");
+        require(_isGroupAdmin(_groupId), "Only Whitelist Group admin is permitted for this operation");
         delete whitelistGroups[_groupId];
     }
 
@@ -88,7 +88,7 @@ contract Whitelist
         public
     {
         require(_isGroup(_groupId), "Group doesn't exist!");
-        require(_isGroupAdmin(_groupId), "Only goup admin is permitted for this operation");
+        require(_isGroupAdmin(_groupId), "Only Whitelist Group admin is permitted for this operation");
 
         for (uint256 i = 0; i < _memberAddress.length; i++) 
         {
@@ -103,6 +103,23 @@ contract Whitelist
     {
         require(_isGroup(_groupId), "Group doesn't exist!");
         return whitelistGroups[_groupId].members[_memberAddress];
+    }
+
+    function getWhitelistAdmin(uint256 _groupId)
+        public
+        view
+        returns(address)
+    {
+        require(_isGroup(_groupId), "Group doesn't exist!");
+        return whitelistGroups[_groupId].whitelistGroupAdmin;
+    }
+
+    function changeWhitelistAdmin(uint256 _groupId, address _whitelistGroupAdmin)
+        public
+    {
+        require(_isGroup(_groupId), "Group doesn't exist!");
+        require(whitelistGroups[_groupId].whitelistGroupAdmin == msg.sender, "Only existing whitelist admin can perform this operation");
+        whitelistGroups[_groupId].whitelistGroupAdmin = _whitelistGroupAdmin;
     }
 
 }
