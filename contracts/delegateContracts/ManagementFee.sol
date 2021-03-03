@@ -5,8 +5,6 @@ import "../storage/VaultStorage.sol";
 contract ManagementFee is 
     VaultStorage {
 
-        uint256 private rate=2;
-
     constructor()public ERC20Detailed(){
 
     }
@@ -28,9 +26,5 @@ contract ManagementFee is
         currentNav=vaultNAV;
         }
 
-    }
-
-    function setRate(uint256 _rateInPercentage) public{
-        rate=_rateInPercentage;
     }
     }
