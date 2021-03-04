@@ -12,6 +12,8 @@ contract Whitelist
         address whitelistGroupAdmin;
         bool created;
     }
+
+    event GroupCreated(address, uint256);
     
     uint256 groupId;
     address public whiteListManager;
@@ -61,6 +63,7 @@ contract Whitelist
         whitelistGroups[groupId] = newGroup;
         whitelistGroups[groupId].members[_whitelistGroupAdmin] = true;
         whitelistGroups[groupId].members[msg.sender] = true;
+        emit GroupCreated(msg.sender, groupId);
         return groupId;
     }
 

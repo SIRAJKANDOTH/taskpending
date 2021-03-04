@@ -52,35 +52,34 @@ contract GnosisSafe
     bool public emergencyBreak;
 
 
-    // function isWhiteListed()
-    //     public 
-    //     view 
-    //     returns (bool) 
-    // {
-    //     bool memberStatus;
-    //     if(whiteListGroups.length == 0)
-    //     {
-    //         memberStatus = true;
-    //     }
-    //     else
-    //     {
-    //         for (uint256 i = 0; i < whiteListGroups.length; i++) 
-    //         {
-    //             if (whiteList.isMember(whiteListGroups[i], msg.sender)) 
-    //             {
-    //                 memberStatus = true;
-    //                 break;
-    //             }
-    //         }
-    //     }
-    //     return memberStatus;
-    // }
+    function isWhiteListed()
+        public 
+        view 
+        returns (bool) 
+    {
+        if(whiteListGroups.length == 0)
+        {
+            return true;
+        }
+        else
+        {
+            for (uint256 i = 0; i < whiteListGroups.length; i++) 
+            {
+                if (whiteList.isMember(whiteListGroups[i], msg.sender)) 
+                {
+                    return true;
+                }
+            }
+            return false;
+        
+        }
+    }
 
-    // modifier onlyWhitelisted
-    // {
-    //     require(isWhiteListed(),"Only Whitelisted");
-    //     _;
-    // }
+    modifier onlyWhitelisted
+    {
+        require(isWhiteListed(),"Only Whitelisted");
+        _;
+    }
 
     function setup(
         string memory _vaultName,
@@ -338,8 +337,8 @@ contract GnosisSafe
 
     function deposit(address _tokenAddress, uint256 _amount)
         onlyNormalMode
+        onlyWhitelisted
         public
-        // onlyWhitelisted
     { 
         uint256 _share;
         require(IAPContract(APContract).isDepositAsset(_tokenAddress), "Not an approved deposit asset");
@@ -368,8 +367,8 @@ contract GnosisSafe
     //Withdraw function with withdrawal asset specified
     function withdraw(address _tokenAddress, uint256 _shares)
         onlyNormalMode
+        onlyWhitelisted
         public
-        // onlyWhitelisted
     {
         require(IAPContract(APContract).isWithdrawalAsset(_tokenAddress),"Not an approved Withdrawal asset");
         require(balanceOf(msg.sender) >= _shares,"You don't have enough shares");
@@ -420,8 +419,8 @@ contract GnosisSafe
     //Withdraw Function without withdrawal asset specified
     function withdraw(uint256 _shares)
         onlyNormalMode
+        onlyWhitelisted
         public
-        // onlyWhitelisted
     {
         require(balanceOf(msg.sender) >= _shares,"You don't have enough shares");
         uint256 safeTotalSupply = totalSupply();

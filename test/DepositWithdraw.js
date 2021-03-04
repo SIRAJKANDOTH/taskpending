@@ -22,9 +22,12 @@ contract(" Deposit", function (accounts) {
 	let proxyFactory;
 	let yrtToken;
 	let aishToken;
+	let groupId;
 
 	beforeEach(async function () {
 		whitelist = await Whitelist.new();
+
+
 		gnosisSafeMasterCopy = await utils.deployContract(
 			"deploying Gnosis Safe Mastercopy",
 			GnosisSafe
@@ -33,6 +36,11 @@ contract(" Deposit", function (accounts) {
 			gnosisSafeMasterCopy.address,
 			whitelist.address
 		);
+		
+		let groupHash = await whitelist.createGroup(accounts[1]);
+		groupId = (await groupHash.logs[0].args["1"]).toString();
+
+		console.log("Is whitelisted == ",await whitelist.isMember(groupId, accounts[1]))
 
 		priceModule = await PriceModule.new(apContract.address);
 
@@ -172,7 +180,7 @@ contract(" Deposit", function (accounts) {
 				accounts[0],
 				accounts[1],
 				apContract.address,
-				[]
+				[groupId]
 			)
 			.encodeABI();
 
@@ -238,9 +246,9 @@ contract(" Deposit", function (accounts) {
 			from: accounts[2],
 		});
 
-		await newGnosisSafe.deposit(aishToken.address, token("2"), {
-			from: accounts[2],
-		});
+		// await newGnosisSafe.deposit(aishToken.address, token("2"), {
+		// 	from: accounts[2],
+		// });
 		// await yrtToken.approve(newGnosisSafe.address, token("100"), {
 		// 	from: accounts[2],
 		// });
