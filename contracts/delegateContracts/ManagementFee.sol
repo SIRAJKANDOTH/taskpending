@@ -7,12 +7,13 @@ contract ManagementFee
     VaultStorage 
 {
 
-    uint256 private rate=2;
-    constructor() public ERC20Detailed()
-    {}
+    constructor()public ERC20Detailed(){
 
-    function executeSafeCleanUp() 
-        public
+    }
+
+  
+
+    function executeSafeCleanUp() public
     {
         uint256 blockDifference = uint256(block.number).sub(tokenBalances.getLastTransactionBlockNumber());
         uint256 vaultNAV = getVaultNAV();
@@ -28,10 +29,4 @@ contract ManagementFee
         }
 
     }
-
-    function setRate(uint256 _rateInPercentage) 
-        public
-    {
-        rate = _rateInPercentage;
     }
-}
