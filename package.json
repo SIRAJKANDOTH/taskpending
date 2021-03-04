@@ -77,7 +77,8 @@
     "openzeppelin-solidity": "^2.0.0",
     "shelljs": "^0.8.3",
     "solc": "0.5.17",
-    "truffle": "^5.1.59"
+    "truffle": "^5.1.59",
+    "truffle-contract-size": "^2.0.1"
   },
   "resolutions": {
     "bitcore-lib": "8.1.1",
