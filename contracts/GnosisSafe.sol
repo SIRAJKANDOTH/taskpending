@@ -2,56 +2,64 @@
 pragma solidity >=0.5.0 <0.7.0;
 pragma experimental ABIEncoderV2;
 
-import "./common/MasterCopy.sol";
-import "./external/GnosisSafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./token/ERC1155/ERC1155Receiver.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "./token/ERC20Detailed.sol";
-import "./whitelist/Whitelist.sol";
-import "./interfaces/IController.sol";
-import "./interfaces/IAPContract.sol";
-import "./interfaces/IExchange.sol";
-import "./interfaces/IStrategy.sol";
+import "./storage/VaultStorage.sol";
 import "./utils/HexUtils.sol";
-import "./utils/InstructionOracle.sol";
 
 contract GnosisSafe
     is 
-    MasterCopy, 
-    ERC20,
-    ERC20Detailed,
-    ERC1155Receiver 
+    VaultStorage
 {
+    //Emergency Functions 
+    function enableEmergencyBreak()
+        public
+    {
+        require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Sender not Authorized");
+        emergencyBreak = true;
+    }
 
-    using SafeERC20 for IERC20;
-    using Address for address;
-    using SafeMath for uint256;
+    function disableEmergencyBreak()
+        public
+    {
+        require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Sender not Authorized");
+        emergencyBreak = false;
+    }
 
-    string public vaultName;
-    address public APContract;
-    address public owner;
-    address public vaultAPSManager;
-    address public vaultStrategyManager;
+    function enableEmergencyExit()
+        public
+    {
+        require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Sender not Authorized");
+        emergencyExit = true;
+        address vaultActiveStrategy = getVaultActiveStrategy();
+        if(vaultActiveStrategy != address(0))
+        {
+            IStrategy(getVaultActiveStrategy()).withdrawAllToSafe();
+            IStrategy(getVaultActiveStrategy()).deRegisterSafe();
+        }
+        for(uint256 i = 0; i < assetList.length; i++ )
+        {   
+            IERC20 token = IERC20(assetList[i]);
+            uint256 tokenBalance = token.balanceOf(address(this));
+            if(tokenBalance > 0)
+            {
+                token.transfer(IAPContract(APContract).getEmergencyVault(), tokenBalance);
+            }
+        }
+    }
 
-    bool private vaultSetupCompleted = false;
-    bool private vaultRegistrationCompleted = false;
+    modifier onlyNormalMode
+    {
+        if(emergencyBreak)
+        {
+            require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Sender not Authorized");
+        }
+        else if(emergencyExit)
+        {
+            revert("This safe is no longer active");
+        }
+        _;
+    }
 
-    mapping(address=>bool) isAssetDeposited;
-    address[] private assetList;
-    
-    Whitelist private whiteList;
-    uint256[] public whiteListGroups;
-
-    address public oneInch;
-
-    bool public emergencyExit;
-    bool public emergencyBreak;
-
-
+    //Whitelist Functions
     function isWhiteListed()
         public 
         view 
@@ -81,6 +89,7 @@ contract GnosisSafe
         _;
     }
 
+    //Initial setup function
     function setup(
         string memory _vaultName,
         string memory _tokenName,
@@ -103,6 +112,7 @@ contract GnosisSafe
         whiteList = Whitelist(IAPContract(APContract).getwhitelistModule());
         oneInch = 0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB;
         setupToken(_tokenName, _symbol);
+        tokenBalances=new TokenBalanceStorage();
     }
 
     function registerVaultWithAPS()
@@ -201,55 +211,7 @@ contract GnosisSafe
         return IAPContract(APContract).getVaultActiveStrategy(address(this));
     }
 
-    //Emergency Functions 
-    function enableEmergencyBreak()
-        public
-    {
-        require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Sender not Authorized");
-        emergencyBreak = true;
-    }
-
-    function disableEmergencyBreak()
-        public
-    {
-        require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Sender not Authorized");
-        emergencyBreak = false;
-    }
-
-    function enableEmergencyExit()
-        public
-    {
-        require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Sender not Authorized");
-        emergencyExit = true;
-        address vaultActiveStrategy = getVaultActiveStrategy();
-        if(vaultActiveStrategy != address(0))
-        {
-            IStrategy(getVaultActiveStrategy()).withdrawAllToSafe();
-            IStrategy(getVaultActiveStrategy()).deRegisterSafe();
-        }
-        for(uint256 i = 0; i < assetList.length; i++ )
-        {   
-            IERC20 token = IERC20(assetList[i]);
-            uint256 tokenBalance = token.balanceOf(address(this));
-            if(tokenBalance > 0)
-            {
-                token.transfer(IAPContract(APContract).getEmergencyVault(), tokenBalance);
-            }
-        }
-    }
-
-    modifier onlyNormalMode
-    {
-        if(emergencyBreak)
-        {
-            require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Sender not Authorized");
-        }
-        else if(emergencyExit)
-        {
-            revert("This safe is no longer active");
-        }
-        _;
-    }
+    
 
     //Function to change the strategy manager of the vault
     function changeAPSManager(address _vaultAPSManager)
@@ -281,60 +243,6 @@ contract GnosisSafe
     }
 
     //Function to get the NAV of the vault
-    function getVaultNAV() 
-        public 
-        view 
-        returns (uint256) 
-    {
-        address _strategy = IAPContract(APContract).getVaultActiveStrategy(address(this));
-        uint256 nav = 0;
-        for (uint256 i = 0; i < assetList.length; i++) 
-        {
-            if(IERC20(assetList[i]).balanceOf(address(this)) > 0)
-            {
-                uint256 tokenUSD = IAPContract(APContract).getUSDPrice(assetList[i]);
-                nav += (IERC20(assetList[i]).balanceOf(address(this)).mul(uint256(tokenUSD)));       
-            }
-        }
-        if(_strategy == address(0))
-        {
-            return nav.div(1e18);
-        }
-        else if(IERC20(_strategy).balanceOf(address(this)) > 0)
-        {
-            uint256 _strategyBalance = IERC20(_strategy).balanceOf(address(this));
-            uint256 strategyTokenUsd = IStrategy(_strategy).tokenValueInUSD();
-            return (nav + (_strategyBalance.mul(strategyTokenUsd)).div(1e18)).div(1e18);
-        }
-        return nav.div(1e18);
-    }
-
-    function getVaultNAVWithoutStrategyToken() 
-        public 
-        view 
-        returns (uint256) 
-    {
-        uint256 nav = 0;
-        for (uint256 i = 0; i < assetList.length; i++) 
-        {
-            if(IERC20(assetList[i]).balanceOf(address(this)) > 0)
-            {
-                uint256 tokenUSD = IAPContract(APContract).getUSDPrice(assetList[i]);
-                nav += (IERC20(assetList[i]).balanceOf(address(this)).mul(uint256(tokenUSD)));       
-            }
-        }
-        return nav.div(1e18);
-    }
-
-    function getDepositNAV(address _tokenAddress, uint256 _amount)
-        view
-        public
-        returns (uint256)
-    {
-        uint256 tokenUSD = IAPContract(APContract).getUSDPrice(_tokenAddress);
-        return (_amount.mul(uint256(tokenUSD))).div(1e18);
-    }
-
     function deposit(address _tokenAddress, uint256 _amount)
         onlyNormalMode
         onlyWhitelisted
@@ -354,6 +262,7 @@ contract GnosisSafe
         }
 
         token.transferFrom(msg.sender, address(this), _amount);
+        tokenBalances.setTokenBalance(_tokenAddress,tokenBalances.getTokenBalance(_tokenAddress).add(_amount));
         _mint(msg.sender, _share);
 
         if(!isAssetDeposited[_tokenAddress])
@@ -376,17 +285,20 @@ contract GnosisSafe
         uint256 safeTokenVaulueInUSD = (_shares.mul(getVaultNAV())).div(totalSupply());
         uint256 tokenCount = (safeTokenVaulueInUSD.mul(1e18)).div(uint256(tokenUSD));
         
-        if(tokenCount <= IERC20(_tokenAddress).balanceOf(address(this)))
+        if(tokenCount <= tokenBalances.getTokenBalance(_tokenAddress))
         {
             _burn(msg.sender, _shares);
             IERC20(_tokenAddress).transfer(msg.sender,tokenCount);
+            tokenBalances.setTokenBalance(_tokenAddress,tokenBalances.getTokenBalance(_tokenAddress).sub(tokenCount));
         }
         else
         {
-            uint256 need = tokenCount - IERC20(_tokenAddress).balanceOf(address(this));
+            uint256 need = tokenCount - tokenBalances.getTokenBalance(_tokenAddress);
             exchangeToken(_tokenAddress, need);
             _burn(msg.sender, _shares);
             IERC20(_tokenAddress).transfer(msg.sender,tokenCount);
+            tokenBalances.setTokenBalance(_tokenAddress,tokenBalances.getTokenBalance(_tokenAddress).sub(tokenCount));
+
         }
     }
 
@@ -447,37 +359,27 @@ contract GnosisSafe
         }
     }
 
-    function tokenValueInUSD() 
-        public 
-        view 
-        returns(uint256)
-    {
-        if(getVaultNAV() == 0 || totalSupply() == 0)
-        {
-            return 0;
-        }
-        else
-        {
-            return (getVaultNAV().mul(1e18)).div(totalSupply());
-        }
-    }
-
     function earn(uint256 _amount) 
         onlyNormalMode
         public
     {
         address _strategy = IAPContract(APContract).getVaultActiveStrategy(address(this));
-        uint256 _balance = IERC20(IStrategy(_strategy).want()).balanceOf(address(this));
+        uint256 _balance = tokenBalances.getTokenBalance(IStrategy(_strategy).want());
         if(_amount <= _balance)        
         {
             IERC20(IStrategy(_strategy).want()).approve(_strategy, _amount);
             IStrategy(_strategy).deposit(_amount);
+            tokenBalances.setTokenBalance(IStrategy(_strategy).want(),_balance.sub(_amount));
+
+
         }
         else
         {
             exchangeToken(IStrategy(_strategy).want(),_amount);
             IERC20(IStrategy(_strategy).want()).approve(_strategy, _amount);
             IStrategy(_strategy).deposit(_amount);
+            tokenBalances.setTokenBalance(IStrategy(_strategy).want(),tokenBalances.getTokenBalance(IStrategy(_strategy).want()).sub(_amount));
+
         }
     }
 
@@ -550,5 +452,19 @@ contract GnosisSafe
         _mint(tx.origin, 100);
         return "";
     }
-
+// safe sender, call sender, sdelegate sender
+    
+    event testManagementFee(uint256, string);
+    function managementFeeCleanUp(address delegateContract) 
+        public
+    {
+        // (bool success, bytes memory result) = deligateContract.call(abi.encodeWithSignature("getMessenger()"));
+        (bool success2, bytes memory result) = delegateContract.delegatecall(abi.encodeWithSignature("executeSafeCleanUp()"));
+        // (bool success2, bytes memory result2) = delegateContract.delegatecall(bytes4(keccak256("getMessenger()")));
+        if(!success2)
+        {
+            revert("failed to execute");
+        }
+        // test= abi.decode(result,(uint256));
+    }
 }

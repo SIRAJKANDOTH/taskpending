@@ -61,7 +61,7 @@
     "eth-lightwallet": "^4.0.0",
     "ethereumjs-abi": "^0.6.8",
     "ethereumjs-util": "^6.2.0",
-    "ganache-cli": "6.3.0",
+    "ganache-cli": "^6.3.0",
     "ipfs-http-client": "^44.2.0",
     "random-buffer": "*",
     "run-with-testrpc": "^0.3.0",
