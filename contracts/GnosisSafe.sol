@@ -135,6 +135,7 @@ contract GnosisSafe
     public
     {
         require(msg.sender == vaultAPSManager, "Sender not Authorized");
+        managementFeeCleanUp();
         IAPContract(APContract).setVaultAssets(_enabledDepositAsset, _enabledWithdrawalAsset, _disabledDepositAsset, _disabledWithdrawalAsset);
     }
 
@@ -281,6 +282,7 @@ contract GnosisSafe
     {
         require(IAPContract(APContract).isWithdrawalAsset(_tokenAddress),"Not an approved Withdrawal asset");
         require(balanceOf(msg.sender) >= _shares,"You don't have enough shares");
+        managementFeeCleanUp();
         uint256 tokenUSD = IAPContract(APContract).getUSDPrice(_tokenAddress);
         uint256 safeTokenVaulueInUSD = (_shares.mul(getVaultNAV())).div(totalSupply());
         uint256 tokenCount = (safeTokenVaulueInUSD.mul(1e18)).div(uint256(tokenUSD));
@@ -335,6 +337,7 @@ contract GnosisSafe
         public
     {
         require(balanceOf(msg.sender) >= _shares,"You don't have enough shares");
+        managementFeeCleanUp();
         uint256 safeTotalSupply = totalSupply();
         _burn(msg.sender, _shares); 
 
@@ -455,11 +458,13 @@ contract GnosisSafe
 // safe sender, call sender, sdelegate sender
     
     event testManagementFee(uint256, string);
-    function managementFeeCleanUp(address delegateContract) 
+    function managementFeeCleanUp() 
         public
     {
+
+        
         // (bool success, bytes memory result) = deligateContract.call(abi.encodeWithSignature("getMessenger()"));
-        (bool success2, bytes memory result) = delegateContract.delegatecall(abi.encodeWithSignature("executeSafeCleanUp()"));
+        (bool success2, bytes memory result) = IAPContract(APContract).platFormManagementFee().delegatecall(abi.encodeWithSignature("executeSafeCleanUp()"));
         // (bool success2, bytes memory result2) = delegateContract.delegatecall(bytes4(keccak256("getMessenger()")));
         if(!success2)
         {
