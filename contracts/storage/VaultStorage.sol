@@ -1,6 +1,4 @@
 pragma solidity >=0.5.0 <0.7.0;
-// import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-// import "../token/ERC20Detailed.sol";
 import "../common/MasterCopy.sol";
 import "../external/GnosisSafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";

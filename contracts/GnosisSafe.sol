@@ -13,21 +13,21 @@ contract GnosisSafe
     function enableEmergencyBreak()
         public
     {
-        require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Sender not Authorized");
+        require(msg.sender == IAPContract(APContract).yieldsterGOD(), "Sender not Authorized");
         emergencyBreak = true;
     }
 
     function disableEmergencyBreak()
         public
     {
-        require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Sender not Authorized");
+        require(msg.sender == IAPContract(APContract).yieldsterGOD(), "Sender not Authorized");
         emergencyBreak = false;
     }
 
     function enableEmergencyExit()
         public
     {
-        require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Sender not Authorized");
+        require(msg.sender == IAPContract(APContract).yieldsterGOD(), "Sender not Authorized");
         emergencyExit = true;
         address vaultActiveStrategy = getVaultActiveStrategy();
         if(vaultActiveStrategy != address(0))
@@ -41,7 +41,7 @@ contract GnosisSafe
             uint256 tokenBalance = token.balanceOf(address(this));
             if(tokenBalance > 0)
             {
-                token.transfer(IAPContract(APContract).getEmergencyVault(), tokenBalance);
+                token.transfer(IAPContract(APContract).emergencyVault(), tokenBalance);
             }
         }
     }
@@ -50,7 +50,7 @@ contract GnosisSafe
     {
         if(emergencyBreak)
         {
-            require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Sender not Authorized");
+            require(msg.sender == IAPContract(APContract).yieldsterGOD(), "Sender not Authorized");
         }
         else if(emergencyExit)
         {
@@ -109,7 +109,7 @@ contract GnosisSafe
         APContract = _APContract; //hardcode APContract address here before deploy to mainnet
         owner = tx.origin;
         whiteListGroups = _whiteListGroups;
-        whiteList = Whitelist(IAPContract(APContract).getwhitelistModule());
+        whiteList = Whitelist(IAPContract(APContract).whitelistModule());
         oneInch = 0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB;
         setupToken(_tokenName, _symbol);
         tokenBalances=new TokenBalanceStorage();
@@ -218,7 +218,7 @@ contract GnosisSafe
         onlyNormalMode
         public
     {
-        require(IAPContract(APContract).getYieldsterDAO() == msg.sender || vaultAPSManager == msg.sender, "Sender not Authorized");
+        require(IAPContract(APContract).yieldsterDAO() == msg.sender || vaultAPSManager == msg.sender, "Sender not Authorized");
         IAPContract(APContract).changeVaultAPSManager(_vaultAPSManager);
         vaultAPSManager = _vaultAPSManager;
     }
@@ -228,7 +228,7 @@ contract GnosisSafe
         onlyNormalMode
         public
     {
-        require(IAPContract(APContract).getYieldsterDAO() == msg.sender || vaultStrategyManager == msg.sender, "Sender not Authorized");
+        require(IAPContract(APContract).yieldsterDAO() == msg.sender || vaultStrategyManager == msg.sender, "Sender not Authorized");
         IAPContract(APContract).changeVaultAPSManager(_strategyManager);
         vaultStrategyManager = _strategyManager;
     }
@@ -394,7 +394,7 @@ contract GnosisSafe
                 uint256 _amount = IERC20(cleanUpList[i]).balanceOf(address(this));
                 if(_amount > 0)
                 {
-                    IERC20(cleanUpList[i]).transfer(IAPContract(APContract).getYieldsterTreasury(), _amount);
+                    IERC20(cleanUpList[i]).transfer(IAPContract(APContract).yieldsterTreasury(), _amount);
                 }
             }
         }
@@ -413,6 +413,7 @@ contract GnosisSafe
     onlyNormalMode
     returns(bytes4)
     {
+        require(IAPContract(APContract).strategyMinter() == msg.sender, "Only Yieldster Strategy Minter");
         HexUtils hexUtils = new HexUtils();
         if(id == 0)
         {
@@ -449,22 +450,21 @@ contract GnosisSafe
     onlyNormalMode
     returns(bytes4)
     {
+        require(IAPContract(APContract).strategyMinter() == msg.sender, "Only Yieldster Strategy Minter");
         _mint(tx.origin, 100);
         return "";
     }
 // safe sender, call sender, sdelegate sender
     
     event testManagementFee(uint256, string);
+
     function managementFeeCleanUp(address delegateContract) 
         public
     {
-        // (bool success, bytes memory result) = deligateContract.call(abi.encodeWithSignature("getMessenger()"));
         (bool success2, bytes memory result) = delegateContract.delegatecall(abi.encodeWithSignature("executeSafeCleanUp()"));
-        // (bool success2, bytes memory result2) = delegateContract.delegatecall(bytes4(keccak256("getMessenger()")));
         if(!success2)
         {
             revert("failed to execute");
         }
-        // test= abi.decode(result,(uint256));
     }
 }

@@ -9,6 +9,8 @@ const ManagementFee=artifacts.require("./delegateContracts/ManagementFee.sol");
 const YRToken = artifacts.require("./yrToken.sol");
 const AishToken = artifacts.require("./aishToken.sol");
 const PriceModule = artifacts.require("./price/PriceModule.sol");
+const StrategyMinter = artifacts.require("./strategies/StrategyMinter.sol");
+
 function token(n) {
 	return web3.utils.toWei(n, "ether");
 }
@@ -90,12 +92,6 @@ contract(" APContract", function (accounts) {
 			"LINK Coin",
 			"0xd8bD0a1cB028a31AA859A21A3758685a95dE4623",
 			"0x01be23585060835e02b77ef475b0cc51aa1e0709"
-		);
-		await apContract.addAsset(
-			"BAT",
-			"Basic Attention Token",
-			"0x031dB56e01f82f20803059331DC6bEe9b17F7fC9",
-			"0xbf7a7169562078c96f0ec1a8afd6ae50f12e5a99"
 		);
 		await apContract.addAsset(
 			"BNB",

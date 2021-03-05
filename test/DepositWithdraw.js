@@ -6,7 +6,9 @@ const PriceModule = artifacts.require("./price/PriceModule.sol");
 const ProxyFactory = artifacts.require("./GnosisSafeProxyFactory.sol");
 const YRToken = artifacts.require("./yrToken.sol");
 const AishToken = artifacts.require("./aishToken.sol");
-const ManagementFee=artifacts.require("./delegateContracts/ManagementFee.sol");
+const ManagementFee = artifacts.require("./delegateContracts/ManagementFee.sol");
+const StrategyMinter = artifacts.require("./strategies/StrategyMinter.sol");
+
 
 function token(n) {
 	return web3.utils.toWei(n, "ether");
@@ -24,6 +26,7 @@ contract(" Deposit", function (accounts) {
 	let yrtToken;
 	let aishToken;
 	let groupId;
+	let strategyMinter;
 
 	beforeEach(async function () {
 		whitelist = await Whitelist.new();
@@ -37,6 +40,8 @@ contract(" Deposit", function (accounts) {
 			gnosisSafeMasterCopy.address,
 			whitelist.address
 		);
+
+		strategyMinter = await StrategyMinter.new(apContract.address);
 		
 		let groupHash = await whitelist.createGroup(accounts[1]);
 		groupId = (await groupHash.logs[0].args["1"]).toString();
@@ -46,6 +51,10 @@ contract(" Deposit", function (accounts) {
 		priceModule = await PriceModule.new(apContract.address);
 
 		await apContract.setPriceModule(priceModule.address);
+
+		await apContract.setStrategyMinter(strategyMinter.address);
+
+		await apContract.setStrategyExecutor(accounts[0]);
 
 		proxyFactory = await ProxyFactory.new(
 			gnosisSafeMasterCopy.address,

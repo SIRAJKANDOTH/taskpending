@@ -4,6 +4,7 @@ var APContract = artifacts.require("./aps/APContract.sol");
 var PriceModule = artifacts.require("./price/PriceModule.sol");
 var ProxyFactory = artifacts.require("./proxies/GnosisSafeProxyFactory.sol");
 var YearnItAll = artifacts.require("./strategies/YearnItAll.sol");
+var StrategyMinter = artifacts.require("./strategies/StrategyMinter.sol");
 
 module.exports = async (deployer) => {
 	await deployer.deploy(GnosisSafe);
@@ -30,6 +31,17 @@ module.exports = async (deployer) => {
 		apContract.address
 	);
 	const proxyFactory = await ProxyFactory.deployed();
+
+	const strategyMinter = await deployer.deploy(
+		StrategyMinter,
+		apContract.address
+	);
+
+	await apContract.setStrategyMinter(strategyMinter.address);
+
+	await apContract.setStrategyExecutor(
+		"0x92506Ee00ad88354fa25E6CbFa7d42116d6823C0"
+	);
 
 	await apContract.addProxyFactory(proxyFactory.address);
 
@@ -58,12 +70,6 @@ module.exports = async (deployer) => {
 		"LINK Coin",
 		"0xd8bD0a1cB028a31AA859A21A3758685a95dE4623",
 		"0x01be23585060835e02b77ef475b0cc51aa1e0709"
-	);
-	await apContract.addAsset(
-		"BAT",
-		"Basic Attention Token",
-		"0x031dB56e01f82f20803059331DC6bEe9b17F7fC9",
-		"0xbf7a7169562078c96f0ec1a8afd6ae50f12e5a99"
 	);
 	await apContract.addAsset(
 		"BNB",
@@ -121,5 +127,4 @@ module.exports = async (deployer) => {
 		"0xD8052918CAd9a8B3a564d7Aa4e680a0dc156380e",
 		"0x3662ABD754eE1d8CB6f5F1D4E315932b36e9955B",
 	]);
-
 };

@@ -25,13 +25,17 @@ interface IAPContract{
 
     function createVault(address, address) external;
 
-    function getYieldsterDAO() view external returns(address);
+    function yieldsterDAO() view external returns(address);
 
-    function getYieldsterTreasury() view external returns(address);
+    function yieldsterTreasury() view external returns(address);
 
-    function getYieldsterGOD() view external returns(address);
+    function yieldsterGOD() view external returns(address);
 
-    function getEmergencyVault() external view returns(address);
+    function emergencyVault() external view returns(address);
+
+    function strategyExecutor() external view returns(address);
+
+    function strategyMinter() external view returns(address);
 
     function setYieldsterGOD(address) external;
 
@@ -47,7 +51,7 @@ interface IAPContract{
 
     function disableVaultStrategy(address, address[] calldata) external;
 
-    function getwhitelistModule() view external returns(address);
+    function whitelistModule() view external returns(address);
 
     function isDepositAsset(address ) external view returns(bool);
 

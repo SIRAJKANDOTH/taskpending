@@ -64,8 +64,6 @@ contract APContract
 
     mapping(uint256 => address) strategyInstructionId;
 
-    mapping(address => mapping(address => address)) public converters;
-
     mapping(address => address) safeOwner;
 
     address public MasterCopy;
@@ -77,6 +75,10 @@ contract APContract
     address public yieldsterGOD;
 
     address public emergencyVault;
+
+    address public strategyExecutor;
+
+    address public strategyMinter;
 
     mapping(address => bool) APSManagers;
 
@@ -155,30 +157,6 @@ contract APContract
         whitelistManager = _whitelistManager;
     }
 
-    function getYieldsterDAO()
-        view
-        public 
-        returns(address)
-    {
-        return yieldsterDAO;
-    }
-
-    function getYieldsterTreasury()
-        view
-        public
-        returns(address)
-    {
-        return yieldsterTreasury;
-    }
-
-    function getYieldsterGOD()
-        view
-        public
-        returns(address)
-    {
-        return yieldsterGOD;
-    }
-
     function setYieldsterGOD(address _yieldsterGOD)
         public
     {
@@ -193,14 +171,6 @@ contract APContract
         yieldsterGOD = address(0);
     }
 
-    function getEmergencyVault()
-        public
-        view
-        returns(address)
-    {
-        return emergencyVault;
-    }
-
     function setEmergencyVault(address _emergencyVault)
         onlyYieldsterDAO
         public
@@ -208,13 +178,18 @@ contract APContract
         emergencyVault = _emergencyVault;
     }
 
-    
-    function getwhitelistModule()
-        view
-        public 
-        returns(address)
+    function setStrategyMinter(address _strategyMinter)
+        onlyYieldsterDAO
+        public
     {
-        return whitelistModule;
+        strategyMinter = _strategyMinter;
+    }
+
+    function setStrategyExecutor(address _strategyExecutor)
+        onlyYieldsterDAO
+        public
+    {
+        strategyExecutor = _strategyExecutor;
     }
 
     function changeVaultAPSManager(address _vaultAPSManager)
@@ -232,29 +207,6 @@ contract APContract
         vaults[msg.sender].vaultStrategyManager = _vaultStrategyManager;
     }
 
-//Converters
-    function setConverter(
-        address _input,
-        address _output,
-        address _converter
-    ) 
-    public 
-    onlyManager
-    {
-        converters[_input][_output] = _converter;
-    }
-
-    function getConverter(
-        address _input,
-        address _output
-    )
-    public
-    view
-    returns(address)
-    {
-        return converters[_input][_output];
-    }
-
 //Price Module
     function setPriceModule(address _priceModule)
         public
@@ -270,7 +222,6 @@ contract APContract
     {
         require(_isAssetPresent(_tokenAddress),"Asset not present!");
         return IPriceModule(priceModule).getUSDPrice(_tokenAddress);
-        // return(int(1),uint(1000000000),uint8(8));
     }
 
 
@@ -363,12 +314,10 @@ contract APContract
         returns(address)
     {
         require(vaults[_vaultAddress].created, "Vault not present");
-       
         return vaultActiveStrategy[_vaultAddress];
     }
 
     function setVaultStrategyAndProtocol(
-
         address _vaultStrategy,
         address[] memory _enabledStrategyProtocols,
         address[] memory _disabledStrategyProtocols,
@@ -483,9 +432,7 @@ contract APContract
     {
         return vaults[_address].created;
     }
-    
-
-    
+       
 
 // Assets
     function _isAssetPresent(address _address) 
@@ -634,8 +581,6 @@ contract APContract
         return strategyInstructionId[_instructionId];
     }
 
-
-
 // Protocols
     function _isProtocolPresent(address _address) 
         private 
@@ -665,6 +610,4 @@ contract APContract
         require(_isProtocolPresent(_protocolAddress),"Protocol not present!");
         delete protocols[_protocolAddress];
     }
-
-
 }
