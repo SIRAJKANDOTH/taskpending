@@ -9,7 +9,6 @@ import "../interfaces/IAPContract.sol";
 import "../interfaces/IExchange.sol";
 import "../interfaces/IStrategy.sol";
 import "../utils/HexUtils.sol";
-import "../utils/InstructionOracle.sol";
 import "./TokenBalanceStorage.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
@@ -110,11 +109,6 @@ contract VaultStorage
         else{
             return (getVaultNAV().mul(1e18)).div(totalSupply());
         }
-    }
-
-    function getBalance(address _tokenAddress) public
-    view returns(uint256){
-        return tokenBalances.getTokenBalance(_tokenAddress);
     }
 
 }

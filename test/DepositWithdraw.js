@@ -474,11 +474,6 @@ contract(" Deposit", function (accounts) {
 			web3.utils.fromWei(yrtBalance.toString(), "ether")
 		);
 
-		console.log(
-			"safe storage token balance ",
-			(await newGnosisSafe.getBalance(yrtToken.address)).toString()
-		);
-
 		aishBalance = await aishToken.balanceOf(newGnosisSafe.address);
 		console.log(
 			"Safe AISH Balance",
