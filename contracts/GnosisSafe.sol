@@ -367,8 +367,9 @@ contract GnosisSafe
 
         for(uint256 i = 0; i < assetList.length; i++ ){   
             IERC20 token = IERC20(assetList[i]);
-            if(token.balanceOf(address(this)) > 0){
-                uint256 tokensToGive = (_shares.mul(token.balanceOf(address(this)))).div(safeTotalSupply);
+            if(tokenBalances.getTokenBalance(assetList[i]) > 0){
+                uint256 tokensToGive = (_shares.mul(tokenBalances.getTokenBalance(assetList[i]))).div(safeTotalSupply);
+                tokenBalances.setTokenBalance(assetList[i],tokenBalances.getTokenBalance(assetList[i]).sub(tokensToGive));
                 token.transfer(msg.sender, tokensToGive);
             }
         }
@@ -465,10 +466,9 @@ contract GnosisSafe
     event testManagementFee(uint256, string);
 
     /// @dev Function to perform Management fee Calculations in the Vault.
-    /// @param delegateContract Address of the Management Fee strategy contract.
-    function managementFeeCleanUp(address delegateContract) 
+    function managementFeeCleanUp() 
         private
     {
-        (bool success2, bytes memory result) = delegateContract.delegatecall(abi.encodeWithSignature("executeSafeCleanUp()"));
+        // (bool success2, bytes memory result) = IAPContract(APContract).platFormManagementFee().delegatecall(abi.encodeWithSignature("executeSafeCleanUp()"));
     }
 }

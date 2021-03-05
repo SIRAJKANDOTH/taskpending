@@ -54,9 +54,9 @@ contract VaultStorage
         address _strategy = IAPContract(APContract).getVaultActiveStrategy(address(this));
         uint256 nav = 0;
         for (uint256 i = 0; i < assetList.length; i++) {
-            if(IERC20(assetList[i]).balanceOf(address(this)) > 0){
+            if(tokenBalances.getTokenBalance(assetList[i]) > 0){
                 uint256 tokenUSD = IAPContract(APContract).getUSDPrice(assetList[i]);
-                nav += (IERC20(assetList[i]).balanceOf(address(this)).mul(uint256(tokenUSD)));       
+                nav += (tokenBalances.getTokenBalance(assetList[i]).mul(uint256(tokenUSD)));       
             }
         }
         if(_strategy == address(0)){
@@ -78,9 +78,9 @@ contract VaultStorage
     {
         uint256 nav = 0;
         for (uint256 i = 0; i < assetList.length; i++){
-            if(IERC20(assetList[i]).balanceOf(address(this)) > 0){
+            if(tokenBalances.getTokenBalance(assetList[i]) > 0){
                 uint256 tokenUSD = IAPContract(APContract).getUSDPrice(assetList[i]);
-                nav += (IERC20(assetList[i]).balanceOf(address(this)).mul(uint256(tokenUSD)));       
+                nav += (tokenBalances.getTokenBalance(assetList[i]).mul(uint256(tokenUSD)));       
             }
         }
         return nav.div(1e18);
@@ -110,6 +110,11 @@ contract VaultStorage
         else{
             return (getVaultNAV().mul(1e18)).div(totalSupply());
         }
+    }
+
+    function getBalance(address _tokenAddress) public
+    view returns(uint256){
+        return tokenBalances.getTokenBalance(_tokenAddress);
     }
 
 }

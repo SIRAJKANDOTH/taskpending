@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.5.0 <0.7.0;
-import "@openzeppelin/contracts/utils/Address.sol";
 
 contract Whitelist
 {
-    using Address for address;
-
     struct WhitelistGroup
     {
         mapping(address => bool) members;
