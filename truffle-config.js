@@ -71,7 +71,7 @@ module.exports = {
       settings: {
         optimizer: {
           enabled: true,
-          runs:1337
+          runs:200
         },
         evmVersion: "petersburg"
       }

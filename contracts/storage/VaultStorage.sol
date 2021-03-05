@@ -25,33 +25,24 @@ contract VaultStorage
     ERC20Detailed,
     ERC1155Receiver 
 {
-    using SafeERC20 for IERC20;
-    using Address for address;
     using SafeMath for uint256;
-
-    string public vaultName;
+    bool internal vaultSetupCompleted = false;
+    bool internal vaultRegistrationCompleted = false;
+    bool public emergencyExit;
+    bool public emergencyBreak;
     address public APContract;
     address public owner;
     address public vaultAPSManager;
     address public vaultStrategyManager;
-    bool internal vaultSetupCompleted = false;
-    bool internal vaultRegistrationCompleted = false;
-
+    address oneInch;
+    address[] internal assetList;
+    string public vaultName;
     mapping(address => bool) public safeAssets;
     mapping(address=>bool) isAssetDeposited;
-    address[] internal assetList;
-    
-    Whitelist internal whiteList;
     uint256[] internal whiteListGroups;
-
-    address oneInch = 0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB;
-    address yieldsterTreasury = 0x5091aF48BEB623b3DA0A53F726db63E13Ff91df9;
-
-    bool public emergencyExit;
-    bool public emergencyBreak;
-
+    Whitelist internal whiteList;
     // Token balance storage keeps track of tokens that are deposited to safe without worrying direct depoited assets affesting the NAV;
-    TokenBalanceStorage tokenBalances;
+    TokenBalanceStorage internal tokenBalances;
     // uint public result;
     // uint public currentBlockDifference;
     // uint public currentNav;
