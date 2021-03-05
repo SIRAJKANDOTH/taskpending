@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.5.0 <0.7.0;
 pragma experimental ABIEncoderV2;
-
 import "./storage/VaultStorage.sol";
 
 contract GnosisSafe
@@ -31,61 +30,58 @@ contract GnosisSafe
         require(msg.sender == IAPContract(APContract).yieldsterGOD(), "Sender not Authorized");
         emergencyExit = true;
         address vaultActiveStrategy = getVaultActiveStrategy();
-        if(vaultActiveStrategy != address(0))
-        {
+
+        if(vaultActiveStrategy != address(0)){
             IStrategy(getVaultActiveStrategy()).withdrawAllToSafe();
             IStrategy(getVaultActiveStrategy()).deRegisterSafe();
         }
-        for(uint256 i = 0; i < assetList.length; i++ )
-        {   
+        for(uint256 i = 0; i < assetList.length; i++ ){   
             IERC20 token = IERC20(assetList[i]);
             uint256 tokenBalance = token.balanceOf(address(this));
-            if(tokenBalance > 0)
-            {
+            if(tokenBalance > 0){
                 token.transfer(IAPContract(APContract).emergencyVault(), tokenBalance);
             }
         }
     }
 
-    modifier onlyNormalMode
+    modifier onlyNormalMode{
+        _onlyNormalMode();
+        _;
+    }
+
+    /// @dev Function that Disables vault interactions in case of Emergency Break and Emergency Exit.
+    function _onlyNormalMode()
+        internal
     {
-        if(emergencyBreak)
-        {
+        if(emergencyBreak){
             require(msg.sender == IAPContract(APContract).yieldsterGOD(), "Sender not Authorized");
         }
-        else if(emergencyExit)
-        {
+        else if(emergencyExit){
             revert("This safe is no longer active");
         }
-        _;
     }
 
     /// @dev Function that checks if the user is whitelisted.
     function isWhiteListed()
         public 
         view 
-        returns (bool) 
     {
-        if(whiteListGroups.length == 0)
-        {
-            return true;
+        if(whiteListGroups.length == 0){
+            return;
         }
-        else
-        {
-            for (uint256 i = 0; i < whiteListGroups.length; i++) 
-            {
-                if (whiteList.isMember(whiteListGroups[i], msg.sender)) 
-                {
-                    return true;
+        else{
+            for (uint256 i = 0; i < whiteListGroups.length; i++){
+                if (whiteList.isMember(whiteListGroups[i], msg.sender)){
+                    return;
                 }
             }
-            return false;
+            revert("Only Whitelisted");
         }
     }
 
     modifier onlyWhitelisted
     {
-        require(isWhiteListed(),"Only Whitelisted");
+        isWhiteListed();
         _;
     }
 
@@ -177,10 +173,8 @@ contract GnosisSafe
         public
     {
         require(msg.sender == vaultStrategyManager, "Sender not Authorized");
-        if(getVaultActiveStrategy() == _strategyAddress)
-        {
-            if(IERC20(_strategyAddress).balanceOf(address(this)) > 0)
-            {
+        if(getVaultActiveStrategy() == _strategyAddress){
+            if(IERC20(_strategyAddress).balanceOf(address(this)) > 0){
                 IStrategy(getVaultActiveStrategy()).withdrawAllToSafe();
             }
             IStrategy(getVaultActiveStrategy()).deRegisterSafe();
@@ -197,10 +191,8 @@ contract GnosisSafe
     {
         require(msg.sender == vaultStrategyManager, "Sender not Authorized");
         require(IAPContract(APContract)._isStrategyEnabled(address(this), _activeVaultStrategy) ,"This strategy is not enabled");
-        if(getVaultActiveStrategy() != address(0))
-        {
-            if(IERC20(getVaultActiveStrategy()).balanceOf(address(this)) > 0)
-            {
+        if(getVaultActiveStrategy() != address(0)){
+            if(IERC20(getVaultActiveStrategy()).balanceOf(address(this)) > 0){
                 IStrategy(getVaultActiveStrategy()).withdrawAllToSafe();
             }
             IStrategy(getVaultActiveStrategy()).deRegisterSafe();
@@ -219,8 +211,7 @@ contract GnosisSafe
         require(msg.sender == vaultStrategyManager, "Sender not Authorized");
         require(IAPContract(APContract)._isStrategyEnabled(address(this), _strategyAddress) ,"This strategy is not enabled");
         require(getVaultActiveStrategy() == _strategyAddress, "This strategy is not active right now");
-        if(IERC20(_strategyAddress).balanceOf(address(this)) > 0)
-        {
+        if(IERC20(_strategyAddress).balanceOf(address(this)) > 0){
             IStrategy(getVaultActiveStrategy()).withdrawAllToSafe();
         }
         IStrategy(getVaultActiveStrategy()).deRegisterSafe();
@@ -264,7 +255,7 @@ contract GnosisSafe
     /// @dev Function to get the amount of Vault Tokens to be minted for the deposit NAV.
     /// @param depositNAV NAV of the Deposit Amount.
     function getMintValue(uint256 depositNAV)
-        public
+        internal
         view
         returns (uint256)
     {
@@ -283,12 +274,10 @@ contract GnosisSafe
         require(IAPContract(APContract).isDepositAsset(_tokenAddress), "Not an approved deposit asset");
         IERC20 token = ERC20(_tokenAddress);
 
-        if(totalSupply() == 0)
-        {
+        if(totalSupply() == 0){
             _share = _amount;
         }
-        else
-        {
+        else{
             _share = getMintValue(getDepositNAV(_tokenAddress, _amount));
         }
 
@@ -296,8 +285,7 @@ contract GnosisSafe
         tokenBalances.setTokenBalance(_tokenAddress,tokenBalances.getTokenBalance(_tokenAddress).add(_amount));
         _mint(msg.sender, _share);
 
-        if(!isAssetDeposited[_tokenAddress])
-        {
+        if(!isAssetDeposited[_tokenAddress]){
             isAssetDeposited[_tokenAddress] = true;
             assetList.push(_tokenAddress);
         }
@@ -318,20 +306,17 @@ contract GnosisSafe
         uint256 safeTokenVaulueInUSD = (_shares.mul(getVaultNAV())).div(totalSupply());
         uint256 tokenCount = (safeTokenVaulueInUSD.mul(1e18)).div(uint256(tokenUSD));
         
-        if(tokenCount <= tokenBalances.getTokenBalance(_tokenAddress))
-        {
+        if(tokenCount <= tokenBalances.getTokenBalance(_tokenAddress)){
             _burn(msg.sender, _shares);
             IERC20(_tokenAddress).transfer(msg.sender,tokenCount);
             tokenBalances.setTokenBalance(_tokenAddress,tokenBalances.getTokenBalance(_tokenAddress).sub(tokenCount));
         }
-        else
-        {
+        else{
             uint256 need = tokenCount - tokenBalances.getTokenBalance(_tokenAddress);
             exchangeToken(_tokenAddress, need);
             _burn(msg.sender, _shares);
             IERC20(_tokenAddress).transfer(msg.sender,tokenCount);
             tokenBalances.setTokenBalance(_tokenAddress,tokenBalances.getTokenBalance(_tokenAddress).sub(tokenCount));
-
         }
     }
 
@@ -341,20 +326,17 @@ contract GnosisSafe
     function exchangeToken(address _targetToken, uint256 _amount)
         internal
     {
-        for(uint256 i = 0; i < assetList.length; i++ )
-            {
+        for(uint256 i = 0; i < assetList.length; i++ ){
                 IERC20 haveToken = IERC20(assetList[i]);
                 uint256 targetTokenUSD = IAPContract(APContract).getUSDPrice(_targetToken);
                 uint256 haveTokenUSD = IAPContract(APContract).getUSDPrice(assetList[i]);
 
-                if((haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD))).div(1e18) > (_amount.mul(uint256(targetTokenUSD))).div(1e18))
-                {
+                if((haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD))).div(1e18) > (_amount.mul(uint256(targetTokenUSD))).div(1e18)){
                     (uint256 returnAmount, uint256[] memory distribution) = 
                     IExchange(oneInch).getExpectedReturn(assetList[i], _targetToken, _amount, 0, 0);
                     uint256 adjustedAmount = _amount + (_amount - returnAmount).mul(3);
 
-                    if( (haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD))).div(1e18) > (adjustedAmount.mul(uint256(targetTokenUSD))).div(1e18))
-                    {
+                    if( (haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD))).div(1e18) > (adjustedAmount.mul(uint256(targetTokenUSD))).div(1e18)){
                         IExchange(oneInch).swap(assetList[i], _targetToken, adjustedAmount, _amount, distribution, 0);
                         break;
                     }
@@ -374,18 +356,15 @@ contract GnosisSafe
         uint256 safeTotalSupply = totalSupply();
         _burn(msg.sender, _shares); 
 
-        if(getVaultActiveStrategy() != address(0))
-        {
+        if(getVaultActiveStrategy() != address(0)){
             uint256 safeStrategyBalance = IERC20(getVaultActiveStrategy()).balanceOf(address(this));
-            if(safeStrategyBalance > 0)
-            {
+            if(safeStrategyBalance > 0){
                 uint256 strategyShares = (_shares.mul(safeStrategyBalance)).div(safeTotalSupply); 
                 IERC20(getVaultActiveStrategy()).transfer(msg.sender,strategyShares);
             }
         }
 
-        for(uint256 i = 0; i < assetList.length; i++ )
-        {   
+        for(uint256 i = 0; i < assetList.length; i++ ){   
             IERC20 token = IERC20(assetList[i]);
             if(token.balanceOf(address(this)) > 0){
                 uint256 tokensToGive = (_shares.mul(token.balanceOf(address(this)))).div(safeTotalSupply);
@@ -402,14 +381,12 @@ contract GnosisSafe
     {
         address _strategy = IAPContract(APContract).getVaultActiveStrategy(address(this));
         uint256 _balance = tokenBalances.getTokenBalance(IStrategy(_strategy).want());
-        if(_amount <= _balance)        
-        {
+        if(_amount <= _balance){
             IERC20(IStrategy(_strategy).want()).approve(_strategy, _amount);
             IStrategy(_strategy).deposit(_amount);
             tokenBalances.setTokenBalance(IStrategy(_strategy).want(),_balance.sub(_amount));
         }
-        else
-        {
+        else{
             exchangeToken(IStrategy(_strategy).want(),_amount);
             IERC20(IStrategy(_strategy).want()).approve(_strategy, _amount);
             IStrategy(_strategy).deposit(_amount);
@@ -423,13 +400,11 @@ contract GnosisSafe
         onlyNormalMode
         public
     {
-        for (uint256 i = 0; i < cleanUpList.length; i++) 
-        {
-            if(! (IAPContract(APContract)._isVaultAsset(cleanUpList[i])))
-            {
+        require(IAPContract(APContract).strategyMinter() == msg.sender, "Only Yieldster Strategy Minter");
+        for (uint256 i = 0; i < cleanUpList.length; i++){
+            if(! (IAPContract(APContract)._isVaultAsset(cleanUpList[i]))){
                 uint256 _amount = IERC20(cleanUpList[i]).balanceOf(address(this));
-                if(_amount > 0)
-                {
+                if(_amount > 0){
                     IERC20(cleanUpList[i]).transfer(IAPContract(APContract).yieldsterTreasury(), _amount);
                 }
             }
@@ -451,22 +426,19 @@ contract GnosisSafe
     {
         require(IAPContract(APContract).strategyMinter() == msg.sender, "Only Yieldster Strategy Minter");
         HexUtils hexUtils = new HexUtils();
-        if(id == 0)
-        {
+        if(id == 0){
             (bool success, bytes memory result) = address(this).call(hexUtils.fromHex(data));
             if(!success){
                 revert("transaction failed");
             }
         }
-        else if(id == 1)
-        {
+        else if(id == 1){
             (bool success, bytes memory result) = IAPContract(APContract).getVaultActiveStrategy(address(this)).call(hexUtils.fromHex(data));
             if(!success){
                 revert("transaction failed");
             }
         }   
-        else
-        {
+        else{
             address smartStrategy = IAPContract(APContract).getStrategyInstructionId(id);
             (bool success, bytes memory result) = address(smartStrategy).delegatecall(hexUtils.fromHex(data));
             if(!success){
@@ -499,8 +471,7 @@ contract GnosisSafe
         public
     {
         (bool success2, bytes memory result) = delegateContract.delegatecall(abi.encodeWithSignature("executeSafeCleanUp()"));
-        if(!success2)
-        {
+        if(!success2){
             revert("failed to execute");
         }
     }

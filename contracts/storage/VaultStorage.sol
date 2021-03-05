@@ -41,7 +41,6 @@ contract VaultStorage
 
     uint256[] internal whiteListGroups;
     address[] internal assetList;
-    mapping(address => bool) public safeAssets;
     mapping(address=>bool) isAssetDeposited;
 
     Whitelist internal whiteList;
@@ -58,20 +57,16 @@ contract VaultStorage
     {
         address _strategy = IAPContract(APContract).getVaultActiveStrategy(address(this));
         uint256 nav = 0;
-        for (uint256 i = 0; i < assetList.length; i++) 
-        {
-            if(IERC20(assetList[i]).balanceOf(address(this)) > 0)
-            {
+        for (uint256 i = 0; i < assetList.length; i++) {
+            if(IERC20(assetList[i]).balanceOf(address(this)) > 0){
                 uint256 tokenUSD = IAPContract(APContract).getUSDPrice(assetList[i]);
                 nav += (IERC20(assetList[i]).balanceOf(address(this)).mul(uint256(tokenUSD)));       
             }
         }
-        if(_strategy == address(0))
-        {
+        if(_strategy == address(0)){
             return nav.div(1e18);
         }
-        else if(IERC20(_strategy).balanceOf(address(this)) > 0)
-        {
+        else if(IERC20(_strategy).balanceOf(address(this)) > 0){
             uint256 _strategyBalance = IERC20(_strategy).balanceOf(address(this));
             uint256 strategyTokenUsd = IStrategy(_strategy).tokenValueInUSD();
             return (nav + (_strategyBalance.mul(strategyTokenUsd)).div(1e18)).div(1e18);
@@ -86,10 +81,8 @@ contract VaultStorage
         returns (uint256) 
     {
         uint256 nav = 0;
-        for (uint256 i = 0; i < assetList.length; i++) 
-        {
-            if(IERC20(assetList[i]).balanceOf(address(this)) > 0)
-            {
+        for (uint256 i = 0; i < assetList.length; i++){
+            if(IERC20(assetList[i]).balanceOf(address(this)) > 0){
                 uint256 tokenUSD = IAPContract(APContract).getUSDPrice(assetList[i]);
                 nav += (IERC20(assetList[i]).balanceOf(address(this)).mul(uint256(tokenUSD)));       
             }
@@ -115,15 +108,12 @@ contract VaultStorage
         view 
         returns(uint256)
     {
-        if(getVaultNAV() == 0 || totalSupply() == 0)
-        {
+        if(getVaultNAV() == 0 || totalSupply() == 0){
             return 0;
         }
-        else
-        {
+        else{
             return (getVaultNAV().mul(1e18)).div(totalSupply());
         }
     }
 
-   
 }
