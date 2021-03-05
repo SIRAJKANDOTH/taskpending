@@ -28,10 +28,6 @@ contract VaultStorage
     bool internal vaultSetupCompleted;
     bool internal vaultRegistrationCompleted;
 
-    uint public result;
-    uint public currentBlockDifference;
-    uint public currentNav;
-
     address public APContract;
     address public owner;
     address public vaultAPSManager;

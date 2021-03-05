@@ -5,6 +5,11 @@ contract TokenBalanceStorage{
     uint256 private tokenTobeMinted;
 
 
+    constructor() public{
+         blockNumber=block.number;
+    }
+
+
     function setTokenBalance(address _tokenAddress, uint256 _balance) public{
         tokenBalance[_tokenAddress]=_balance;
     }

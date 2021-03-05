@@ -31,7 +31,7 @@ contract(" APContract", function (accounts) {
   let priceModule;
 
   beforeEach(async function () {
-    managementFee = await ManagementFee.new();
+  
     whitelist = await Whitelist.new();
     strategyMinter = await StrategyMinter.new();
     
@@ -39,9 +39,11 @@ contract(" APContract", function (accounts) {
       "deploying Gnosis Safe Mastercopy",
       GnosisSafe
     );
+	managementFee = await ManagementFee.new();
     apContract = await APContract.new(
       gnosisSafeMasterCopy.address,
-      whitelist.address
+      whitelist.address,
+	  managementFee.address
     );
     priceModule = await PriceModule.new(apContract.address);
 
@@ -215,10 +217,10 @@ contract(" APContract", function (accounts) {
 		await newGnosisSafe.deposit(aishToken.address, token("100"));
 
     // Test Management fee
-    await newGnosisSafe.managementFeeCleanUp(managementFee.address);
+    await newGnosisSafe.managementFeeCleanUp();
     console.log("called")
     console.log("sender balance",(await newGnosisSafe.balanceOf(accounts[0])).toString());
-    let result=(await newGnosisSafe.result())/(10**18);
+    let result=(await newGnosisSafe.result());
     let currentBlockDifference=await newGnosisSafe.currentBlockDifference();
     let currentNav=await newGnosisSafe.currentNav();
     let calculatedFee=(currentNav*currentBlockDifference*2/100)/2628000;
@@ -227,7 +229,7 @@ contract(" APContract", function (accounts) {
     console.log("BlockDiffernce: ",(currentBlockDifference).toString());
     console.log("curren Nav: ",(currentNav).toString());
     console.log("calculated Fee ",(calculatedFee).toString());
-      assert.equal(result,calculatedFee,"expected and calculated management Fee matches")
+      assert.equal(parseInt(result),parseInt(calculatedFee),"expected and calculated management Fee matches")
 
   })
 });

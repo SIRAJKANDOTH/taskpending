@@ -50,11 +50,10 @@ contract GnosisSafe
     }
 
     /// @dev Function that Disables vault interactions in case of Emergency Break and Emergency Exit.
-    function _onlyNormalMode()
-        internal
-    {
-        if(emergencyBreak){
-            require(msg.sender == IAPContract(APContract).yieldsterGOD(), "Sender not Authorized");
+    function _onlyNormalMode() private view {
+        if(emergencyBreak)
+        {
+            require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Sender not Authorized");
         }
         else if(emergencyExit){
             revert("This safe is no longer active");
@@ -63,7 +62,7 @@ contract GnosisSafe
 
     /// @dev Function that checks if the user is whitelisted.
     function isWhiteListed()
-        public 
+        private 
         view 
     {
         if(whiteListGroups.length == 0){
@@ -144,6 +143,7 @@ contract GnosisSafe
     public
     {
         require(msg.sender == vaultAPSManager, "Sender not Authorized");
+        managementFeeCleanUp();
         IAPContract(APContract).setVaultAssets(_enabledDepositAsset, _enabledWithdrawalAsset, _disabledDepositAsset, _disabledWithdrawalAsset);
     }
 
@@ -302,6 +302,7 @@ contract GnosisSafe
     {
         require(IAPContract(APContract).isWithdrawalAsset(_tokenAddress),"Not an approved Withdrawal asset");
         require(balanceOf(msg.sender) >= _shares,"You don't have enough shares");
+        managementFeeCleanUp();
         uint256 tokenUSD = IAPContract(APContract).getUSDPrice(_tokenAddress);
         uint256 safeTokenVaulueInUSD = (_shares.mul(getVaultNAV())).div(totalSupply());
         uint256 tokenCount = (safeTokenVaulueInUSD.mul(1e18)).div(uint256(tokenUSD));
@@ -327,22 +328,21 @@ contract GnosisSafe
         internal
     {
         for(uint256 i = 0; i < assetList.length; i++ ){
-                IERC20 haveToken = IERC20(assetList[i]);
-                uint256 targetTokenUSD = IAPContract(APContract).getUSDPrice(_targetToken);
-                uint256 haveTokenUSD = IAPContract(APContract).getUSDPrice(assetList[i]);
+            IERC20 haveToken = IERC20(assetList[i]);
+            uint256 targetTokenUSD = IAPContract(APContract).getUSDPrice(_targetToken);
+            uint256 haveTokenUSD = IAPContract(APContract).getUSDPrice(assetList[i]);
 
-                if((haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD))).div(1e18) > (_amount.mul(uint256(targetTokenUSD))).div(1e18)){
-                    (uint256 returnAmount, uint256[] memory distribution) = 
-                    IExchange(oneInch).getExpectedReturn(assetList[i], _targetToken, _amount, 0, 0);
-                    uint256 adjustedAmount = _amount + (_amount - returnAmount).mul(3);
+            if((haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD))).div(1e18) > (_amount.mul(uint256(targetTokenUSD))).div(1e18)){
+                (uint256 returnAmount, uint256[] memory distribution) = 
+                IExchange(oneInch).getExpectedReturn(assetList[i], _targetToken, _amount, 0, 0);
+                uint256 adjustedAmount = _amount + (_amount - returnAmount).mul(3);
 
-                    if( (haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD))).div(1e18) > (adjustedAmount.mul(uint256(targetTokenUSD))).div(1e18)){
-                        IExchange(oneInch).swap(assetList[i], _targetToken, adjustedAmount, _amount, distribution, 0);
-                        break;
-                    }
-                    
-                }                
-            }
+                if( (haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD))).div(1e18) > (adjustedAmount.mul(uint256(targetTokenUSD))).div(1e18)){
+                    IExchange(oneInch).swap(assetList[i], _targetToken, adjustedAmount, _amount, distribution, 0);
+                    break;
+                }
+            }                
+        }
     }
 
     /// @dev Function to Withdraw shares from the Vault.
@@ -353,6 +353,7 @@ contract GnosisSafe
         public
     {
         require(balanceOf(msg.sender) >= _shares,"You don't have enough shares");
+        managementFeeCleanUp();
         uint256 safeTotalSupply = totalSupply();
         _burn(msg.sender, _shares); 
 
@@ -397,7 +398,6 @@ contract GnosisSafe
     /// @dev Function to cleanup vault unsupported tokens to the Yieldster Treasury.
     /// @param cleanUpList List of unsupported tokens to be transfered.
     function safeCleanUp(address[] memory cleanUpList)
-        onlyNormalMode
         public
     {
         require(IAPContract(APContract).strategyMinter() == msg.sender, "Only Yieldster Strategy Minter");
@@ -409,7 +409,6 @@ contract GnosisSafe
                 }
             }
         }
-        
     }
 
     /// @dev Function to perform operation on Receivel of ERC1155 token from Yieldster Strategy Minter.
@@ -468,11 +467,8 @@ contract GnosisSafe
     /// @dev Function to perform Management fee Calculations in the Vault.
     /// @param delegateContract Address of the Management Fee strategy contract.
     function managementFeeCleanUp(address delegateContract) 
-        public
+        private
     {
         (bool success2, bytes memory result) = delegateContract.delegatecall(abi.encodeWithSignature("executeSafeCleanUp()"));
-        if(!success2){
-            revert("failed to execute");
-        }
     }
 }

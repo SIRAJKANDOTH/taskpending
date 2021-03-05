@@ -3,12 +3,15 @@ var Whitelist = artifacts.require("./whitelist/Whitelist.sol");
 var APContract = artifacts.require("./aps/APContract.sol");
 var PriceModule = artifacts.require("./price/PriceModule.sol");
 var ProxyFactory = artifacts.require("./proxies/GnosisSafeProxyFactory.sol");
+var PlatformManagementFee = artifacts.require("./delegateContracts/ManagementFee.sol");
 var YearnItAll = artifacts.require("./strategies/YearnItAll.sol");
 var StrategyMinter = artifacts.require("./strategies/StrategyMinter.sol");
 
 module.exports = async (deployer) => {
 	await deployer.deploy(GnosisSafe);
 	const gnosisSafeMasterCopy = await GnosisSafe.deployed();
+	await deployer.deploy(PlatformManagementFee);
+	const managementFee= await PlatformManagementFee.deployed();
 
 	await deployer.deploy(Whitelist);
 	const whitelist = await Whitelist.deployed();
@@ -16,7 +19,8 @@ module.exports = async (deployer) => {
 	await deployer.deploy(
 		APContract,
 		gnosisSafeMasterCopy.address,
-		whitelist.address
+		whitelist.address,
+		managementFee.address
 	);
 	const apContract = await APContract.deployed();
 

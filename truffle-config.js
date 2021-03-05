@@ -64,6 +64,7 @@ module.exports = {
       gasPrice: 1
     }
   },
+  plugins: ["truffle-contract-size"],
   compilers: {
     solc: {
       version: package.dependencies.solc,

@@ -89,13 +89,15 @@ contract APContract
     address public proxyFactory;
 
     address public priceModule;
+    address public platFormManagementFee;
 
     uint public test = 0;
 
 
     constructor(
         address _MasterCopy, 
-        address _whitelistModule
+        address _whitelistModule,
+        address _platformManagementFee
     ) 
     public
     {
@@ -106,6 +108,7 @@ contract APContract
         APSManagers[msg.sender] = true;
         MasterCopy = _MasterCopy;
         whitelistModule = _whitelistModule;
+        platFormManagementFee=_platformManagementFee;
     }
 
     function addProxyFactory(address _proxyFactory)
