@@ -38,7 +38,8 @@
     "migrate": "run(){ truffle migrate --reset --network=$@; }; run",
     "do": "run(){ truffle exec --network=$@; }; run",
     "prepare": "yarn truffle compile && yarn tnt iN",
-    "preversion": "node scripts/clean_build.js && yarn tnt cB"
+    "preversion": "node scripts/clean_build.js && yarn tnt cB",
+    "estimate": "run(){ truffle compile && truffle run contract-size }; run"
   },
   "repository": {
     "type": "git",

@@ -48,6 +48,12 @@ contract GnosisSafe
 
     modifier onlyNormalMode
     {
+        _onlyNormalMode();
+        
+        _;
+    }
+
+    function _onlyNormalMode() private view{
         if(emergencyBreak)
         {
             require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Sender not Authorized");
@@ -56,18 +62,17 @@ contract GnosisSafe
         {
             revert("This safe is no longer active");
         }
-        _;
     }
+
+    
 
     //Whitelist Functions
     function isWhiteListed()
         public 
         view 
-        returns (bool) 
     {
         if(whiteListGroups.length == 0)
         {
-            return true;
         }
         else
         {
@@ -75,17 +80,17 @@ contract GnosisSafe
             {
                 if (whiteList.isMember(whiteListGroups[i], msg.sender)) 
                 {
-                    return true;
+                    break;
                 }
             }
-            return false;
+            revert("Only whitelisted");
         
         }
     }
 
     modifier onlyWhitelisted
     {
-        require(isWhiteListed(),"Only Whitelisted");
+     isWhiteListed();
         _;
     }
 

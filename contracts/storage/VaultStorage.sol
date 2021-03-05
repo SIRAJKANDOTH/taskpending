@@ -52,9 +52,9 @@ contract VaultStorage
 
     // Token balance storage keeps track of tokens that are deposited to safe without worrying direct depoited assets affesting the NAV;
     TokenBalanceStorage tokenBalances;
-    uint public result;
-    uint public currentBlockDifference;
-    uint public currentNav;
+    // uint public result;
+    // uint public currentBlockDifference;
+    // uint public currentNav;
 
     // Moved here for delegate purpose
     function getVaultNAV() 

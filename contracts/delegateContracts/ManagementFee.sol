@@ -24,9 +24,9 @@ contract ManagementFee
             uint256 tokensTobeMinted = navIntrest.mul(1e18).div(tokenValueInUSD());
             _mint(IAPContract(APContract).getYieldsterDAO() , tokensTobeMinted);
             tokenBalances.setTokenTobeMinted(tokenBalances.getTokenToBeMinted().add(tokensTobeMinted));
-            result = navIntrest;
-            currentBlockDifference = blockDifference;
-            currentNav = vaultNAV;
+            // result = navIntrest;
+            // currentBlockDifference = blockDifference;
+            // currentNav = vaultNAV;
         }
 
     }
