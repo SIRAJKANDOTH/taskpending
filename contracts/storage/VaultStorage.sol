@@ -39,7 +39,7 @@ contract VaultStorage
     address[] internal assetList;
     mapping(address=>bool) isAssetDeposited;
 
-    Whitelist internal whiteList;
+    // Whitelist internal whiteList;
 
     // Token balance storage keeps track of tokens that are deposited to safe without worrying direct depoited assets affesting the NAV;
     TokenBalanceStorage tokenBalances;

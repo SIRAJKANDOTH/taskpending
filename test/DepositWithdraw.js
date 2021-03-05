@@ -10,6 +10,7 @@ const ManagementFee = artifacts.require(
 	"./delegateContracts/ManagementFee.sol"
 );
 const StrategyMinter = artifacts.require("./strategies/StrategyMinter.sol");
+const StringUtil = artifacts.require("./utils/string/strings.sol");
 
 function token(n) {
 	return web3.utils.toWei(n, "ether");
@@ -32,6 +33,7 @@ contract(" Deposit", function (accounts) {
 
 	beforeEach(async function () {
 		whitelist = await Whitelist.new();
+		stringUtil = await StringUtil.new();
 		managementFee = await ManagementFee.new();
 
 		gnosisSafeMasterCopy = await utils.deployContract(
@@ -41,7 +43,8 @@ contract(" Deposit", function (accounts) {
 		apContract = await APContract.new(
 			gnosisSafeMasterCopy.address,
 			whitelist.address,
-			managementFee.address
+			managementFee.address,
+			stringUtil.address
 		);
 
 		strategyMinter = await StrategyMinter.new(apContract.address);

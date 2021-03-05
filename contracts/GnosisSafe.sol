@@ -70,7 +70,7 @@ contract GnosisSafe
         }
         else{
             for (uint256 i = 0; i < whiteListGroups.length; i++){
-                if (whiteList.isMember(whiteListGroups[i], msg.sender)){
+                if (Whitelist(IAPContract(APContract).whitelistModule()).isMember(whiteListGroups[i], msg.sender)){
                     return;
                 }
             }
@@ -111,7 +111,6 @@ contract GnosisSafe
         APContract = _APContract; //hardcode APContract address here before deploy to mainnet
         owner = tx.origin;
         whiteListGroups = _whiteListGroups;
-        whiteList = Whitelist(IAPContract(APContract).whitelistModule());
         oneInch = 0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB;
         setupToken(_tokenName, _symbol);
         tokenBalances=new TokenBalanceStorage();
@@ -456,7 +455,6 @@ contract GnosisSafe
         bytes calldata 
     )
     external
-    onlyNormalMode
     returns(bytes4)
     {
        
