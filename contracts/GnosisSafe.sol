@@ -80,7 +80,6 @@ contract GnosisSafe
                 }
             }
             return false;
-        
         }
     }
 
