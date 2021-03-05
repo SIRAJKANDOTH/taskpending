@@ -53,7 +53,7 @@ contract GnosisSafe
     function _onlyNormalMode() private view {
         if(emergencyBreak)
         {
-            require(msg.sender == IAPContract(APContract).getYieldsterGOD(), "Sender not Authorized");
+            require(msg.sender == IAPContract(APContract).yieldsterGOD(), "Sender not Authorized");
         }
         else if(emergencyExit){
             revert("This safe is no longer active");
