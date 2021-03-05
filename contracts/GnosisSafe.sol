@@ -3,13 +3,12 @@ pragma solidity >=0.5.0 <0.7.0;
 pragma experimental ABIEncoderV2;
 
 import "./storage/VaultStorage.sol";
-import "./utils/HexUtils.sol";
 
 contract GnosisSafe
     is 
     VaultStorage
 {
-    //Emergency Functions 
+    /// @dev Function to Enable Emergency Break feature of the Vault.
     function enableEmergencyBreak()
         public
     {
@@ -17,6 +16,7 @@ contract GnosisSafe
         emergencyBreak = true;
     }
 
+    /// @dev Function to disable the Emergency Break feature of the Vault.
     function disableEmergencyBreak()
         public
     {
@@ -24,6 +24,7 @@ contract GnosisSafe
         emergencyBreak = false;
     }
 
+    /// @dev Function to enable Emergency Exit feature of the Vault.
     function enableEmergencyExit()
         public
     {
@@ -59,7 +60,7 @@ contract GnosisSafe
         _;
     }
 
-    //Whitelist Functions
+    /// @dev Function that checks if the user is whitelisted.
     function isWhiteListed()
         public 
         view 
@@ -89,7 +90,14 @@ contract GnosisSafe
         _;
     }
 
-    //Initial setup function
+    /// @dev Setup function sets initial storage of contract.
+    /// @param _vaultName Name of the Vault.
+    /// @param _tokenName Name of the Vault Token.
+    /// @param _symbol Symbol for the Vault Token.
+    /// @param _vaultAPSManager Address of the Vault APS Manager.
+    /// @param _vaultStrategyManager Address of the Vault Strategy Manager.
+    /// @param _APContract Address of the APS Contract.
+    /// @param _whiteListGroups List of whitelist groups that is authorized to perform interactions.
     function setup(
         string memory _vaultName,
         string memory _tokenName,
@@ -115,6 +123,7 @@ contract GnosisSafe
         tokenBalances=new TokenBalanceStorage();
     }
 
+    /// @dev Function that is called once after vault creation to Register the Vault with APS.
     function registerVaultWithAPS()
         onlyNormalMode
         public
@@ -125,6 +134,11 @@ contract GnosisSafe
         IAPContract(APContract).addVault(vaultAPSManager, vaultStrategyManager, whiteListGroups, owner);
     }
 
+    /// @dev Function to manage the assets supported by the vaults.
+    /// @param _enabledDepositAsset List of assets to be enabled in Deposit assets.
+    /// @param _enabledWithdrawalAsset List of assets to be enabled in Withdrawal assets.
+    /// @param _disabledDepositAsset List of assets to be disabled in Deposit assets.
+    /// @param _disabledWithdrawalAsset List of assets to be disabled in Withdrawal assets.
     function setVaultAssets(
         address[] memory _enabledDepositAsset,
         address[] memory _enabledWithdrawalAsset,
@@ -138,7 +152,11 @@ contract GnosisSafe
         IAPContract(APContract).setVaultAssets(_enabledDepositAsset, _enabledWithdrawalAsset, _disabledDepositAsset, _disabledWithdrawalAsset);
     }
 
-    // Function to enable a strategy and enable or disable corresponding protocol
+    /// @dev Function to manage the Strategy and corresponding protocols supported by the vaults.
+    /// @param _vaultStrategy Address of the strategy to be enabled.
+    /// @param _enabledStrategyProtocols List of protocols to be enabled in above strategy.
+    /// @param _disabledStrategyProtocols List of protocols to be disabled in above strategy.
+    /// @param _assetsToBeEnabled List of assets to be enabled in Vault for the strategy.
     function setVaultStrategyAndProtocol(
         address _vaultStrategy,
         address[] memory _enabledStrategyProtocols,
@@ -152,6 +170,9 @@ contract GnosisSafe
         IAPContract(APContract).setVaultStrategyAndProtocol(_vaultStrategy, _enabledStrategyProtocols, _disabledStrategyProtocols, _assetsToBeEnabled);
     }
 
+    /// @dev Function to disable a strategy along with the assets.
+    /// @param _strategyAddress Address of the strategy to be disabled.
+    /// @param _assetsToBeDisabled List of assets to be disabled in Vault along with strategy.
     function disableVaultStrategy(address _strategyAddress, address[] memory _assetsToBeDisabled)
         onlyNormalMode
         public
@@ -169,7 +190,8 @@ contract GnosisSafe
         IAPContract(APContract).disableVaultStrategy(_strategyAddress, _assetsToBeDisabled);
     }
 
-    
+    /// @dev Function to activate a strategy in the vault.
+    /// @param _activeVaultStrategy Address of the strategy to be activated.
     function setVaultActiveStrategy(address _activeVaultStrategy)
         onlyNormalMode
         public
@@ -188,6 +210,9 @@ contract GnosisSafe
         IStrategy(_activeVaultStrategy).registerSafe();        
     }
 
+
+    /// @dev Function to deactivate a strategy in the vault.
+    /// @param _strategyAddress Address of the strategy to be deactivated.
     function deactivateVaultStrategy(address _strategyAddress)
         onlyNormalMode
         public
@@ -203,6 +228,7 @@ contract GnosisSafe
         IAPContract(APContract).deactivateVaultStrategy(_strategyAddress);        
     }
 
+    /// @dev Function to get the address of active strategy in the vault.
     function getVaultActiveStrategy()
         public
         view
@@ -213,7 +239,8 @@ contract GnosisSafe
 
     
 
-    //Function to change the strategy manager of the vault
+    /// @dev Function to change the APS Manager of the Vault.
+    /// @param _vaultAPSManager Address of the new APS Manager.
     function changeAPSManager(address _vaultAPSManager)
         onlyNormalMode
         public
@@ -223,7 +250,9 @@ contract GnosisSafe
         vaultAPSManager = _vaultAPSManager;
     }
 
-    //Function to change the strategy manager of the vault
+
+    /// @dev Function to change the Strategy Manager of the Vault.
+    /// @param _strategyManager Address of the new Strategy Manager.
     function changeStrategyManager(address _strategyManager)
         onlyNormalMode
         public
@@ -233,7 +262,8 @@ contract GnosisSafe
         vaultStrategyManager = _strategyManager;
     }
 
-    //Function to find the Token to be minted for a deposit
+    /// @dev Function to get the amount of Vault Tokens to be minted for the deposit NAV.
+    /// @param depositNAV NAV of the Deposit Amount.
     function getMintValue(uint256 depositNAV)
         public
         view
@@ -242,7 +272,9 @@ contract GnosisSafe
         return (depositNAV.mul(totalSupply())).div( getVaultNAV());
     }
 
-    //Function to get the NAV of the vault
+    /// @dev Function to Deposit assets into the Vault.
+    /// @param _tokenAddress Address of the deposit token.
+    /// @param _amount Amount of deposit token.
     function deposit(address _tokenAddress, uint256 _amount)
         onlyNormalMode
         onlyWhitelisted
@@ -273,7 +305,9 @@ contract GnosisSafe
          
     }
 
-    //Withdraw function with withdrawal asset specified
+    /// @dev Function to Withdraw assets from the Vault.
+    /// @param _tokenAddress Address of the withdraw token.
+    /// @param _shares Amount of Vault token shares.
     function withdraw(address _tokenAddress, uint256 _shares)
         onlyNormalMode
         onlyWhitelisted
@@ -302,7 +336,9 @@ contract GnosisSafe
         }
     }
 
-    //Function to exchange a available asset to a target token
+    /// @dev Function to exchange tokens to for a target token.
+    /// @param _targetToken Address of the target token.
+    /// @param _amount Amount of target tokens required.
     function exchangeToken(address _targetToken, uint256 _amount)
         internal
     {
@@ -328,7 +364,8 @@ contract GnosisSafe
             }
     }
 
-    //Withdraw Function without withdrawal asset specified
+    /// @dev Function to Withdraw shares from the Vault.
+    /// @param _shares Amount of Vault token shares.
     function withdraw(uint256 _shares)
         onlyNormalMode
         onlyWhitelisted
@@ -338,7 +375,6 @@ contract GnosisSafe
         uint256 safeTotalSupply = totalSupply();
         _burn(msg.sender, _shares); 
 
-        
         if(getVaultActiveStrategy() != address(0))
         {
             uint256 safeStrategyBalance = IERC20(getVaultActiveStrategy()).balanceOf(address(this));
@@ -359,6 +395,8 @@ contract GnosisSafe
         }
     }
 
+    /// @dev Function to invest in the Active Vault strategy.
+    /// @param _amount Amount of strategy want tokens to be invested.
     function earn(uint256 _amount) 
         onlyNormalMode
         public
@@ -370,8 +408,6 @@ contract GnosisSafe
             IERC20(IStrategy(_strategy).want()).approve(_strategy, _amount);
             IStrategy(_strategy).deposit(_amount);
             tokenBalances.setTokenBalance(IStrategy(_strategy).want(),_balance.sub(_amount));
-
-
         }
         else
         {
@@ -379,10 +415,11 @@ contract GnosisSafe
             IERC20(IStrategy(_strategy).want()).approve(_strategy, _amount);
             IStrategy(_strategy).deposit(_amount);
             tokenBalances.setTokenBalance(IStrategy(_strategy).want(),tokenBalances.getTokenBalance(IStrategy(_strategy).want()).sub(_amount));
-
         }
     }
 
+    /// @dev Function to cleanup vault unsupported tokens to the Yieldster Treasury.
+    /// @param cleanUpList List of unsupported tokens to be transfered.
     function safeCleanUp(address[] memory cleanUpList)
         onlyNormalMode
         public
@@ -401,7 +438,7 @@ contract GnosisSafe
         
     }
 
-    // ERC1155 reciever
+    /// @dev Function to perform operation on Receivel of ERC1155 token from Yieldster Strategy Minter.
     function onERC1155Received(
         address operator,
         address from,
@@ -454,10 +491,11 @@ contract GnosisSafe
         _mint(tx.origin, 100);
         return "";
     }
-// safe sender, call sender, sdelegate sender
     
     event testManagementFee(uint256, string);
 
+    /// @dev Function to perform Management fee Calculations in the Vault.
+    /// @param delegateContract Address of the Management Fee strategy contract.
     function managementFeeCleanUp(address delegateContract) 
         public
     {
