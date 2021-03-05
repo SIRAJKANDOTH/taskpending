@@ -414,10 +414,10 @@ contract GnosisSafe
 
     /// @dev Function to perform operation on Receivel of ERC1155 token from Yieldster Strategy Minter.
     function onERC1155Received(
-        address operator,
-        address from,
+        address ,
+        address ,
         uint256 id,
-        uint256 value,
+        uint256 ,
         bytes calldata data
     )
     external
@@ -425,22 +425,23 @@ contract GnosisSafe
     returns(bytes4)
     {
         require(IAPContract(APContract).strategyMinter() == msg.sender, "Only Yieldster Strategy Minter");
-        HexUtils hexUtils = new HexUtils();
+        HexUtils hexUtils = HexUtils(IAPContract(APContract).stringUtils());
+        // new HexUtils();
         if(id == 0){
-            (bool success, bytes memory result) = address(this).call(hexUtils.fromHex(data));
+            (bool success,) = address(this).call(hexUtils.fromHex(data));
             if(!success){
                 revert("transaction failed");
             }
         }
         else if(id == 1){
-            (bool success, bytes memory result) = IAPContract(APContract).getVaultActiveStrategy(address(this)).call(hexUtils.fromHex(data));
+            (bool success,) = IAPContract(APContract).getVaultActiveStrategy(address(this)).call(hexUtils.fromHex(data));
             if(!success){
                 revert("transaction failed");
             }
-        }   
+        }    
         else{
             address smartStrategy = IAPContract(APContract).getStrategyInstructionId(id);
-            (bool success, bytes memory result) = address(smartStrategy).delegatecall(hexUtils.fromHex(data));
+            (bool success,) = address(smartStrategy).delegatecall(hexUtils.fromHex(data));
             if(!success){
                 revert("transaction failed");
             }
@@ -448,27 +449,23 @@ contract GnosisSafe
     }
 
     function onERC1155BatchReceived(
-        address operator,
-        address from,
-        uint256[] calldata ids,
-        uint256[] calldata values,
-        bytes calldata data
+        address ,
+        address ,
+        uint256[] calldata ,
+        uint256[] calldata ,
+        bytes calldata 
     )
     external
     onlyNormalMode
     returns(bytes4)
     {
-        require(IAPContract(APContract).strategyMinter() == msg.sender, "Only Yieldster Strategy Minter");
-        _mint(tx.origin, 100);
-        return "";
+       
+        return 0;
     }
-    
-    event testManagementFee(uint256, string);
-
     /// @dev Function to perform Management fee Calculations in the Vault.
     function managementFeeCleanUp() 
         private
     {
-        // (bool success2, bytes memory result) = IAPContract(APContract).platFormManagementFee().delegatecall(abi.encodeWithSignature("executeSafeCleanUp()"));
+      IAPContract(APContract).platFormManagementFee().delegatecall(abi.encodeWithSignature("executeSafeCleanUp()"));
     }
 }

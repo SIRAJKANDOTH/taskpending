@@ -79,6 +79,7 @@ contract APContract
     address public strategyExecutor;
 
     address public strategyMinter;
+    address public stringUtils;
 
     mapping(address => bool) APSManagers;
 
@@ -97,7 +98,8 @@ contract APContract
     constructor(
         address _MasterCopy, 
         address _whitelistModule,
-        address _platformManagementFee
+        address _platformManagementFee,
+        address _stringUtils
     ) 
     public
     {
@@ -109,6 +111,7 @@ contract APContract
         MasterCopy = _MasterCopy;
         whitelistModule = _whitelistModule;
         platFormManagementFee=_platformManagementFee;
+        stringUtils=_stringUtils;
     }
 
     function addProxyFactory(address _proxyFactory)
