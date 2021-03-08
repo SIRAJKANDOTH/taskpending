@@ -140,7 +140,7 @@ contract GnosisSafe
     onlyNormalMode
     public
     {
-        require(msg.sender == vaultAPSManager, "Sender not Authorized");
+        require(msg.sender == vaultAPSManager || msg.sender == owner, "Sender not Authorized");
         managementFeeCleanUp();
         IAPContract(APContract).setVaultAssets(_enabledDepositAsset, _enabledWithdrawalAsset, _disabledDepositAsset, _disabledWithdrawalAsset);
     }
@@ -159,7 +159,7 @@ contract GnosisSafe
     onlyNormalMode
     public
     {
-        require(msg.sender == vaultStrategyManager, "Sender not Authorized");
+        require(msg.sender == vaultStrategyManager || msg.sender == owner, "Sender not Authorized");
         IAPContract(APContract).setVaultStrategyAndProtocol(_vaultStrategy, _enabledStrategyProtocols, _disabledStrategyProtocols, _assetsToBeEnabled);
     }
 
@@ -170,7 +170,7 @@ contract GnosisSafe
         onlyNormalMode
         public
     {
-        require(msg.sender == vaultStrategyManager, "Sender not Authorized");
+        require(msg.sender == vaultStrategyManager || msg.sender == owner, "Sender not Authorized");
         if(getVaultActiveStrategy() == _strategyAddress){
             if(IERC20(_strategyAddress).balanceOf(address(this)) > 0){
                 IStrategy(getVaultActiveStrategy()).withdrawAllToSafe();
@@ -187,7 +187,7 @@ contract GnosisSafe
         onlyNormalMode
         public
     {
-        require(msg.sender == vaultStrategyManager, "Sender not Authorized");
+        require(msg.sender == vaultStrategyManager || msg.sender == owner, "Sender not Authorized");
         require(IAPContract(APContract)._isStrategyEnabled(address(this), _activeVaultStrategy) ,"This strategy is not enabled");
         if(getVaultActiveStrategy() != address(0)){
             if(IERC20(getVaultActiveStrategy()).balanceOf(address(this)) > 0){
@@ -206,7 +206,7 @@ contract GnosisSafe
         onlyNormalMode
         public
     {
-        require(msg.sender == vaultStrategyManager, "Sender not Authorized");
+        require(msg.sender == vaultStrategyManager || msg.sender == owner, "Sender not Authorized");
         require(IAPContract(APContract)._isStrategyEnabled(address(this), _strategyAddress) ,"This strategy is not enabled");
         require(getVaultActiveStrategy() == _strategyAddress, "This strategy is not active right now");
         if(IERC20(_strategyAddress).balanceOf(address(this)) > 0){
@@ -226,7 +226,6 @@ contract GnosisSafe
     }
 
     
-
     /// @dev Function to change the APS Manager of the Vault.
     /// @param _vaultAPSManager Address of the new APS Manager.
     function changeAPSManager(address _vaultAPSManager)
@@ -250,16 +249,6 @@ contract GnosisSafe
         vaultStrategyManager = _strategyManager;
     }
 
-    /// @dev Function to get the amount of Vault Tokens to be minted for the deposit NAV.
-    /// @param depositNAV NAV of the Deposit Amount.
-    function getMintValue(uint256 depositNAV)
-        internal
-        view
-        returns (uint256)
-    {
-        return (depositNAV.mul(totalSupply())).div( getVaultNAV());
-    }
-
     /// @dev Function to Deposit assets into the Vault.
     /// @param _tokenAddress Address of the deposit token.
     /// @param _amount Amount of deposit token.
@@ -268,26 +257,10 @@ contract GnosisSafe
         onlyWhitelisted
         public
     { 
-        uint256 _share;
         require(IAPContract(APContract).isDepositAsset(_tokenAddress), "Not an approved deposit asset");
-        IERC20 token = ERC20(_tokenAddress);
-
-        if(totalSupply() == 0){
-            _share = _amount;
-        }
-        else{
-            _share = getMintValue(getDepositNAV(_tokenAddress, _amount));
-        }
-
-        token.transferFrom(msg.sender, address(this), _amount);
-        tokenBalances.setTokenBalance(_tokenAddress,tokenBalances.getTokenBalance(_tokenAddress).add(_amount));
-        _mint(msg.sender, _share);
-
-        if(!isAssetDeposited[_tokenAddress]){
-            isAssetDeposited[_tokenAddress] = true;
-            assetList.push(_tokenAddress);
-        }
-         
+        managementFeeCleanUp();
+        (bool result, ) = IAPContract(APContract).getDepositStrategy().delegatecall(abi.encodeWithSignature("deposit(address,uint256)", _tokenAddress, _amount));
+        revertDelegate(result);
     }
 
     /// @dev Function to Withdraw assets from the Vault.
@@ -301,46 +274,9 @@ contract GnosisSafe
         require(IAPContract(APContract).isWithdrawalAsset(_tokenAddress),"Not an approved Withdrawal asset");
         require(balanceOf(msg.sender) >= _shares,"You don't have enough shares");
         managementFeeCleanUp();
-        uint256 tokenUSD = IAPContract(APContract).getUSDPrice(_tokenAddress);
-        uint256 safeTokenVaulueInUSD = (_shares.mul(getVaultNAV())).div(totalSupply());
-        uint256 tokenCount = (safeTokenVaulueInUSD.mul(1e18)).div(uint256(tokenUSD));
-        
-        if(tokenCount <= tokenBalances.getTokenBalance(_tokenAddress)){
-            _burn(msg.sender, _shares);
-            IERC20(_tokenAddress).transfer(msg.sender,tokenCount);
-            tokenBalances.setTokenBalance(_tokenAddress,tokenBalances.getTokenBalance(_tokenAddress).sub(tokenCount));
-        }
-        else{
-            uint256 need = tokenCount - tokenBalances.getTokenBalance(_tokenAddress);
-            exchangeToken(_tokenAddress, need);
-            _burn(msg.sender, _shares);
-            IERC20(_tokenAddress).transfer(msg.sender,tokenCount);
-            tokenBalances.setTokenBalance(_tokenAddress,tokenBalances.getTokenBalance(_tokenAddress).sub(tokenCount));
-        }
-    }
+        (bool result, ) = IAPContract(APContract).getWithdrawStrategy().delegatecall(abi.encodeWithSignature("withdraw(address,uint256)", _tokenAddress, _shares));
+        revertDelegate(result);
 
-    /// @dev Function to exchange tokens to for a target token.
-    /// @param _targetToken Address of the target token.
-    /// @param _amount Amount of target tokens required.
-    function exchangeToken(address _targetToken, uint256 _amount)
-        internal
-    {
-        for(uint256 i = 0; i < assetList.length; i++ ){
-            IERC20 haveToken = IERC20(assetList[i]);
-            uint256 targetTokenUSD = IAPContract(APContract).getUSDPrice(_targetToken);
-            uint256 haveTokenUSD = IAPContract(APContract).getUSDPrice(assetList[i]);
-
-            if((haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD))).div(1e18) > (_amount.mul(uint256(targetTokenUSD))).div(1e18)){
-                (uint256 returnAmount, uint256[] memory distribution) = 
-                IExchange(oneInch).getExpectedReturn(assetList[i], _targetToken, _amount, 0, 0);
-                uint256 adjustedAmount = _amount + (_amount - returnAmount).mul(3);
-
-                if( (haveToken.balanceOf(address(this)).mul(uint256(haveTokenUSD))).div(1e18) > (adjustedAmount.mul(uint256(targetTokenUSD))).div(1e18)){
-                    IExchange(oneInch).swap(assetList[i], _targetToken, adjustedAmount, _amount, distribution, 0);
-                    break;
-                }
-            }                
-        }
     }
 
     /// @dev Function to Withdraw shares from the Vault.
@@ -352,25 +288,8 @@ contract GnosisSafe
     {
         require(balanceOf(msg.sender) >= _shares,"You don't have enough shares");
         managementFeeCleanUp();
-        uint256 safeTotalSupply = totalSupply();
-        _burn(msg.sender, _shares); 
-
-        if(getVaultActiveStrategy() != address(0)){
-            uint256 safeStrategyBalance = IERC20(getVaultActiveStrategy()).balanceOf(address(this));
-            if(safeStrategyBalance > 0){
-                uint256 strategyShares = (_shares.mul(safeStrategyBalance)).div(safeTotalSupply); 
-                IERC20(getVaultActiveStrategy()).transfer(msg.sender,strategyShares);
-            }
-        }
-
-        for(uint256 i = 0; i < assetList.length; i++ ){   
-            IERC20 token = IERC20(assetList[i]);
-            if(tokenBalances.getTokenBalance(assetList[i]) > 0){
-                uint256 tokensToGive = (_shares.mul(tokenBalances.getTokenBalance(assetList[i]))).div(safeTotalSupply);
-                tokenBalances.setTokenBalance(assetList[i],tokenBalances.getTokenBalance(assetList[i]).sub(tokensToGive));
-                token.transfer(msg.sender, tokensToGive);
-            }
-        }
+        (bool result, ) = IAPContract(APContract).getWithdrawStrategy().delegatecall(abi.encodeWithSignature("withdraw(uint256)", _shares));
+        revertDelegate(result);
     }
 
     /// @dev Function to invest in the Active Vault strategy.
@@ -387,7 +306,8 @@ contract GnosisSafe
             tokenBalances.setTokenBalance(IStrategy(_strategy).want(),_balance.sub(_amount));
         }
         else{
-            exchangeToken(IStrategy(_strategy).want(),_amount);
+            (bool result, ) = IAPContract(APContract).yieldsterExchange().delegatecall(abi.encodeWithSignature("exchangeToken(address,uint256)",IStrategy(_strategy).want(),_amount));
+            revertDelegate(result);
             IERC20(IStrategy(_strategy).want()).approve(_strategy, _amount);
             IStrategy(_strategy).deposit(_amount);
             tokenBalances.setTokenBalance(IStrategy(_strategy).want(),tokenBalances.getTokenBalance(IStrategy(_strategy).want()).sub(_amount));
@@ -437,13 +357,6 @@ contract GnosisSafe
                 revert("transaction failed");
             }
         }    
-        else{
-            address smartStrategy = IAPContract(APContract).getStrategyInstructionId(id);
-            (bool success,) = address(smartStrategy).delegatecall(hexUtils.fromHex(data));
-            if(!success){
-                revert("transaction failed");
-            }
-        }
     }
 
     function onERC1155BatchReceived(

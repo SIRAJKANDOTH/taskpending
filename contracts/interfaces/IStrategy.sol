@@ -12,9 +12,6 @@ interface IStrategy {
     // Controller | Vault role - withdraw should always return to Vault
     function withdraw(uint256) external;
 
-    function skim() external;
-
-    // withdrw to strategy
     function withdrawAll() external ;
 
     function balanceOf() external view returns (uint256);
@@ -28,5 +25,7 @@ interface IStrategy {
     function registerSafe() external;
 
     function deRegisterSafe() external;
+
+    function getActiveProtocol(address) external view returns(address);
 
 }

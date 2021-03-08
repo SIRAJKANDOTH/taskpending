@@ -10,7 +10,15 @@ const ManagementFee = artifacts.require(
 	"./delegateContracts/ManagementFee.sol"
 );
 const StrategyMinter = artifacts.require("./strategies/StrategyMinter.sol");
-const StringUtil = artifacts.require("./utils/string/strings.sol");
+const HexUtils = artifacts.require("./utils/HexUtils.sol");
+
+const StockDeposit = artifacts.require(
+	"./smartStrategies/deposit/StockDeposit.sol"
+);
+const StockWithdraw = artifacts.require(
+	"./smartStrategies/deposit/StockWithdraw.sol"
+);
+const Exchange = artifacts.require("./exchange/Exchange.sol");
 
 function token(n) {
 	return web3.utils.toWei(n, "ether");
@@ -19,7 +27,6 @@ function token(n) {
 contract(" Deposit", function (accounts) {
 	let newGnosisSafe;
 	let newGnosisSafeData;
-	let newGnosisSafeAddress;
 	let gnosisSafeMasterCopy;
 	let apContract;
 	let whitelist;
@@ -30,11 +37,18 @@ contract(" Deposit", function (accounts) {
 	let groupId;
 	let strategyMinter;
 	let managementFee;
+	let stockDeposit;
+	let stockWithdraw;
+	let exchange;
+	let hexUtils;
 
 	beforeEach(async function () {
 		whitelist = await Whitelist.new();
-		stringUtil = await StringUtil.new();
+		hexUtils = await HexUtils.new();
 		managementFee = await ManagementFee.new();
+		stockDeposit = await StockDeposit.new();
+		stockWithdraw = await StockWithdraw.new();
+		exchange = await Exchange.new();
 
 		gnosisSafeMasterCopy = await utils.deployContract(
 			"deploying Gnosis Safe Mastercopy",
@@ -44,7 +58,7 @@ contract(" Deposit", function (accounts) {
 			gnosisSafeMasterCopy.address,
 			whitelist.address,
 			managementFee.address,
-			stringUtil.address
+			hexUtils.address
 		);
 
 		strategyMinter = await StrategyMinter.new(apContract.address);
@@ -64,6 +78,13 @@ contract(" Deposit", function (accounts) {
 		await apContract.setStrategyMinter(strategyMinter.address);
 
 		await apContract.setStrategyExecutor(accounts[0]);
+
+		await apContract.setYieldsterExchange(exchange.address);
+
+		await apContract.setStockDepositWithdraw(
+			stockDeposit.address,
+			stockWithdraw.address
+		);
 
 		proxyFactory = await ProxyFactory.new(
 			gnosisSafeMasterCopy.address,
@@ -329,15 +350,6 @@ contract(" Deposit", function (accounts) {
 			web3.utils.fromWei(totalSupply.toString(), "ether")
 		);
 
-		let depositNAV = await newGnosisSafe.getDepositNAV(
-			yrtToken.address,
-			token("1")
-		);
-		console.log(
-			"Deposit NAV",
-			web3.utils.fromWei(depositNAV.toString(), "ether")
-		);
-
 		// let yrt = await apContract.getUSDPrice(yrtToken.address);
 		// console.log(
 		// 	"yrt values",
@@ -422,15 +434,6 @@ contract(" Deposit", function (accounts) {
 		console.log(
 			"safe total supply ",
 			web3.utils.fromWei(totalSupply.toString(), "ether")
-		);
-
-		depositNAV = await newGnosisSafe.getDepositNAV(
-			yrtToken.address,
-			token("1")
-		);
-		console.log(
-			"Deposit NAV",
-			web3.utils.fromWei(depositNAV.toString(), "ether")
 		);
 
 		// await newGnosisSafe.deposit(yrtToken.address, token("10"), {

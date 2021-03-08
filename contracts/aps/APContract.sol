@@ -26,6 +26,8 @@ contract APContract
         mapping(address => bool) vaultDepositAssets;
         mapping(address => bool) vaultWithdrawalAssets;
         mapping(address => bool) vaultEnabledStrategy;
+        address depositStrategy;
+        address withdrawStrategy;
         address vaultAPSManager;
         address vaultStrategyManager;
         uint256[] whitelistGroup;
@@ -82,6 +84,8 @@ contract APContract
 
     address public strategyMinter;
 
+    address public yieldsterExchange;
+
     address public stringUtils;
 
     mapping(address => bool) APSManagers;
@@ -95,6 +99,10 @@ contract APContract
     address public priceModule;
 
     address public platFormManagementFee;
+
+    address public stockDeposit;
+
+    address public stockWithdraw;
 
     uint public test = 0;
 
@@ -202,6 +210,24 @@ contract APContract
         strategyExecutor = _strategyExecutor;
     }
 
+    function setYieldsterExchange(address _yieldsterExchange)
+        onlyYieldsterDAO
+        public
+    {
+        yieldsterExchange = _yieldsterExchange;
+    }
+
+    
+    function setStockDepositWithdraw(address _stockDeposit, address _stockWithdraw)
+        onlyYieldsterDAO
+        public
+    {
+        stockDeposit = _stockDeposit;
+        stockWithdraw = _stockWithdraw;
+    }
+
+
+
     function changeVaultAPSManager(address _vaultAPSManager)
         external
     {
@@ -258,6 +284,8 @@ contract APContract
             vaultAPSManager : _vaultAPSManager, 
             vaultStrategyManager : _vaultStrategyManager,
             whitelistGroup : _whitelistGroup,
+            depositStrategy: stockDeposit,
+            withdrawStrategy: stockWithdraw,
             created : true
             });
         vaults[msg.sender] = newVault;
@@ -309,6 +337,22 @@ contract APContract
     {
         require(vaults[msg.sender].created, "Vault not present");
         return managementFeeStrategies[msg.sender];
+    }
+
+    function getDepositStrategy()
+        public
+        returns(address)
+    {
+        require(vaults[msg.sender].created, "Vault not present");
+        return vaults[msg.sender].depositStrategy;
+    }
+
+    function getWithdrawStrategy()
+        public
+        returns(address)
+    {
+        require(vaults[msg.sender].created, "Vault not present");
+        return vaults[msg.sender].withdrawStrategy;
     }
 
     function setPlatformManagementFee(address _vaultAddress, address _managementFeeAddress)

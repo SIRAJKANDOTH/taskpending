@@ -33,11 +33,21 @@ interface IAPContract{
 
     function emergencyVault() external view returns(address);
 
+    function yieldsterExchange() external view returns(address);
+
     function strategyExecutor() external view returns(address);
 
     function strategyMinter() external view returns(address);
 
+    function stockDeposit() external view returns(address);
+    
+    function stockWithdraw() external view returns(address);
+
     function setYieldsterGOD(address) external;
+
+    function getDepositStrategy() external returns(address);
+
+    function getWithdrawStrategy() external returns(address);
 
     function changeVaultAPSManager(address) external;
 

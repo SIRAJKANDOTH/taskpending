@@ -43,6 +43,16 @@ contract VaultStorage
     TokenBalanceStorage tokenBalances;
     
 
+
+    
+    /// @dev Function to revert in case of delegatecall fail.
+    function revertDelegate(bool delegateStatus)
+        internal
+    {
+        if(!delegateStatus){
+            revert("Operation perfomed Failed");
+        }
+    }
     /// @dev Function to return the NAV of the Vault.
     function getVaultNAV() 
         public 
@@ -89,11 +99,21 @@ contract VaultStorage
     /// @param _amount Amount of the Deposit tokens.    
     function getDepositNAV(address _tokenAddress, uint256 _amount)
         view
-        public
+        internal
         returns (uint256)
     {
         uint256 tokenUSD = IAPContract(APContract).getUSDPrice(_tokenAddress);
         return (_amount.mul(uint256(tokenUSD))).div(1e18);
+    }
+
+    /// @dev Function to get the amount of Vault Tokens to be minted for the deposit NAV.
+    /// @param depositNAV NAV of the Deposit Amount.
+    function getMintValue(uint256 depositNAV)
+        internal
+        view
+        returns (uint256)
+    {
+        return (depositNAV.mul(totalSupply())).div( getVaultNAV());
     }
 
     /// @dev Function to return Value of the Vault Token.

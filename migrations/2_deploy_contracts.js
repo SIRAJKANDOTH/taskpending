@@ -1,34 +1,52 @@
-var GnosisSafe = artifacts.require("./GnosisSafe.sol");
-var Whitelist = artifacts.require("./whitelist/Whitelist.sol");
-var APContract = artifacts.require("./aps/APContract.sol");
-var PriceModule = artifacts.require("./price/PriceModule.sol");
-var ProxyFactory = artifacts.require("./proxies/GnosisSafeProxyFactory.sol");
-var PlatformManagementFee = artifacts.require("./delegateContracts/ManagementFee.sol");
-var YearnItAll = artifacts.require("./strategies/YearnItAll.sol");
-var StrategyMinter = artifacts.require("./strategies/StrategyMinter.sol");
-var StringUtil = artifacts.require("./utils/string/strings.sol");
-
+const GnosisSafe = artifacts.require("./GnosisSafe.sol");
+const Whitelist = artifacts.require("./whitelist/Whitelist.sol");
+const APContract = artifacts.require("./aps/APContract.sol");
+const PriceModule = artifacts.require("./price/PriceModule.sol");
+const ProxyFactory = artifacts.require("./proxies/GnosisSafeProxyFactory.sol");
+const PlatformManagementFee = artifacts.require(
+	"./delegateContracts/ManagementFee.sol"
+);
+const YearnItAll = artifacts.require("./strategies/YearnItAll.sol");
+const StrategyMinter = artifacts.require("./strategies/StrategyMinter.sol");
+const HexUtils = artifacts.require("./utils/HexUtils.sol");
+const StockDeposit = artifacts.require(
+	"./smartStrategies/deposit/StockDeposit.sol"
+);
+const StockWithdraw = artifacts.require(
+	"./smartStrategies/deposit/StockWithdraw.sol"
+);
+const Exchange = artifacts.require("./exchange/Exchange.sol");
 
 module.exports = async (deployer) => {
 	await deployer.deploy(GnosisSafe);
 	const gnosisSafeMasterCopy = await GnosisSafe.deployed();
+
 	await deployer.deploy(PlatformManagementFee);
-	const managementFee= await PlatformManagementFee.deployed();
+	const managementFee = await PlatformManagementFee.deployed();
 
 	await deployer.deploy(Whitelist);
 	const whitelist = await Whitelist.deployed();
 
-	await deployer.deploy(StringUtil);
-	const stringUtil = await StringUtil.deployed();
+	await deployer.deploy(HexUtils);
+	const hexUtils = await HexUtils.deployed();
 
 	await deployer.deploy(
 		APContract,
 		gnosisSafeMasterCopy.address,
 		whitelist.address,
 		managementFee.address,
-		stringUtil.address
+		hexUtils.address
 	);
 	const apContract = await APContract.deployed();
+
+	await deployer.deploy(StockDeposit);
+	const stockDeposit = await StockDeposit.deployed();
+
+	await deployer.deploy(StockWithdraw);
+	const stockWithdraw = await StockWithdraw.deployed();
+
+	await deployer.deploy(Exchange);
+	const exchange = await Exchange.deployed();
 
 	await deployer.deploy(PriceModule, apContract.address);
 	const priceModule = await PriceModule.deployed();
@@ -47,6 +65,12 @@ module.exports = async (deployer) => {
 		apContract.address
 	);
 
+	await apContract.setYieldsterExchange(exchange.address);
+
+	await apContract.setStockDepositWithdraw(
+		stockDeposit.address,
+		stockWithdraw.address
+	);
 	await apContract.setStrategyMinter(strategyMinter.address);
 
 	await apContract.setStrategyExecutor(
