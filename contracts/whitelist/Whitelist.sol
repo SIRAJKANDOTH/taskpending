@@ -3,22 +3,21 @@ pragma solidity >=0.5.0 <0.7.0;
 
 contract Whitelist
 {
+
+    uint256 groupId;
+    address public whiteListManager;
     struct WhitelistGroup
     {
         mapping(address => bool) members;
         address whitelistGroupAdmin;
         bool created;
     }
-
-    event GroupCreated(address, uint256);
-    
-    uint256 groupId;
-    address public whiteListManager;
     mapping(uint256 => WhitelistGroup) private whitelistGroups;
+    event GroupCreated(address, uint256);
 
     constructor() public
     {
-        whiteListManager=msg.sender;
+        whiteListManager = msg.sender;
     }
 
     modifier onlyWhitelistManager{
@@ -26,13 +25,17 @@ contract Whitelist
         _;
     }
 
+    /// @dev Function to change the whitelist manager of Yieldster.
+    /// @param _manager Address of the new manager.
     function changeManager(address _manager) 
         public 
         onlyWhitelistManager
     {
-        whiteListManager=_manager;
+        whiteListManager = _manager;
     }
 
+    /// @dev Function that returns if a whitelist group is exist.
+    /// @param _groupId Group Id of the whitelist group.
     function _isGroup(uint256 _groupId) 
         private 
         view 
@@ -41,6 +44,8 @@ contract Whitelist
         return whitelistGroups[_groupId].created;
     }
 
+    /// @dev Function that returns if the msg.sender is the whitelist group admin.
+    /// @param _groupId Group Id of the whitelist group.
     function _isGroupAdmin(uint256 _groupId) 
         private 
         view 
@@ -49,6 +54,8 @@ contract Whitelist
         return whitelistGroups[_groupId].whitelistGroupAdmin == msg.sender;
     }
 
+    /// @dev Function to create a new whitelist group.
+    /// @param _whitelistGroupAdmin Address of the whitelist group admin.
     function createGroup(address _whitelistGroupAdmin) 
         public
         returns(uint256) 
@@ -64,6 +71,8 @@ contract Whitelist
         return groupId;
     }
 
+    /// @dev Function to delete a whitelist group.
+    /// @param _groupId Group Id of the whitelist group.
     function deleteGroup(uint256 _groupId) 
         public 
     {
@@ -72,6 +81,9 @@ contract Whitelist
         delete whitelistGroups[_groupId];
     }
 
+    /// @dev Function to add members to a whitelist group.
+    /// @param _groupId Group Id of the whitelist group.
+    /// @param _memberAddress List of address to be added to the whitelist group.
     function addMembersToGroup(uint256 _groupId, address[] memory _memberAddress) 
         public
     {
@@ -84,6 +96,9 @@ contract Whitelist
         }
     }
 
+    /// @dev Function to remove members from a whitelist group.
+    /// @param _groupId Group Id of the whitelist group.
+    /// @param _memberAddress List of address to be removed from the whitelist group.
     function removeMembersFromGroup(uint256 _groupId, address[] memory _memberAddress) 
         public
     {
@@ -96,6 +111,9 @@ contract Whitelist
         }
     }
 
+    /// @dev Function to check if an address is a whitelisted address.
+    /// @param _groupId Group Id of the whitelist group.
+    /// @param _memberAddress Address to check.
     function isMember(uint256 _groupId, address _memberAddress) 
         public 
         view 
@@ -105,6 +123,8 @@ contract Whitelist
         return whitelistGroups[_groupId].members[_memberAddress];
     }
 
+    /// @dev Function that returns the address of the whitelist group admin.
+    /// @param _groupId Group Id of the whitelist group.
     function getWhitelistAdmin(uint256 _groupId)
         public
         view
@@ -114,6 +134,9 @@ contract Whitelist
         return whitelistGroups[_groupId].whitelistGroupAdmin;
     }
 
+    /// @dev Function to change the whitelist admin of a group.
+    /// @param _groupId Group Id of the whitelist group.
+    /// @param _whitelistGroupAdmin Address of the new whitelist admin.
     function changeWhitelistAdmin(uint256 _groupId, address _whitelistGroupAdmin)
         public
     {
