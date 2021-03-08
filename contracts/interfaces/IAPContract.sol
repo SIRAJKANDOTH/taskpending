@@ -75,9 +75,9 @@ interface IAPContract{
 
     function _isStrategyEnabled( address , address )external view returns(bool);
 
-    function getStrategyInstructionId(uint256) external returns(address);  
-
     function getVaultManagementFee() external returns(address[] memory);
+
+    function setVaultSmartStrategy(address, uint256) external;
 
     function stringUtils() external view returns(address);   
 }

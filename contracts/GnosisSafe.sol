@@ -225,7 +225,17 @@ contract GnosisSafe
         return IAPContract(APContract).getVaultActiveStrategy(address(this));
     }
 
-    
+    /// @dev Function to set smart strategies to vault.
+    /// @param _smartStrategyAddress Address of smart Strategy.
+    /// @param _type Type of smart strategy.
+    function setVaultSmartStrategy(address _smartStrategyAddress, uint256 _type)
+        public
+    {
+        require(msg.sender == vaultStrategyManager || msg.sender == owner, "Sender not Authorized");
+        IAPContract(APContract).setVaultSmartStrategy(_smartStrategyAddress,_type);
+    }
+
+
     /// @dev Function to change the APS Manager of the Vault.
     /// @param _vaultAPSManager Address of the new APS Manager.
     function changeAPSManager(address _vaultAPSManager)
