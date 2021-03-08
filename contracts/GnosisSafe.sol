@@ -12,7 +12,7 @@ contract GnosisSafe
         public
     {
         require(msg.sender == IAPContract(APContract).yieldsterGOD(), "Sender not Authorized");
-        emergencyBreak = true;
+        emergencyConditions = 1;
     }
 
     /// @dev Function to disable the Emergency Break feature of the Vault.
@@ -20,7 +20,7 @@ contract GnosisSafe
         public
     {
         require(msg.sender == IAPContract(APContract).yieldsterGOD(), "Sender not Authorized");
-        emergencyBreak = false;
+        emergencyConditions = 0;
     }
 
     /// @dev Function to enable Emergency Exit feature of the Vault.
@@ -28,7 +28,7 @@ contract GnosisSafe
         public
     {
         require(msg.sender == IAPContract(APContract).yieldsterGOD(), "Sender not Authorized");
-        emergencyExit = true;
+        emergencyConditions = 2;
         address vaultActiveStrategy = getVaultActiveStrategy();
 
         if(vaultActiveStrategy != address(0)){
@@ -51,11 +51,10 @@ contract GnosisSafe
 
     /// @dev Function that Disables vault interactions in case of Emergency Break and Emergency Exit.
     function _onlyNormalMode() private view {
-        if(emergencyBreak)
-        {
+        if(emergencyConditions == 1){
             require(msg.sender == IAPContract(APContract).yieldsterGOD(), "Sender not Authorized");
         }
-        else if(emergencyExit){
+        else if(emergencyConditions == 2){
             revert("This safe is no longer active");
         }
     }
@@ -113,7 +112,7 @@ contract GnosisSafe
         whiteListGroups = _whiteListGroups;
         oneInch = 0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB;
         setupToken(_tokenName, _symbol);
-        tokenBalances=new TokenBalanceStorage();
+        tokenBalances = new TokenBalanceStorage();
     }
 
     /// @dev Function that is called once after vault creation to Register the Vault with APS.
@@ -457,13 +456,16 @@ contract GnosisSafe
     external
     returns(bytes4)
     {
-       
         return 0;
     }
+
     /// @dev Function to perform Management fee Calculations in the Vault.
     function managementFeeCleanUp() 
         private
     {
-      IAPContract(APContract).platFormManagementFee().delegatecall(abi.encodeWithSignature("executeSafeCleanUp()"));
+        address[] memory managementFeeStrategies = IAPContract(APContract).getVaultManagementFee();
+        for (uint256 i = 0; i < managementFeeStrategies.length; i++){
+            managementFeeStrategies[i].delegatecall(abi.encodeWithSignature("executeSafeCleanUp()"));
+        }
     }
 }

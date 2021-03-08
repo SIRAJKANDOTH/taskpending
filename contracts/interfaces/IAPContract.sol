@@ -66,6 +66,8 @@ interface IAPContract{
     function _isStrategyEnabled( address , address )external view returns(bool);
 
     function getStrategyInstructionId(uint256) external returns(address);  
-    function platFormManagementFee() external view returns(address);
+
+    function getVaultManagementFee() external returns(address[] memory);
+
     function stringUtils() external view returns(address);   
 }

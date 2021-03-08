@@ -39,6 +39,8 @@ contract APContract
         bool created;
     }
 
+    mapping(address => address[]) managementFeeStrategies;
+
     struct SmartStrategy
     {
         uint256 instructionId;
@@ -79,6 +81,7 @@ contract APContract
     address public strategyExecutor;
 
     address public strategyMinter;
+
     address public stringUtils;
 
     mapping(address => bool) APSManagers;
@@ -90,6 +93,7 @@ contract APContract
     address public proxyFactory;
 
     address public priceModule;
+
     address public platFormManagementFee;
 
     uint public test = 0;
@@ -110,7 +114,7 @@ contract APContract
         APSManagers[msg.sender] = true;
         MasterCopy = _MasterCopy;
         whitelistModule = _whitelistModule;
-        platFormManagementFee=_platformManagementFee;
+        platFormManagementFee = _platformManagementFee;
         stringUtils=_stringUtils;
     }
 
@@ -251,12 +255,13 @@ contract APContract
         require(safeOwner[msg.sender] == _owner, "Only owner can call this function");
         Vault memory newVault = Vault(
             {
-            vaultAPSManager:_vaultAPSManager, 
-            vaultStrategyManager:_vaultStrategyManager,
-            whitelistGroup:_whitelistGroup, 
-            created:true
+            vaultAPSManager : _vaultAPSManager, 
+            vaultStrategyManager : _vaultStrategyManager,
+            whitelistGroup : _whitelistGroup,
+            created : true
             });
         vaults[msg.sender] = newVault;
+        managementFeeStrategies[msg.sender] = [platFormManagementFee];
     }
 
     function setVaultAssets(
@@ -296,6 +301,22 @@ contract APContract
             vaults[msg.sender].vaultAssets[asset] = false;
             vaults[msg.sender].vaultWithdrawalAssets[asset] = false;
         }
+    }
+
+    function getVaultManagementFee()
+        public
+        returns(address[] memory)
+    {
+        require(vaults[msg.sender].created, "Vault not present");
+        return managementFeeStrategies[msg.sender];
+    }
+
+    function setPlatformManagementFee(address _vaultAddress, address _managementFeeAddress)
+        public
+    {
+        require(vaults[_vaultAddress].created, "Vault not present");
+        require(vaults[_vaultAddress].vaultStrategyManager == msg.sender, "Sender not Authorized");
+        managementFeeStrategies[_vaultAddress].push(_managementFeeAddress);
     }
 
     function setVaultActiveStrategy(address _strategyAddress)

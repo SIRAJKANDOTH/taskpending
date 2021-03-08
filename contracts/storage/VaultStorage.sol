@@ -22,8 +22,7 @@ contract VaultStorage
 {
     using SafeMath for uint256;
 
-    bool public emergencyExit;
-    bool public emergencyBreak;
+    uint8 public emergencyConditions;
     bool internal vaultSetupCompleted;
     bool internal vaultRegistrationCompleted;
 
