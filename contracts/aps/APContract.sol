@@ -6,22 +6,19 @@ import "../interfaces/IPriceModule.sol";
 
 contract APContract
 {
-    struct Asset
-    {
+    struct Asset{
         string name;
         string symbol;
         bool created;
     }
 
-    struct Protocol
-    {
+    struct Protocol{
         string name;
         string symbol;
         bool created;
     }
 
-    struct Vault
-    {
+    struct Vault{
         mapping(address => bool) vaultAssets;
         mapping(address => bool) vaultDepositAssets;
         mapping(address => bool) vaultWithdrawalAssets;
@@ -34,8 +31,7 @@ contract APContract
         bool created;
     }
 
-    struct Strategy
-    {
+    struct Strategy{
         string strategyName;
         mapping(address => bool) strategyProtocols;
         bool created;
@@ -43,8 +39,7 @@ contract APContract
 
     mapping(address => address[]) managementFeeStrategies;
 
-    struct SmartStrategy
-    {
+    struct SmartStrategy{
         string smartStrategyName;
         bool created;
     }
@@ -120,7 +115,7 @@ contract APContract
         MasterCopy = _MasterCopy;
         whitelistModule = _whitelistModule;
         platFormManagementFee = _platformManagementFee;
-        stringUtils=_stringUtils;
+        stringUtils = _stringUtils;
     }
 
     function addProxyFactory(address _proxyFactory)
@@ -131,26 +126,24 @@ contract APContract
     }
 
 //Modifiers
-    modifier onlyYieldsterDAO
-    {
+    modifier onlyYieldsterDAO{
         require(yieldsterDAO == msg.sender, "Only Yieldster DAO is allowed to perform this operation");
         _;
     }
 
-    modifier onlyManager
-    {
+    modifier onlyManager{
         require(APSManagers[msg.sender], "Only APS managers allowed to perform this operation!");
         _;
     }
 
-    modifier onlySafeOwner
-    {
+    modifier onlySafeOwner{
         require(safeOwner[msg.sender] == tx.origin, "Only safe Owner can perform this operation");
         _;
     }
 
 
-//Managers
+    /// @dev Function to add APS manager to Yieldster.
+    /// @param _manager Address of the manager.
     function addManager(address _manager) 
         public
         onlyYieldsterDAO
@@ -158,6 +151,8 @@ contract APContract
         APSManagers[_manager] = true;
     }
 
+    /// @dev Function to remove APS manager from Yieldster.
+    /// @param _manager Address of the manager.
     function removeManager(address _manager)
         public
         onlyYieldsterDAO
@@ -165,6 +160,8 @@ contract APContract
         APSManagers[_manager] = false;
     } 
 
+    /// @dev Function to change whitelist Manager.
+    /// @param _whitelistManager Address of the whitelist manager.
     function changeWhitelistManager(address _whitelistManager)
         public
         onlyYieldsterDAO
@@ -172,6 +169,8 @@ contract APContract
         whitelistManager = _whitelistManager;
     }
 
+    /// @dev Function to set Yieldster GOD.
+    /// @param _yieldsterGOD Address of the Yieldster GOD.
     function setYieldsterGOD(address _yieldsterGOD)
         public
     {
@@ -179,6 +178,7 @@ contract APContract
         yieldsterGOD = _yieldsterGOD;
     }
 
+    /// @dev Function to disable Yieldster GOD.
     function disableYieldsterGOD()
         public
     {
@@ -186,6 +186,8 @@ contract APContract
         yieldsterGOD = address(0);
     }
 
+    /// @dev Function to set Emergency vault.
+    /// @param _emergencyVault Address of the Yieldster Emergency vault.
     function setEmergencyVault(address _emergencyVault)
         onlyYieldsterDAO
         public
@@ -193,6 +195,8 @@ contract APContract
         emergencyVault = _emergencyVault;
     }
 
+    /// @dev Function to set Yieldster strategy minter.
+    /// @param _strategyMinter Address of the Yieldster strategy minter.
     function setStrategyMinter(address _strategyMinter)
         onlyYieldsterDAO
         public
@@ -200,6 +204,8 @@ contract APContract
         strategyMinter = _strategyMinter;
     }
 
+    /// @dev Function to set Yieldster strategy executor.
+    /// @param _strategyExecutor Address of the Yieldster strategy executor.
     function setStrategyExecutor(address _strategyExecutor)
         onlyYieldsterDAO
         public
@@ -207,6 +213,8 @@ contract APContract
         strategyExecutor = _strategyExecutor;
     }
 
+    /// @dev Function to set Yieldster Exchange.
+    /// @param _yieldsterExchange Address of the Yieldster exchange.
     function setYieldsterExchange(address _yieldsterExchange)
         onlyYieldsterDAO
         public
@@ -214,7 +222,9 @@ contract APContract
         yieldsterExchange = _yieldsterExchange;
     }
 
-    
+    /// @dev Function to set stock Deposit and Withdraw.
+    /// @param _stockDeposit Address of the stock deposit contract.
+    /// @param _stockWithdraw Address of the stock withdraw contract.
     function setStockDepositWithdraw(address _stockDeposit, address _stockWithdraw)
         onlyYieldsterDAO
         public
@@ -224,7 +234,8 @@ contract APContract
     }
 
 
-
+    /// @dev Function to change the APS Manager for a vault.
+    /// @param _vaultAPSManager Address of the new APS Manager.
     function changeVaultAPSManager(address _vaultAPSManager)
         external
     {
@@ -233,6 +244,8 @@ contract APContract
         vaults[msg.sender].vaultAPSManager = _vaultAPSManager;
     }
 
+    /// @dev Function to change the Strategy Manager for a vault.
+    /// @param _vaultStrategyManager Address of the new Strategy Manager.
     function changeVaultStrategyManager(address _vaultStrategyManager)
         external
     {
@@ -241,6 +254,8 @@ contract APContract
     }
 
 //Price Module
+    /// @dev Function to set Yieldster price module.
+    /// @param _priceModule Address of the price module.
     function setPriceModule(address _priceModule)
         public
         onlyManager
@@ -248,6 +263,8 @@ contract APContract
         priceModule = _priceModule;
     }
 
+    /// @dev Function to get the USD price for a token.
+    /// @param _tokenAddress Address of the token.
     function getUSDPrice(address _tokenAddress) 
         public 
         view
@@ -259,6 +276,9 @@ contract APContract
 
 
 //Vaults
+    /// @dev Function to create a vault.
+    /// @param _owner Address of the owner of the vault.
+    /// @param _vaultAddress Address of the new vault.
     function createVault(address _owner, address _vaultAddress)
     public
     {
@@ -267,6 +287,11 @@ contract APContract
     }
 
 
+    /// @dev Function to add a vault in the APS.
+    /// @param _vaultAPSManager Address of the vaults APS Manager.
+    /// @param _vaultStrategyManager Address of the vaults Strateg Manager.
+    /// @param _whitelistGroup List of whitelist groups applied to the vault.
+    /// @param _owner Address of the vault owner.
     function addVault(
         address _vaultAPSManager,
         address _vaultStrategyManager,
@@ -289,6 +314,11 @@ contract APContract
         managementFeeStrategies[msg.sender] = [platFormManagementFee];
     }
 
+    /// @dev Function to Manage the vault assets.
+    /// @param _enabledDepositAsset List of deposit assets to be enabled in the vault.
+    /// @param _enabledWithdrawalAsset List of withdrawal assets to be enabled in the vault.
+    /// @param _disabledDepositAsset List of deposit assets to be disabled in the vault.
+    /// @param _disabledWithdrawalAsset List of withdrawal assets to be disabled in the vault.
     function setVaultAssets(
         address[] memory _enabledDepositAsset,
         address[] memory _enabledWithdrawalAsset,
@@ -328,6 +358,7 @@ contract APContract
         }
     }
 
+    /// @dev Function to get the list of management fee strategies applied to the vault.
     function getVaultManagementFee()
         public
         returns(address[] memory)
@@ -336,6 +367,7 @@ contract APContract
         return managementFeeStrategies[msg.sender];
     }
 
+    /// @dev Function to get the deposit strategy applied to the vault.
     function getDepositStrategy()
         public
         returns(address)
@@ -344,6 +376,7 @@ contract APContract
         return vaults[msg.sender].depositStrategy;
     }
 
+    /// @dev Function to get the withdrawal strategy applied to the vault.
     function getWithdrawStrategy()
         public
         returns(address)
@@ -352,7 +385,10 @@ contract APContract
         return vaults[msg.sender].withdrawStrategy;
     }
 
-    function setPlatformManagementFee(address _vaultAddress, address _managementFeeAddress)
+    /// @dev Function to set the management fee strategies applied to a vault.
+    /// @param _vaultAddress Address of the vault.
+    /// @param _managementFeeAddress Address of the management fee strategy.
+    function setManagementFeeStrategies(address _vaultAddress, address _managementFeeAddress)
         public
     {
         require(vaults[_vaultAddress].created, "Vault not present");
@@ -360,6 +396,8 @@ contract APContract
         managementFeeStrategies[_vaultAddress].push(_managementFeeAddress);
     }
 
+    /// @dev Function to set vault active strategy.
+    /// @param _strategyAddress Address of the strategy.
     function setVaultActiveStrategy(address _strategyAddress)
         public
     {
@@ -368,6 +406,8 @@ contract APContract
         vaultActiveStrategy[msg.sender] = _strategyAddress;
     }
 
+    /// @dev Function to deactivate a vault strategy.
+    /// @param _strategyAddress Address of the strategy.
     function deactivateVaultStrategy(address _strategyAddress)
         public
     {
@@ -376,6 +416,7 @@ contract APContract
         vaultActiveStrategy[msg.sender] = address(0);
     }
 
+    /// @dev Function to get vault active strategy.
     function getVaultActiveStrategy(address _vaultAddress)
         public
         view
@@ -385,6 +426,11 @@ contract APContract
         return vaultActiveStrategy[_vaultAddress];
     }
 
+    /// @dev Function to Manage the vault strategies.
+    /// @param _vaultStrategy Address of the strategy.
+    /// @param _enabledStrategyProtocols List of protocols that are enabled in the strategy.
+    /// @param _disabledStrategyProtocols List of protocols that are disabled in the strategy.
+    /// @param _assetsToBeEnabled List of assets that have to be enabled along with the strategy.
     function setVaultStrategyAndProtocol(
         address _vaultStrategy,
         address[] memory _enabledStrategyProtocols,
@@ -419,6 +465,9 @@ contract APContract
 
     }
 
+    /// @dev Function to disable the vault strategies.
+    /// @param _strategyAddress Address of the strategy.
+    /// @param _assetsToBeDisabled List of assets that have to be disabled along with the strategy.
     function disableVaultStrategy(address _strategyAddress, address[] memory _assetsToBeDisabled)
         public
     {
@@ -436,6 +485,9 @@ contract APContract
         }
     }
 
+    /// @dev Function to set smart strategy applied to the vault.
+    /// @param _smartStrategyAddress Address of the smart strategy.
+    /// @param _type type of smart strategy(deposit or withdraw).
     function setVaultSmartStrategy(address _smartStrategyAddress, uint256 _type)
         public
     {
@@ -450,9 +502,12 @@ contract APContract
         else{
             revert("Invalid type provided");
         }
-
     }
 
+    /// @dev Function to check if a particular protocol is enabled in a strategy for a vault.
+    /// @param _vaultAddress Address of the vault.
+    /// @param _strategyAddress Address of the strategy.
+    /// @param _protocolAddress Address of the protocol to check.
     function _isStrategyProtocolEnabled(
         address _vaultAddress, 
         address _strategyAddress, 
@@ -462,22 +517,21 @@ contract APContract
     view
     returns(bool)
     {
-        if(
-            vaults[_vaultAddress].created &&
+        if( vaults[_vaultAddress].created &&
             strategies[_strategyAddress].created &&
             protocols[_protocolAddress].created &&
             vaults[_vaultAddress].vaultEnabledStrategy[_strategyAddress] &&
-            vaultStrategyEnabledProtocols[_vaultAddress][_strategyAddress][_protocolAddress]
-        )
-        {
+            vaultStrategyEnabledProtocols[_vaultAddress][_strategyAddress][_protocolAddress]){
             return true;
         }
-        else
-        {
+        else{
             return false;
         }
     }
 
+    /// @dev Function to check if a strategy is enabled for the vault.
+    /// @param _vaultAddress Address of the vault.
+    /// @param _strategyAddress Address of the strategy.
     function _isStrategyEnabled(
         address _vaultAddress, 
         address _strategyAddress
@@ -486,20 +540,18 @@ contract APContract
     view
     returns(bool)
     {
-        if(
-            vaults[_vaultAddress].created &&
+        if(vaults[_vaultAddress].created &&
             strategies[_strategyAddress].created &&
-            vaults[_vaultAddress].vaultEnabledStrategy[_strategyAddress]
-        )
-        {
+            vaults[_vaultAddress].vaultEnabledStrategy[_strategyAddress]){
             return true;
         }
-        else
-        {
+        else{
             return false;
         }
     }
 
+    /// @dev Function to check if the asset is supported by the vault.
+    /// @param cleanUpAsset Address of the asset.
     function _isVaultAsset(address cleanUpAsset)
         public
         view
@@ -509,17 +561,11 @@ contract APContract
         return vaults[msg.sender].vaultAssets[cleanUpAsset];
 
     }
-
-    function _isVaultPresent(address _address) 
-        private 
-        view 
-        returns(bool)
-    {
-        return vaults[_address].created;
-    }
        
 
 // Assets
+    /// @dev Function to check if an asset is supported by Yieldster.
+    /// @param _address Address of the asset.
     function _isAssetPresent(address _address) 
         private 
         view 
@@ -528,7 +574,11 @@ contract APContract
         return assets[_address].created;
     }
     
-
+    /// @dev Function to add an asset to the Yieldster.
+    /// @param _symbol Symbol of the asset.
+    /// @param _name Name of the asset.
+    /// @param _feedAddress feed address of the asset.
+    /// @param _tokenAddress Address of the asset.
     function addAsset(
         string memory _symbol, 
         string memory _name,
@@ -544,43 +594,41 @@ contract APContract
         assets[_tokenAddress]=newAsset;
     }
 
+    /// @dev Function to remove an asset from the Yieldster.
+    /// @param _tokenAddress Address of the asset.
     function removeAsset(address _tokenAddress) 
         public 
         onlyManager
-        {
+    {
         require(_isAssetPresent(_tokenAddress),"Asset not present!");
         delete assets[_tokenAddress];
     }
     
-    function getAssetDetails(address _tokenAddress) 
-        public 
-        view 
-        returns(string memory, string memory)
-    {
-        require(_isAssetPresent(_tokenAddress),"Asset not present!");
-        return(assets[_tokenAddress].name, assets[_tokenAddress].symbol);
-
-    }
-
+    /// @dev Function to check if an asset is supported deposit asset in the vault.
+    /// @param _assetAddress Address of the asset.
     function isDepositAsset(address _assetAddress)
-    public
-    view
-    returns(bool)
+        public
+        view
+        returns(bool)
     {
         require(vaults[msg.sender].created, "Vault not present");
         return vaults[msg.sender].vaultDepositAssets[_assetAddress];
     }
-    
+
+    /// @dev Function to check if an asset is supported withdrawal asset in the vault.
+    /// @param _assetAddress Address of the asset.
     function isWithdrawalAsset(address _assetAddress)
-    public
-    view
-    returns(bool)
+        public
+        view
+        returns(bool)
     {
         require(vaults[msg.sender].created, "Vault not present");
         return vaults[msg.sender].vaultWithdrawalAssets[_assetAddress];
     }
 
 //Strategies
+    /// @dev Function to check if a strategy is supported by Yieldster.
+    /// @param _address Address of the strategy.
     function _isStrategyPresent(address _address) 
         private 
         view 
@@ -589,6 +637,10 @@ contract APContract
         return strategies[_address].created;
     }
 
+    /// @dev Function to add a strategy to Yieldster.
+    /// @param _strategyName Name of the strategy.
+    /// @param _strategyAddress Address of the strategy.
+    /// @param _strategyAddress List of protocols present in the strategy.
     function addStrategy(
         string memory _strategyName,
         address _strategyAddress,
@@ -606,9 +658,10 @@ contract APContract
             require(_isProtocolPresent(protocol), "Protocol not supported by Yieldster");
             strategies[_strategyAddress].strategyProtocols[protocol] = true;
         }
-        
     }
 
+    /// @dev Function to remove a strategy from Yieldster.
+    /// @param _strategyAddress Address of the strategy.
     function removeStrategy(address _strategyAddress) 
         public 
         onlyManager
@@ -618,7 +671,8 @@ contract APContract
     }
 
 //Smart Strategy
-
+    /// @dev Function to check if a smart strategy is supported by Yieldster.
+    /// @param _address Address of the smart strategy.
     function _isSmartStrategyPresent(address _address) 
         private 
         view 
@@ -627,6 +681,9 @@ contract APContract
         return smartStrategies[_address].created;
     }
 
+    /// @dev Function to add a smart strategy to Yieldster.
+    /// @param _smartStrategyName Name of the smart strategy.
+    /// @param _smartStrategyAddress Address of the smart strategy.
     function addSmartStrategy(
         string memory _smartStrategyName,
         address _smartStrategyAddress
@@ -636,13 +693,13 @@ contract APContract
     {
         require(!_isSmartStrategyPresent(_smartStrategyAddress),"Smart Strategy already present!");
         SmartStrategy memory newSmartStrategy = SmartStrategy
-            ({ 
-                smartStrategyName : _smartStrategyName,
-                created : true 
-            });
+            ({ smartStrategyName : _smartStrategyName,
+                created : true });
         smartStrategies[_smartStrategyAddress] = newSmartStrategy;
     }
 
+    /// @dev Function to remove a smart strategy from Yieldster.
+    /// @param _smartStrategyAddress Address of the smart strategy.
     function removeSmartStrategy(address _smartStrategyAddress) 
         public 
         onlyManager
@@ -652,6 +709,8 @@ contract APContract
     }
 
 // Protocols
+    /// @dev Function to check if a protocol is supported by Yieldster.
+    /// @param _address Address of the protocol.
     function _isProtocolPresent(address _address) 
         private 
         view 
@@ -660,6 +719,10 @@ contract APContract
         return protocols[_address].created;
     }
 
+    /// @dev Function to add a protocol to Yieldster.
+    /// @param _symbol symbol of the protocol.
+    /// @param _name Name of the protocol.
+    /// @param _protocolAddress Address of the protocol.
     function addProtocol(
         string memory _symbol,
         string memory _name,
@@ -673,6 +736,8 @@ contract APContract
         protocols[_protocolAddress] = newProtocol;
     }
 
+    /// @dev Function to remove a protocol from Yieldster.
+    /// @param _protocolAddress Address of the protocol.
     function removeProtocol(address _protocolAddress) 
         public 
         onlyManager
