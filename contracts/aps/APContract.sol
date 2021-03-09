@@ -6,6 +6,40 @@ import "../interfaces/IPriceModule.sol";
 
 contract APContract
 {
+    address public MasterCopy;
+
+    address public yieldsterDAO;
+
+    address public yieldsterTreasury;
+
+    address public yieldsterGOD;
+
+    address public emergencyVault;
+
+    address public strategyExecutor;
+
+    address public strategyMinter;
+
+    address public yieldsterExchange;
+
+    address public stringUtils;
+
+    address public whitelistModule;
+
+    address public whitelistManager;
+
+    address public proxyFactory;
+
+    address public priceModule;
+
+    address public platFormManagementFee;
+
+    address public stockDeposit;
+
+    address public stockWithdraw;
+
+    uint public test = 0;
+
     struct Asset{
         string name;
         string symbol;
@@ -37,14 +71,14 @@ contract APContract
         bool created;
     }
 
-    mapping(address => address[]) managementFeeStrategies;
-
     struct SmartStrategy{
         string smartStrategyName;
         bool created;
     }
 
     event VaultCreation(address vaultAddress);
+
+    mapping(address => address[]) managementFeeStrategies;
 
     mapping(address => mapping(address => mapping(address => bool))) vaultStrategyEnabledProtocols;
 
@@ -61,44 +95,15 @@ contract APContract
     mapping(address => SmartStrategy) smartStrategies;
 
     mapping(address => address) safeOwner;
-
-    address public MasterCopy;
-
-    address public yieldsterDAO;
-
-    address public yieldsterTreasury;
-
-    address public yieldsterGOD;
-
-    address public emergencyVault;
-
-    address public strategyExecutor;
-
-    address public strategyMinter;
-
-    address public yieldsterExchange;
-
-    address public stringUtils;
-
+    
     mapping(address => bool) APSManagers;
 
-    address public whitelistModule;
-
-    address public whitelistManager;
-
-    address public proxyFactory;
-
-    address public priceModule;
-
-    address public platFormManagementFee;
-
-    address public stockDeposit;
-
-    address public stockWithdraw;
-
-    uint public test = 0;
-
-
+    
+    /// @dev Constructor function.
+    /// @param _MasterCopy Address of Yieldster safe master copy.
+    /// @param _whitelistModule Address of whitelist module.
+    /// @param _platformManagementFee Address of platform management fee strategy.
+    /// @param _stringUtils Address of string utils.
     constructor(
         address _MasterCopy, 
         address _whitelistModule,
@@ -118,6 +123,8 @@ contract APContract
         stringUtils = _stringUtils;
     }
 
+    /// @dev Function to add proxy Factory address to Yieldster.
+    /// @param _proxyFactory Address of proxy factory.
     function addProxyFactory(address _proxyFactory)
         public
         onlyManager

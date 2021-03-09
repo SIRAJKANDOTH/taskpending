@@ -354,7 +354,6 @@ contract GnosisSafe
     {
         require(IAPContract(APContract).strategyMinter() == msg.sender, "Only Yieldster Strategy Minter");
         HexUtils hexUtils = HexUtils(IAPContract(APContract).stringUtils());
-        // new HexUtils();
         if(id == 0){
             (bool success,) = address(this).call(hexUtils.fromHex(data));
             if(!success){
