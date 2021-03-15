@@ -1,16 +1,16 @@
 pragma solidity ^0.5.3;
-import "./GnosisSafeProxy.sol";
+import "./YieldsterVaultProxy.sol";
 import "./IProxyCreationCallback.sol";
 import "../interfaces/IAPContract.sol";
 
 /// @title Proxy Factory - Allows to create new proxy contact and execute a message call to the new proxy within one transaction.
 /// @author Stefan George - <stefan@gnosis.pm>
-contract GnosisSafeProxyFactory {
+contract YieldsterVaultProxyFactory {
 
     address private mastercopy;
     address private APContract;
     
-    event ProxyCreation(GnosisSafeProxy proxy);
+    event ProxyCreation(YieldsterVaultProxy proxy);
     constructor(address _mastercopy, address _APContract)
     public
     {
@@ -22,9 +22,9 @@ contract GnosisSafeProxyFactory {
     /// @param data Payload for message call sent to new proxy contract.
     function createProxy(bytes memory data)
         public
-        returns (GnosisSafeProxy proxy)
+        returns (YieldsterVaultProxy proxy)
     {
-        proxy = new GnosisSafeProxy(mastercopy);
+        proxy = new YieldsterVaultProxy(mastercopy);
         if (data.length > 0)
             // solium-disable-next-line security/no-inline-assembly
             assembly {
@@ -36,12 +36,12 @@ contract GnosisSafeProxyFactory {
 
     /// @dev Allows to retrieve the runtime code of a deployed Proxy. This can be used to check that the expected Proxy was deployed.
     function proxyRuntimeCode() public pure returns (bytes memory) {
-        return type(GnosisSafeProxy).runtimeCode;
+        return type(YieldsterVaultProxy).runtimeCode;
     }
 
     /// @dev Allows to retrieve the creation code used for the Proxy deployment. With this it is easily possible to calculate predicted address.
     function proxyCreationCode() public pure returns (bytes memory) {
-        return type(GnosisSafeProxy).creationCode;
+        return type(YieldsterVaultProxy).creationCode;
     }
 
     /// @dev Allows to create new proxy contact using CREATE2 but it doesn't run the initializer.
@@ -51,11 +51,11 @@ contract GnosisSafeProxyFactory {
     /// @param saltNonce Nonce that will be used to generate the salt to calculate the address of the new proxy contract.
     function deployProxyWithNonce(address _mastercopy, bytes memory initializer, uint256 saltNonce)
         internal
-        returns (GnosisSafeProxy proxy)
+        returns (YieldsterVaultProxy proxy)
     {
         // If the initializer changes the proxy address should change too. Hashing the initializer data is cheaper than just concatinating it
         bytes32 salt = keccak256(abi.encodePacked(keccak256(initializer), saltNonce));
-        bytes memory deploymentData = abi.encodePacked(type(GnosisSafeProxy).creationCode, uint256(_mastercopy));
+        bytes memory deploymentData = abi.encodePacked(type(YieldsterVaultProxy).creationCode, uint256(_mastercopy));
         // solium-disable-next-line security/no-inline-assembly
         assembly {
             proxy := create2(0x0, add(0x20, deploymentData), mload(deploymentData), salt)
@@ -69,7 +69,7 @@ contract GnosisSafeProxyFactory {
     /// @param saltNonce Nonce that will be used to generate the salt to calculate the address of the new proxy contract.
     function createProxyWithNonce(address _mastercopy, bytes memory initializer, uint256 saltNonce)
         public
-        returns (GnosisSafeProxy proxy)
+        returns (YieldsterVaultProxy proxy)
     {
         proxy = deployProxyWithNonce(_mastercopy, initializer, saltNonce);
         if (initializer.length > 0)
@@ -87,7 +87,7 @@ contract GnosisSafeProxyFactory {
     /// @param callback Callback that will be invoced after the new proxy contract has been successfully deployed and initialized.
     function createProxyWithCallback(address _mastercopy, bytes memory initializer, uint256 saltNonce, IProxyCreationCallback callback)
         public
-        returns (GnosisSafeProxy proxy)
+        returns (YieldsterVaultProxy proxy)
     {
         uint256 saltNonceWithCallback = uint256(keccak256(abi.encodePacked(saltNonce, callback)));
         proxy = createProxyWithNonce(_mastercopy, initializer, saltNonceWithCallback);
@@ -103,7 +103,7 @@ contract GnosisSafeProxyFactory {
     /// @param saltNonce Nonce that will be used to generate the salt to calculate the address of the new proxy contract.
     function calculateCreateProxyWithNonceAddress(address _mastercopy, bytes calldata initializer, uint256 saltNonce)
         external
-        returns (GnosisSafeProxy proxy)
+        returns (YieldsterVaultProxy proxy)
     {
         proxy = deployProxyWithNonce(_mastercopy, initializer, saltNonce);
         revert(string(abi.encodePacked(proxy)));
@@ -111,16 +111,16 @@ contract GnosisSafeProxyFactory {
 
 }
 // pragma solidity ^0.5.3;
-// import "./GnosisSafeProxy.sol";
+// import "./YieldsterVaultProxy.sol";
 // import "./IProxyCreationCallback.sol";
 // import "../interfaces/IAPContract.sol";
 
-// contract GnosisSafeProxyFactory {
+// contract YieldsterVaultProxyFactory {
 
 //     address private MasterCopy;
 //     address private APSContract;
 
-//     event ProxyCreation(GnosisSafeProxy proxy , address MasterCopy);
+//     event ProxyCreation(YieldsterVaultProxy proxy , address MasterCopy);
 
 //     constructor(address _MasterCopy, address _APSContract) public {
 //     MasterCopy = _MasterCopy;
@@ -132,9 +132,9 @@ contract GnosisSafeProxyFactory {
 //     /// @param data Payload for message call sent to new proxy contract.
 //     function createProxy(bytes memory data)
 //         public
-//         returns (GnosisSafeProxy proxy)
+//         returns (YieldsterVaultProxy proxy)
 //     {
-//         proxy = new GnosisSafeProxy(MasterCopy);
+//         proxy = new YieldsterVaultProxy(MasterCopy);
 //         if (data.length > 0)
 //             // solium-disable-next-line security/no-inline-assembly
 //             assembly {

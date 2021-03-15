@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.5.0 <0.7.0;
 import "./ChainlinkService.sol";
-import "../external/GnosisSafeMath.sol";
+import "../external/YieldsterVaultMath.sol";
 
 
 contract PriceModule is ChainlinkService
 {
 
-    using GnosisSafeMath for uint256;
+    using YieldsterVaultMath for uint256;
     mapping (address => address) feedAddress;
 
     address public priceModuleManager;

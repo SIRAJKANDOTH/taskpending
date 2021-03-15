@@ -1,9 +1,9 @@
 const utils = require("./utils/general");
-const GnosisSafe = artifacts.require("./GnosisSafe.sol");
+const YieldsterVault = artifacts.require("./YieldsterVault.sol");
 const APContract = artifacts.require("./aps/APContract.sol");
 const Whitelist = artifacts.require("./whitelist/Whitelist.sol");
 const PriceModule = artifacts.require("./price/PriceModule.sol");
-const ProxyFactory = artifacts.require("./GnosisSafeProxyFactory.sol");
+const ProxyFactory = artifacts.require("./YieldsterVaultProxyFactory.sol");
 const YRToken = artifacts.require("./yrToken.sol");
 const AishToken = artifacts.require("./aishToken.sol");
 const ManagementFee = artifacts.require(
@@ -25,9 +25,9 @@ function token(n) {
 }
 
 contract(" Deposit", function (accounts) {
-	let newGnosisSafe;
-	let newGnosisSafeData;
-	let gnosisSafeMasterCopy;
+	let newYieldsterVault;
+	let newYieldsterVaultData;
+	let yieldsterVaultMasterCopy;
 	let apContract;
 	let whitelist;
 	let priceModule;
@@ -50,12 +50,12 @@ contract(" Deposit", function (accounts) {
 		stockWithdraw = await StockWithdraw.new();
 		exchange = await Exchange.new();
 
-		gnosisSafeMasterCopy = await utils.deployContract(
-			"deploying Gnosis Safe Mastercopy",
-			GnosisSafe
+		yieldsterVaultMasterCopy = await utils.deployContract(
+			"deploying Yieldster Vault Mastercopy",
+			YieldsterVault
 		);
 		apContract = await APContract.new(
-			gnosisSafeMasterCopy.address,
+			yieldsterVaultMasterCopy.address,
 			whitelist.address,
 			managementFee.address,
 			hexUtils.address
@@ -87,7 +87,7 @@ contract(" Deposit", function (accounts) {
 		);
 
 		proxyFactory = await ProxyFactory.new(
-			gnosisSafeMasterCopy.address,
+			yieldsterVaultMasterCopy.address,
 			apContract.address
 		);
 		yrtToken = await YRToken.new(token("100000000"));
@@ -211,8 +211,8 @@ contract(" Deposit", function (accounts) {
 		);
 	});
 
-	it("should add safe to APS", async () => {
-		newGnosisSafeData = await gnosisSafeMasterCopy.contract.methods
+	it("should add Vault to APS", async () => {
+		newYieldsterVaultData = await yieldsterVaultMasterCopy.contract.methods
 			.setup(
 				"Liva One",
 				"Liva",
@@ -224,24 +224,24 @@ contract(" Deposit", function (accounts) {
 			)
 			.encodeABI();
 
-		newGnosisSafe = await utils.getParamFromTxEvent(
-			await proxyFactory.createProxy(newGnosisSafeData),
+		newYieldsterVault = await utils.getParamFromTxEvent(
+			await proxyFactory.createProxy(newYieldsterVaultData),
 			"ProxyCreation",
 			"proxy",
 			proxyFactory.address,
-			GnosisSafe,
-			"create Gnosis Safe"
+			YieldsterVault,
+			"create Yieldster Vault"
 		);
 
 		console.log(
-			"safe owner",
-			await newGnosisSafe.owner(),
+			"Vault owner",
+			await newYieldsterVault.owner(),
 			"other address",
 			accounts[0]
 		);
 
-		await newGnosisSafe.registerVaultWithAPS();
-		await newGnosisSafe.setVaultAssets(
+		await newYieldsterVault.registerVaultWithAPS();
+		await newYieldsterVault.setVaultAssets(
 			[
 				"0x4dbcdf9b62e891a7cec5a2568c3f4faf9e8abe2b",
 				"0x01be23585060835e02b77ef475b0cc51aa1e0709",
@@ -259,94 +259,98 @@ contract(" Deposit", function (accounts) {
 		);
 		console.log("YRT TOken", yrtToken.address);
 
-		console.log("Safe Name", await newGnosisSafe.vaultName());
-		assert.equal(await newGnosisSafe.vaultName(), "Liva One", "Names match");
+		console.log("Vault Name", await newYieldsterVault.vaultName());
+		assert.equal(
+			await newYieldsterVault.vaultName(),
+			"Liva One",
+			"Names match"
+		);
 
-		assert.ok(newGnosisSafe.address);
-		let safeNAVInitial = await newGnosisSafe.getVaultNAV();
-		console.log("Safe NAV Initial", safeNAVInitial.toString());
+		assert.ok(newYieldsterVault.address);
+		let VaultNAVInitial = await newYieldsterVault.getVaultNAV();
+		console.log("Vault NAV Initial", VaultNAVInitial.toString());
 
-		let safeTokenValueInitial = await newGnosisSafe.tokenValueInUSD();
-		console.log("token value usd Initial", safeTokenValueInitial.toString());
+		let vaultTokenValueInitial = await newYieldsterVault.tokenValueInUSD();
+		console.log("token value usd Initial", vaultTokenValueInitial.toString());
 
 		console.log("-----------deposit----------------");
 
-		await yrtToken.approve(newGnosisSafe.address, token("100"), {
+		await yrtToken.approve(newYieldsterVault.address, token("100"), {
 			from: accounts[1],
 		});
 
-		await newGnosisSafe.deposit(yrtToken.address, token("1"), {
+		await newYieldsterVault.deposit(yrtToken.address, token("1"), {
 			from: accounts[1],
 		});
-		await aishToken.approve(newGnosisSafe.address, token("100"), {
+		await aishToken.approve(newYieldsterVault.address, token("100"), {
 			from: accounts[1],
 		});
 
-		// await aishToken.approve(newGnosisSafe.address, token("100"), {
+		// await aishToken.approve(newYieldsterVault.address, token("100"), {
 		// 	from: accounts[2],
 		// });
 
-		// await newGnosisSafe.deposit(aishToken.address, token("2"), {
+		// await newYieldsterVault.deposit(aishToken.address, token("2"), {
 		// 	from: accounts[2],
 		// });
-		// await yrtToken.approve(newGnosisSafe.address, token("100"), {
+		// await yrtToken.approve(newYieldsterVault.address, token("100"), {
 		// 	from: accounts[2],
 		// });
-		// await newGnosisSafe.deposit(yrtToken.address, token("8"), {
+		// await newYieldsterVault.deposit(yrtToken.address, token("8"), {
 		// 	from: accounts[2],
 		// });
-		// await yrtToken.approve(newGnosisSafe.address, token("100"), {
+		// await yrtToken.approve(newYieldsterVault.address, token("100"), {
 		// 	from: accounts[3],
 		// });
-		// await newGnosisSafe.deposit(yrtToken.address, token("18"), {
+		// await newYieldsterVault.deposit(yrtToken.address, token("18"), {
 		// 	from: accounts[3],
 		// });
 
-		let yrtBalance = await yrtToken.balanceOf(newGnosisSafe.address);
+		let yrtBalance = await yrtToken.balanceOf(newYieldsterVault.address);
 		console.log(
-			"Safe YRT Balance",
+			"Vault YRT Balance",
 			web3.utils.fromWei(yrtBalance.toString(), "ether")
 		);
 
-		let aishBalance = await aishToken.balanceOf(newGnosisSafe.address);
+		let aishBalance = await aishToken.balanceOf(newYieldsterVault.address);
 		console.log(
-			"Safe AISH Balance",
+			"Vault AISH Balance",
 			web3.utils.fromWei(aishBalance.toString(), "ether")
 		);
 
-		let investor1SafeBalance = await newGnosisSafe.balanceOf(accounts[1]);
-		let investor2SafeBalance = await newGnosisSafe.balanceOf(accounts[2]);
-		// let investor3SafeBalance = await newGnosisSafe.balanceOf(accounts[3]);
+		let investor1VaultBalance = await newYieldsterVault.balanceOf(accounts[1]);
+		let investor2VaultBalance = await newYieldsterVault.balanceOf(accounts[2]);
+		// let investor3VaultBalance = await newYieldsterVault.balanceOf(accounts[3]);
 		console.log(
-			"Safe Token investor1 balance",
-			web3.utils.fromWei(investor1SafeBalance.toString(), "ether")
+			"Vault Token investor1 balance",
+			web3.utils.fromWei(investor1VaultBalance.toString(), "ether")
 		);
 		console.log(
-			"Safe Token investor2 balance",
-			web3.utils.fromWei(investor2SafeBalance.toString(), "ether")
+			"Vault Token investor2 balance",
+			web3.utils.fromWei(investor2VaultBalance.toString(), "ether")
 		);
 		// console.log(
-		// 	"Safe Token investor3 balance",
-		// 	web3.utils.fromWei(investor3SafeBalance.toString(), "ether")
+		// 	"Vault Token investor3 balance",
+		// 	web3.utils.fromWei(investor3VaultBalance.toString(), "ether")
 		// );
-		let safeNAV = await newGnosisSafe.getVaultNAV();
-		console.log("Safe NAV", safeNAV.toString());
-		// let deleigateresult= await newGnosisSafe.managementFeeCleanUp(managementFee.address);
-		// console.log("Safe NAV wth delegate", deleigateresult);
-		// console.log("Safe NAV wth delegate", (await newGnosisSafe.test()).toString());
+		let vaultNAV = await newYieldsterVault.getVaultNAV();
+		console.log("Vault NAV", vaultNAV.toString());
+		// let deleigateresult= await newYieldsterVault.managementFeeCleanUp(managementFee.address);
+		// console.log("Vault NAV wth delegate", deleigateresult);
+		// console.log("Vault NAV wth delegate", (await newYieldsterVault.test()).toString());
 		console.log(
-			"Safe NAV from WEI",
-			web3.utils.fromWei(safeNAV.toString(), "ether")
+			"Vault NAV from WEI",
+			web3.utils.fromWei(vaultNAV.toString(), "ether")
 		);
-		let safeTokenValue = await newGnosisSafe.tokenValueInUSD();
+		let vaultTokenValue = await newYieldsterVault.tokenValueInUSD();
 		console.log(
 			"token value usd ",
-			web3.utils.fromWei(safeTokenValue.toString(), "ether")
+			web3.utils.fromWei(vaultTokenValue.toString(), "ether")
 		);
 
-		let totalSupply = await newGnosisSafe.totalSupply();
+		let totalSupply = await newYieldsterVault.totalSupply();
 		console.log(
-			"safe total supply ",
+			"Vault total supply ",
 			web3.utils.fromWei(totalSupply.toString(), "ether")
 		);
 
@@ -360,10 +364,10 @@ contract(" Deposit", function (accounts) {
 		// 	yrt[2].toString()
 		// );
 
-		// investor1SafeBalance = await newGnosisSafe.balanceOf(accounts[1]);
+		// investor1VaultBalance = await newYieldsterVault.balanceOf(accounts[1]);
 		// console.log(
-		// 	"Safe Token investor1 balance",
-		// 	web3.utils.fromWei(investor1SafeBalance.toString(), "ether")
+		// 	"Vault Token investor1 balance",
+		// 	web3.utils.fromWei(investor1VaultBalance.toString(), "ether")
 		// );
 		let investor1YrtBalance = await yrtToken.balanceOf(accounts[1]);
 		console.log(
@@ -379,19 +383,19 @@ contract(" Deposit", function (accounts) {
 
 		console.log("------------withdraw-----------");
 
-		await newGnosisSafe.withdraw(token("1"), {
+		await newYieldsterVault.withdraw(token("1"), {
 			from: accounts[1],
 		});
-		// await newGnosisSafe.withdraw(token("8"), {
+		// await newYieldsterVault.withdraw(token("8"), {
 		// 	from: accounts[2],
 		// });
-		// await newGnosisSafe.withdraw(token("18"), {
+		// await newYieldsterVault.withdraw(token("18"), {
 		// 	from: accounts[3],
 		// });
-		investor1SafeBalance = await newGnosisSafe.balanceOf(accounts[1]);
+		investor1VaultBalance = await newYieldsterVault.balanceOf(accounts[1]);
 		console.log(
-			"Safe Token investor1 balance",
-			web3.utils.fromWei(investor1SafeBalance.toString(), "ether")
+			"Vault Token investor1 balance",
+			web3.utils.fromWei(investor1VaultBalance.toString(), "ether")
 		);
 
 		investor1YrtBalance = await yrtToken.balanceOf(accounts[1]);
@@ -406,43 +410,43 @@ contract(" Deposit", function (accounts) {
 			web3.utils.fromWei(investor1aishBalance.toString(), "ether")
 		);
 
-		yrtBalance = await yrtToken.balanceOf(newGnosisSafe.address);
+		yrtBalance = await yrtToken.balanceOf(newYieldsterVault.address);
 		console.log(
-			"Safe YRT Balance",
+			"Vault YRT Balance",
 			web3.utils.fromWei(yrtBalance.toString(), "ether")
 		);
 
-		aishBalance = await aishToken.balanceOf(newGnosisSafe.address);
+		aishBalance = await aishToken.balanceOf(newYieldsterVault.address);
 		console.log(
-			"Safe AISH Balance",
+			"Vault AISH Balance",
 			web3.utils.fromWei(aishBalance.toString(), "ether")
 		);
 
-		safeNAV = await newGnosisSafe.getVaultNAV();
-		console.log("Safe NAV", safeNAV.toString());
+		vaultNAV = await newYieldsterVault.getVaultNAV();
+		console.log("Vault NAV", vaultNAV.toString());
 		console.log(
-			"Safe NAV from WEI",
-			web3.utils.fromWei(safeNAV.toString(), "ether")
+			"Vault NAV from WEI",
+			web3.utils.fromWei(vaultNAV.toString(), "ether")
 		);
-		safeTokenValue = await newGnosisSafe.tokenValueInUSD();
+		vaultTokenValue = await newYieldsterVault.tokenValueInUSD();
 		console.log(
 			"token value usd ",
-			web3.utils.fromWei(safeTokenValue.toString(), "ether")
+			web3.utils.fromWei(vaultTokenValue.toString(), "ether")
 		);
 
-		totalSupply = await newGnosisSafe.totalSupply();
+		totalSupply = await newYieldsterVault.totalSupply();
 		console.log(
-			"safe total supply ",
+			"Vault total supply ",
 			web3.utils.fromWei(totalSupply.toString(), "ether")
 		);
 
-		// await newGnosisSafe.deposit(yrtToken.address, token("10"), {
+		// await newYieldsterVault.deposit(yrtToken.address, token("10"), {
 		// 	from: accounts[1],
 		// });
 
-		// await newGnosisSafe.enableEmergencyBreak();
-		// await newGnosisSafe.disableEmergencyBreak();
-		// await newGnosisSafe.deposit(yrtToken.address, token("1"), {
+		// await newYieldsterVault.enableEmergencyBreak();
+		// await newYieldsterVault.disableEmergencyBreak();
+		// await newYieldsterVault.deposit(yrtToken.address, token("1"), {
 		// 	from: accounts[1],
 		// });
 
@@ -451,17 +455,17 @@ contract(" Deposit", function (accounts) {
 		// 	web3.utils.fromWei(await yrtToken.balanceOf(accounts[0]), "ether")
 		// );
 
-		// await newGnosisSafe.enableEmergencyExit();
+		// await newYieldsterVault.enableEmergencyExit();
 
 		// console.log(
 		// 	"emergency vault YRT",
 		// 	web3.utils.fromWei(await yrtToken.balanceOf(accounts[0]), "ether")
 		// );
-		// await newGnosisSafe.deposit(yrtToken.address, token("10"), {
+		// await newYieldsterVault.deposit(yrtToken.address, token("10"), {
 		// 	from: accounts[1],
 		// });
 
-		// await newGnosisSafe.withdraw(yrtToken.address, token("2"),{from:accounts[2]});
+		// await newYieldsterVault.withdraw(yrtToken.address, token("2"),{from:accounts[2]});
 		// investor2YrtBalance = await yrtToken.balanceOf(accounts[2]);
 		// console.log(
 		// 	"Investor 2 after withdrawal",
@@ -470,37 +474,37 @@ contract(" Deposit", function (accounts) {
 
 		console.log("After direct deposit");
 
-		await yrtToken.transfer(newGnosisSafe.address, token("100"), {
+		await yrtToken.transfer(newYieldsterVault.address, token("100"), {
 			from: accounts[1],
 		});
 
-		yrtBalance = await yrtToken.balanceOf(newGnosisSafe.address);
+		yrtBalance = await yrtToken.balanceOf(newYieldsterVault.address);
 		console.log(
-			"Safe YRT Balance",
+			"Vault YRT Balance",
 			web3.utils.fromWei(yrtBalance.toString(), "ether")
 		);
 
-		aishBalance = await aishToken.balanceOf(newGnosisSafe.address);
+		aishBalance = await aishToken.balanceOf(newYieldsterVault.address);
 		console.log(
-			"Safe AISH Balance",
+			"Vault AISH Balance",
 			web3.utils.fromWei(aishBalance.toString(), "ether")
 		);
 
-		safeNAV = await newGnosisSafe.getVaultNAV();
-		console.log("Safe NAV", safeNAV.toString());
+		vaultNAV = await newYieldsterVault.getVaultNAV();
+		console.log("Vault NAV", vaultNAV.toString());
 		console.log(
-			"Safe NAV from WEI",
-			web3.utils.fromWei(safeNAV.toString(), "ether")
+			"Vault NAV from WEI",
+			web3.utils.fromWei(vaultNAV.toString(), "ether")
 		);
-		safeTokenValue = await newGnosisSafe.tokenValueInUSD();
+		vaultTokenValue = await newYieldsterVault.tokenValueInUSD();
 		console.log(
 			"token value usd ",
-			web3.utils.fromWei(safeTokenValue.toString(), "ether")
+			web3.utils.fromWei(vaultTokenValue.toString(), "ether")
 		);
 
-		totalSupply = await newGnosisSafe.totalSupply();
+		totalSupply = await newYieldsterVault.totalSupply();
 		console.log(
-			"safe total supply ",
+			"Vault total supply ",
 			web3.utils.fromWei(totalSupply.toString(), "ether")
 		);
 	});

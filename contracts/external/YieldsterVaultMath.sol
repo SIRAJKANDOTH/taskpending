@@ -2,12 +2,12 @@ pragma solidity >=0.5.0 <0.7.0;
 
 
 /**
- * @title GnosisSafeMath
+ * @title YieldsterVaultMath
  * @dev Math operations with safety checks that revert on error
- * Renamed from SafeMath to GnosisSafeMath to avoid conflicts
+ * Renamed from SafeMath to YieldsterVaultMath to avoid conflicts
  * TODO: remove once open zeppelin update to solc 0.5.0
  */
-library GnosisSafeMath{
+library YieldsterVaultMath{
 
   /**
   * @dev Multiplies two numbers, reverts on overflow.

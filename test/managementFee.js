@@ -1,8 +1,8 @@
 const utils = require("./utils/general");
-const GnosisSafe = artifacts.require("./GnosisSafe.sol");
+const YieldsterVault = artifacts.require("./YieldsterVault.sol");
 const APContract = artifacts.require("./aps/APContract.sol");
 const Whitelist = artifacts.require("./whitelist/Whitelist.sol");
-const ProxyFactory = artifacts.require("./GnosisSafeProxyFactory.sol");
+const ProxyFactory = artifacts.require("./YieldsterVaultProxyFactory.sol");
 const StrategyMinter = artifacts.require("./strategies/StrategyMinter.sol");
 const YearnItAll = artifacts.require("./strategies/YearnItAll.sol");
 const ManagementFee=artifacts.require("./delegateContracts/ManagementFee.sol");
@@ -16,10 +16,10 @@ function token(n) {
 }
 
 contract(" APContract", function (accounts) {
-  let newGnosisSafe;
-  let newGnosisSafeData;
-  let newGnosisSafeAddress;
-  let gnosisSafeMasterCopy;
+  let newYieldsterVault;
+  let newYieldsterVaultData;
+  let newYieldsterVaultAddress;
+  let yieldsterVaultMasterCopy;
   let apContract;
   let whitelist;
   let proxyFactory;
@@ -35,20 +35,20 @@ contract(" APContract", function (accounts) {
     whitelist = await Whitelist.new();
     strategyMinter = await StrategyMinter.new();
     
-    gnosisSafeMasterCopy = await utils.deployContract(
-      "deploying Gnosis Safe Mastercopy",
-      GnosisSafe
+    yieldsterVaultMasterCopy = await utils.deployContract(
+      "deploying Yieldster Vault Mastercopy",
+      YieldsterVault
     );
 	managementFee = await ManagementFee.new();
     apContract = await APContract.new(
-      gnosisSafeMasterCopy.address,
+      yieldsterVaultMasterCopy.address,
       whitelist.address,
 	  managementFee.address
     );
     priceModule = await PriceModule.new(apContract.address);
 
     proxyFactory = await ProxyFactory.new(
-      gnosisSafeMasterCopy.address,
+      yieldsterVaultMasterCopy.address,
       apContract.address
     );
 
@@ -158,7 +158,7 @@ contract(" APContract", function (accounts) {
 				"0x7d66cde53cc0a169cae32712fc48934e610aef14",
 			]
 		);
-    newGnosisSafeData = await gnosisSafeMasterCopy.contract.methods
+    newYieldsterVaultData = await yieldsterVaultMasterCopy.contract.methods
     .setup(
       "Liva One",
       "Liva",
@@ -170,17 +170,17 @@ contract(" APContract", function (accounts) {
     )
     .encodeABI();
 
-  newGnosisSafe = await utils.getParamFromTxEvent(
-    await proxyFactory.createProxy(newGnosisSafeData),
+  newYieldsterVault = await utils.getParamFromTxEvent(
+    await proxyFactory.createProxy(newYieldsterVaultData),
     "ProxyCreation",
     "proxy",
     proxyFactory.address,
-    GnosisSafe,
-    "create Gnosis Safe"
+    YieldsterVault,
+    "create Yieldster Vault"
   );
 
-  await newGnosisSafe.registerVaultWithAPS();
-  await newGnosisSafe.setVaultAssets(
+  await newYieldsterVault.registerVaultWithAPS();
+  await newYieldsterVault.setVaultAssets(
 	  [
 		  "0x4dbcdf9b62e891a7cec5a2568c3f4faf9e8abe2b",
 		  "0x01be23585060835e02b77ef475b0cc51aa1e0709",
@@ -199,30 +199,30 @@ contract(" APContract", function (accounts) {
 
   });
 
-  it("should add safe to APS", async () => {
+  it("should add vault to APS", async () => {
   
    
 
 
-    assert.equal(await newGnosisSafe.vaultName(), "Liva One", "Safe created");
+    assert.equal(await newYieldsterVault.vaultName(), "Liva One", "vault created");
 
 
 
   });
 
   it("Execute management fee clean Up",async()=>{
-    await yrtToken.approve(newGnosisSafe.address, token("100"));
-		await newGnosisSafe.deposit(yrtToken.address, token("100"));
-    await aishToken.approve(newGnosisSafe.address, token("100"));
-		await newGnosisSafe.deposit(aishToken.address, token("100"));
+    await yrtToken.approve(newYieldsterVault.address, token("100"));
+		await newYieldsterVault.deposit(yrtToken.address, token("100"));
+    await aishToken.approve(newYieldsterVault.address, token("100"));
+		await newYieldsterVault.deposit(aishToken.address, token("100"));
 
     // Test Management fee
-    await newGnosisSafe.managementFeeCleanUp();
+    await newYieldsterVault.managementFeeCleanUp();
     console.log("called")
-    console.log("sender balance",(await newGnosisSafe.balanceOf(accounts[0])).toString());
-    let result=(await newGnosisSafe.result());
-    let currentBlockDifference=await newGnosisSafe.currentBlockDifference();
-    let currentNav=await newGnosisSafe.currentNav();
+    console.log("sender balance",(await newYieldsterVault.balanceOf(accounts[0])).toString());
+    let result=(await newYieldsterVault.result());
+    let currentBlockDifference=await newYieldsterVault.currentBlockDifference();
+    let currentNav=await newYieldsterVault.currentNav();
     let calculatedFee=(currentNav*currentBlockDifference*2/100)/2628000;
  
     console.log("result: ",(result).toString());

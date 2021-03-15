@@ -20,7 +20,7 @@ contract Exchange
             uint256 haveTokenUSD = IAPContract(APContract).getUSDPrice(assetList[i]);
 
             if((tokenBalances.getTokenBalance(assetList[i]).mul(uint256(haveTokenUSD))).div(1e18) > (_amount.mul(uint256(targetTokenUSD))).div(1e18)){
-                (uint256 returnAmount, uint256[] memory distribution) = 
+                (uint256 returnAmount, ) = 
                 IExchange(oneInch).getExpectedReturn(assetList[i], _targetToken, _amount, 0, 0);
                 uint256 adjustedAmount = _amount + (_amount - returnAmount).mul(3);
 

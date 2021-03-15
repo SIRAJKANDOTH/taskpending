@@ -1,6 +1,6 @@
 pragma solidity >=0.5.0 <0.7.0;
 import "../common/MasterCopy.sol";
-import "../external/GnosisSafeMath.sol";
+import "../external/YieldsterVaultMath.sol";
 import "../token/ERC1155/ERC1155Receiver.sol";
 import "../token/ERC20Detailed.sol";
 import "../whitelist/Whitelist.sol";
@@ -47,6 +47,7 @@ contract VaultStorage
     
     /// @dev Function to revert in case of delegatecall fail.
     function revertDelegate(bool delegateStatus)
+        pure
         internal
     {
         if(!delegateStatus){

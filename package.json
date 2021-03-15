@@ -22,11 +22,11 @@
       73799
     ],
     "contracts": [
-      "GnosisSafe",
+      "YieldsterVault",
       "CreateAndAddModules",
       "CreateCall",
       "MultiSend",
-      "GnosisSafeProxyFactory",
+      "YieldsterVaultProxyFactory",
       "IProxy",
       "DefaultCallbackHandler"
     ]

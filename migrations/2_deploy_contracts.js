@@ -1,8 +1,8 @@
-const GnosisSafe = artifacts.require("./GnosisSafe.sol");
+const YieldsterVault = artifacts.require("./YieldsterVault.sol");
 const Whitelist = artifacts.require("./whitelist/Whitelist.sol");
 const APContract = artifacts.require("./aps/APContract.sol");
 const PriceModule = artifacts.require("./price/PriceModule.sol");
-const ProxyFactory = artifacts.require("./proxies/GnosisSafeProxyFactory.sol");
+const ProxyFactory = artifacts.require("./proxies/YieldsterVaultProxyFactory.sol");
 const PlatformManagementFee = artifacts.require(
 	"./delegateContracts/ManagementFee.sol"
 );
@@ -18,8 +18,8 @@ const StockWithdraw = artifacts.require(
 const Exchange = artifacts.require("./exchange/Exchange.sol");
 
 module.exports = async (deployer) => {
-	await deployer.deploy(GnosisSafe);
-	const gnosisSafeMasterCopy = await GnosisSafe.deployed();
+	await deployer.deploy(YieldsterVault);
+	const yieldsterVaultMasterCopy = await YieldsterVault.deployed();
 
 	await deployer.deploy(PlatformManagementFee);
 	const managementFee = await PlatformManagementFee.deployed();
@@ -32,7 +32,7 @@ module.exports = async (deployer) => {
 
 	await deployer.deploy(
 		APContract,
-		gnosisSafeMasterCopy.address,
+		yieldsterVaultMasterCopy.address,
 		whitelist.address,
 		managementFee.address,
 		hexUtils.address
@@ -55,7 +55,7 @@ module.exports = async (deployer) => {
 
 	await deployer.deploy(
 		ProxyFactory,
-		gnosisSafeMasterCopy.address,
+		yieldsterVaultMasterCopy.address,
 		apContract.address
 	);
 	const proxyFactory = await ProxyFactory.deployed();

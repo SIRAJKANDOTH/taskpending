@@ -1,9 +1,9 @@
 const utils = require("./utils/general");
-const GnosisSafe = artifacts.require("./GnosisSafe.sol");
+const YieldsterVault = artifacts.require("./YieldsterVault.sol");
 const APContract = artifacts.require("./aps/APContract.sol");
 const Whitelist = artifacts.require("./whitelist/Whitelist.sol");
 const PriceModule = artifacts.require("./price/PriceModule.sol");
-const ProxyFactory = artifacts.require("./GnosisSafeProxyFactory.sol");
+const ProxyFactory = artifacts.require("./YieldsterVaultProxyFactory.sol");
 var YearnItAll = artifacts.require("./strategies/YearnItAll.sol");
 const YRToken = artifacts.require("./yrToken.sol");
 const AishToken = artifacts.require("./aishToken.sol");
@@ -13,10 +13,10 @@ function token(n) {
 }
 
 contract(" Deposit", function (accounts) {
-	let newGnosisSafe;
-	let newGnosisSafeData;
-	let newGnosisSafeAddress;
-	let gnosisSafeMasterCopy;
+	let newYieldsterVault;
+	let newYieldsterVaultData;
+	let newYieldsterVaultAddress;
+	let yieldsterVaultMasterCopy;
 	let apContract;
 	let whitelist;
 	let priceModule;
@@ -27,12 +27,12 @@ contract(" Deposit", function (accounts) {
 
 	beforeEach(async function () {
 		whitelist = await Whitelist.new();
-		gnosisSafeMasterCopy = await utils.deployContract(
-			"deploying Gnosis Safe Mastercopy",
-			GnosisSafe
+		yieldsterVaultMasterCopy = await utils.deployContract(
+			"deploying Yieldster Vault Mastercopy",
+			YieldsterVault
 		);
 		apContract = await APContract.new(
-			gnosisSafeMasterCopy.address,
+			yieldsterVaultMasterCopy.address,
 			whitelist.address
 		);
 
@@ -41,7 +41,7 @@ contract(" Deposit", function (accounts) {
 		await apContract.setPriceModule(priceModule.address);
 
 		proxyFactory = await ProxyFactory.new(
-			gnosisSafeMasterCopy.address,
+			yieldsterVaultMasterCopy.address,
 			apContract.address
 		);
 
@@ -150,8 +150,8 @@ contract(" Deposit", function (accounts) {
 		]);
 	});
 
-	it("should add safe to APS", async () => {
-		newGnosisSafeData = await gnosisSafeMasterCopy.contract.methods
+	it("should add vault to APS", async () => {
+		newYieldsterVaultData = await yieldsterVaultMasterCopy.contract.methods
 			.setup(
 				"Liva One",
 				"Liva",
@@ -163,23 +163,23 @@ contract(" Deposit", function (accounts) {
 			)
 			.encodeABI();
 
-		newGnosisSafe = await utils.getParamFromTxEvent(
-			await proxyFactory.createProxy(newGnosisSafeData),
+		newYieldsterVault = await utils.getParamFromTxEvent(
+			await proxyFactory.createProxy(newYieldsterVaultData),
 			"ProxyCreation",
 			"proxy",
 			proxyFactory.address,
-			GnosisSafe,
-			"create Gnosis Safe"
+			YieldsterVault,
+			"create Yieldster Vault"
 		);
 
 		console.log(
-			"safe owner",
-			await newGnosisSafe.owner(),
+			"vault owner",
+			await newYieldsterVault.owner(),
 			"other address",
 			accounts[0]
 		);
 
-		await newGnosisSafe.registerVaultWithAPS(
+		await newYieldsterVault.registerVaultWithAPS(
 			[
 				"0x4dbcdf9b62e891a7cec5a2568c3f4faf9e8abe2b",
 				"0x01be23585060835e02b77ef475b0cc51aa1e0709",
@@ -194,16 +194,16 @@ contract(" Deposit", function (accounts) {
 			]
 		);
 
-		console.log("Safe Name", await newGnosisSafe.vaultName());
-		assert.equal(await newGnosisSafe.vaultName(), "Liva One", "Names match");
+		console.log("vault Name", await newYieldsterVault.vaultName());
+		assert.equal(await newYieldsterVault.vaultName(), "Liva One", "Names match");
 
-		let safeNAVInitial = await newGnosisSafe.getVaultNAV();
-		console.log("Safe NAV Initial", safeNAVInitial.toString());
+		let vaultNAVInitial = await newYieldsterVault.getVaultNAV();
+		console.log("vault NAV Initial", vaultNAVInitial.toString());
 
-		let safeTokenValueInitial = await newGnosisSafe.tokenValueInUSD();
-		console.log("token value usd Initial", safeTokenValueInitial.toString());
+		let vaultTokenValueInitial = await newYieldsterVault.tokenValueInUSD();
+		console.log("token value usd Initial", vaultTokenValueInitial.toString());
 
-		await newGnosisSafe.setVaultStrategyAndProtocol(
+		await newYieldsterVault.setVaultStrategyAndProtocol(
 			yearnItAll.address,
 			[
 				"0xd27Dc2D8ceF541f94FbA737079F2DFeA39B2EEf8",
@@ -213,16 +213,16 @@ contract(" Deposit", function (accounts) {
 			[]
 		);
 
-		await newGnosisSafe.setVaultActiveStrategy(yearnItAll.address);
+		await newYieldsterVault.setVaultActiveStrategy(yearnItAll.address);
 
 		console.log(
 			"active strategy given ",
 			yearnItAll.address,
 			" set ",
-			await newGnosisSafe.getVaultActiveStrategy()
+			await newYieldsterVault.getVaultActiveStrategy()
 		);
 
-		await newGnosisSafe.setStrategyActiveProtocol(
+		await newYieldsterVault.setStrategyActiveProtocol(
 			"0xd27Dc2D8ceF541f94FbA737079F2DFeA39B2EEf8"
 		);
 	});

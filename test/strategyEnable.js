@@ -1,8 +1,8 @@
 const utils = require("./utils/general");
-const GnosisSafe = artifacts.require("./GnosisSafe.sol");
+const YieldsterVault = artifacts.require("./YieldsterVault.sol");
 const APContract = artifacts.require("./aps/APContract.sol");
 const Whitelist = artifacts.require("./whitelist/Whitelist.sol");
-const ProxyFactory = artifacts.require("./GnosisSafeProxyFactory.sol");
+const ProxyFactory = artifacts.require("./YieldsterVaultProxyFactory.sol");
 const YRToken = artifacts.require("./yrToken.sol");
 
 function token(n) {
@@ -10,10 +10,10 @@ function token(n) {
 }
 
 contract(" Deposit", function (accounts) {
-	let newGnosisSafe;
-	let newGnosisSafeData;
-	let newGnosisSafeAddress;
-	let gnosisSafeMasterCopy;
+	let newYieldsterVault;
+	let newYieldsterVaultData;
+	let newYieldsterVaultAddress;
+	let yieldsterVaultMasterCopy;
 	let apContract;
 	let whitelist;
 	let proxyFactory;
@@ -21,17 +21,17 @@ contract(" Deposit", function (accounts) {
 
 	beforeEach(async function () {
 		whitelist = await Whitelist.new();
-		gnosisSafeMasterCopy = await utils.deployContract(
-			"deploying Gnosis Safe Mastercopy",
-			GnosisSafe
+		yieldsterVaultMasterCopy = await utils.deployContract(
+			"deploying Yieldster Vault Mastercopy",
+			YieldsterVault
 		);
 		apContract = await APContract.new(
-			gnosisSafeMasterCopy.address,
+			yieldsterVaultMasterCopy.address,
 			whitelist.address
 		);
 
 		proxyFactory = await ProxyFactory.new(
-			gnosisSafeMasterCopy.address,
+			yieldsterVaultMasterCopy.address,
 			apContract.address
 		);
 		yrtToken = await YRToken.new(token("100000000"));
@@ -145,8 +145,8 @@ contract(" Deposit", function (accounts) {
 		);
 	});
 
-	it("should add safe to APS", async () => {
-		newGnosisSafeData = await gnosisSafeMasterCopy.contract.methods
+	it("should add vault to APS", async () => {
+		newYieldsterVaultData = await yieldsterVaultMasterCopy.contract.methods
 			.setup(
 				"Liva One",
 				"Liva",
@@ -158,23 +158,23 @@ contract(" Deposit", function (accounts) {
 			)
 			.encodeABI();
 
-		newGnosisSafe = await utils.getParamFromTxEvent(
-			await proxyFactory.createProxy(newGnosisSafeData),
+		newYieldsterVault = await utils.getParamFromTxEvent(
+			await proxyFactory.createProxy(newYieldsterVaultData),
 			"ProxyCreation",
 			"proxy",
 			proxyFactory.address,
-			GnosisSafe,
-			"create Gnosis Safe"
+			YieldsterVault,
+			"create Yieldster Vault"
 		);
 
 		console.log(
-			"safe owner",
-			await newGnosisSafe.owner(),
+			"vault owner",
+			await newYieldsterVault.owner(),
 			"other address",
 			accounts[0]
 		);
 
-		await newGnosisSafe.registerVaultWithAPS(
+		await newYieldsterVault.registerVaultWithAPS(
 			[
 				"0x4dbcdf9b62e891a7cec5a2568c3f4faf9e8abe2b",
 				"0x01be23585060835e02b77ef475b0cc51aa1e0709",
@@ -188,25 +188,25 @@ contract(" Deposit", function (accounts) {
 		);
 		console.log("YRT TOken", yrtToken.address);
 
-		console.log("Safe Name", await newGnosisSafe.vaultName());
-		assert.equal(await newGnosisSafe.vaultName(), "Liva One", "Names match");
+		console.log("vault Name", await newYieldsterVault.vaultName());
+		assert.equal(await newYieldsterVault.vaultName(), "Liva One", "Names match");
 
-		assert.ok(newGnosisSafe.address);
+		assert.ok(newYieldsterVault.address);
 
-		await newGnosisSafe.setVaultStrategyAndProtocol(
+		await newYieldsterVault.setVaultStrategyAndProtocol(
 			"0x6f7454cba97fffe10e053187f23925a86f5c20c4",
 			["0x95b58a6bff3d14b7db2f5cb5f0ad413dc2940658"],
 			["0x7d66cde53cc0a169cae32712fc48934e610aef14"]
 		);
 
-		await newGnosisSafe.setVaultActiveStrategy(
+		await newYieldsterVault.setVaultActiveStrategy(
 			"0x6f7454cba97fffe10e053187f23925a86f5c20c4"
 		);
 
 		console.log("Yearn it all 0x6f7454cba97fffe10e053187f23925a86f5c20c4");
 		console.log(
 			"Vault Strategy",
-			await apContract.getVaultActiveStrategy(newGnosisSafe.address)
+			await apContract.getVaultActiveStrategy(newYieldsterVault.address)
 		);
 
 	});
