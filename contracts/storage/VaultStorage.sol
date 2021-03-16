@@ -4,7 +4,6 @@ import "../external/YieldsterVaultMath.sol";
 import "../token/ERC1155/ERC1155Receiver.sol";
 import "../token/ERC20Detailed.sol";
 import "../whitelist/Whitelist.sol";
-import "../interfaces/IController.sol";
 import "../interfaces/IAPContract.sol";
 import "../interfaces/IExchange.sol";
 import "../interfaces/IStrategy.sol";
