@@ -35,9 +35,9 @@ interface IAPContract{
 
     function yieldsterExchange() external view returns(address);
 
-    function strategyExecutor() external view returns(address);
+    function strategyExecutor(address) external view returns(address);
 
-    function strategyMinter() external view returns(address);
+    function strategyMinter(address) external view returns(address);
 
     function stockDeposit() external view returns(address);
     
