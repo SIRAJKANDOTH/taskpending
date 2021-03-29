@@ -50,6 +50,8 @@ interface IAPContract{
     function getWithdrawStrategy() external returns(address);
 
     function changeVaultAPSManager(address) external;
+    
+    function changeVaultStrategyManager(address) external;
 
     function setVaultStrategyAndProtocol(address , address[] calldata , address[] calldata, address[] calldata ) external;
 

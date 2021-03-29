@@ -255,7 +255,7 @@ contract YieldsterVault
         public
     {
         require(IAPContract(APContract).yieldsterDAO() == msg.sender || vaultStrategyManager == msg.sender, "Sender not Authorized");
-        IAPContract(APContract).changeVaultAPSManager(_strategyManager);
+        IAPContract(APContract).changeVaultStrategyManager(_strategyManager);
         vaultStrategyManager = _strategyManager;
     }
 
