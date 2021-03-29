@@ -6,8 +6,6 @@ interface IStrategy {
 
     function deposit(uint256) external;
 
-    function withdraw(address) external;
-
     function withdraw(uint256) external;
 
     function withdrawAll() external ;
