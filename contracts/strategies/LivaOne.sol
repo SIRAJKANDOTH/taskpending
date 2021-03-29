@@ -17,6 +17,7 @@ contract LivaOne
 
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
+    // string public test="test";
     
 // yearn vault - need to confirm address
 
@@ -246,5 +247,9 @@ contract LivaOne
             deposit(_balance);
         }
     }
+
+    // function exec() onlyRegisteredSafe external {
+    //     test="test passed";
+    // }
 
 }

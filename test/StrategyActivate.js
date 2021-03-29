@@ -15,6 +15,8 @@ const PlatformManagementFee = artifacts.require(
 );
 const HexUtils = artifacts.require("./utils/HexUtils.sol");
 
+var abi = require('ethereumjs-abi');
+
 function token(n) {
   return web3.utils.toWei(n, "ether");
 }
@@ -185,7 +187,7 @@ contract(" Deposit", function (accounts) {
         "0xD8052918CAd9a8B3a564d7Aa4e680a0dc156380e",
         "0x3662ABD754eE1d8CB6f5F1D4E315932b36e9955B",
       ],
-      accounts[0],
+      yearnitallMinter.address,
       accounts[0]
     );
     await apContract.addStrategy(
@@ -196,7 +198,7 @@ contract(" Deposit", function (accounts) {
         "0xD8052918CAd9a8B3a564d7Aa4e680a0dc156380e",
         "0x3662ABD754eE1d8CB6f5F1D4E315932b36e9955B",
       ],
-      accounts[0],
+      livaOneMinter.address,
       accounts[0]
     );
   });
@@ -334,8 +336,11 @@ contract(" Deposit", function (accounts) {
       await yieldsterVaultLiva.getVaultActiveStrategy()
     );
 
-    // await yieldsterVaultLiva.setStrategyActiveProtocol(
-    //   "0xd27Dc2D8ceF541f94FbA737079F2DFeA39B2EEf8"
-    // );
+	//   await livaOneMinter.mintStrategy(
+	// 	yieldsterVaultLiva.address,
+	// 	abi.simpleEncode('exec()').toString('hex'),1
+	//   );
+
+	//   console.log("result",(await livaOne.test()))
   });
 });
