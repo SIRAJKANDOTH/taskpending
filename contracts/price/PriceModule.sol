@@ -38,7 +38,7 @@ contract PriceModule is ChainlinkService
         returns(uint256)
     {
         require(feedAddress[_tokenAddress] != address(0), "This asset price is not present");
-        (int price, uint timestamp, uint8 decimals) = getLatestPrice(feedAddress[_tokenAddress]);
+        (int price, , uint8 decimals) = getLatestPrice(feedAddress[_tokenAddress]);
 
        if(decimals < 18)
         {

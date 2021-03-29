@@ -6,15 +6,15 @@ interface IStrategy {
 
     function deposit(uint256) external;
 
-    // Withdraw to strategy
     function withdraw(address) external;
 
-    // Controller | Vault role - withdraw should always return to Vault
     function withdraw(uint256) external;
 
     function withdrawAll() external ;
 
-    function balanceOf() external view returns (uint256);
+    function balanceOf(address) external view returns (uint256);
+
+    function getStrategyNAV() external view  returns (uint256);
 
     function changeProtocol(address) external;
 
