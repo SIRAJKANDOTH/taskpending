@@ -27,5 +27,7 @@ interface IStrategy {
     function deRegisterSafe() external;
 
     function getActiveProtocol(address) external view returns(address);
+    
+    function strategyExecutor() external view returns(address);
 
 }

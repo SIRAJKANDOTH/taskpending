@@ -16,10 +16,6 @@ contract APContract
 
     address public emergencyVault;
 
-    address public strategyExecutor;
-
-    address public strategyMinter;
-
     address public yieldsterExchange;
 
     address public stringUtils;
@@ -69,11 +65,14 @@ contract APContract
         string strategyName;
         mapping(address => bool) strategyProtocols;
         bool created;
+        address minter;
+        address executer;
     }
 
     struct SmartStrategy{
         string smartStrategyName;
         bool created;
+ 
     }
 
     event VaultCreation(address vaultAddress);
@@ -202,22 +201,32 @@ contract APContract
         emergencyVault = _emergencyVault;
     }
 
-    /// @dev Function to set Yieldster strategy minter.
-    /// @param _strategyMinter Address of the Yieldster strategy minter.
-    function setStrategyMinter(address _strategyMinter)
-        onlyYieldsterDAO
-        public
-    {
-        strategyMinter = _strategyMinter;
+    // @dev Function to set Yieldster strategy minter.
+    // @param _strategyMinter Address of the Yieldster strategy minter.
+    // function setStrategyMinter(address _strategyMinter)
+    //     onlyYieldsterDAO
+    //     public
+    // {
+    //     strategyMinter = _strategyMinter;
+    // }
+
+    // /// @dev Function to set Yieldster strategy executor.
+    // /// @param _strategyExecutor Address of the Yieldster strategy executor.
+    // function setStrategyExecutor(address _strategyExecutor)
+    //     onlyYieldsterDAO
+    //     public
+    // {
+    //     strategyExecutor = _strategyExecutor;
+    // }
+
+    function strategyExecutor(address _strategy) external view returns(address){
+        return strategies[_strategy].executer;
+
     }
 
-    /// @dev Function to set Yieldster strategy executor.
-    /// @param _strategyExecutor Address of the Yieldster strategy executor.
-    function setStrategyExecutor(address _strategyExecutor)
-        onlyYieldsterDAO
-        public
-    {
-        strategyExecutor = _strategyExecutor;
+    function strategyMinter(address _strategy) external view returns(address){
+       return strategies[_strategy].minter;
+
     }
 
     /// @dev Function to set Yieldster Exchange.
@@ -651,13 +660,15 @@ contract APContract
     function addStrategy(
         string memory _strategyName,
         address _strategyAddress,
-        address[] memory _strategyProtocols
+        address[] memory _strategyProtocols,
+        address _minter,
+        address _executer
         ) 
         public 
         onlyManager
     {
         require(!_isStrategyPresent(_strategyAddress),"Strategy already present!");
-        Strategy memory newStrategy = Strategy({ strategyName:_strategyName, created:true });
+        Strategy memory newStrategy = Strategy({ strategyName:_strategyName, created:true,minter:_minter,executer:_executer });
         strategies[_strategyAddress] = newStrategy;
 
         for (uint256 i = 0; i < _strategyProtocols.length; i++) {

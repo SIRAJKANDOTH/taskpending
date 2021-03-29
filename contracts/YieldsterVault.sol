@@ -329,7 +329,7 @@ contract YieldsterVault
     function safeCleanUp(address[] memory cleanUpList)
         public
     {
-        require(IAPContract(APContract).strategyMinter() == msg.sender, "Only Yieldster Strategy Minter");
+        require(IAPContract(APContract).strategyMinter(IAPContract(APContract).getVaultActiveStrategy(address(this))) == msg.sender, "Only Yieldster Strategy Minter");
         for (uint256 i = 0; i < cleanUpList.length; i++){
             if(! (IAPContract(APContract)._isVaultAsset(cleanUpList[i]))){
                 uint256 _amount = IERC20(cleanUpList[i]).balanceOf(address(this));
@@ -352,7 +352,7 @@ contract YieldsterVault
     onlyNormalMode
     returns(bytes4)
     {
-        require(IAPContract(APContract).strategyMinter() == msg.sender, "Only Yieldster Strategy Minter");
+        require(IAPContract(APContract).strategyMinter(IAPContract(APContract).getVaultActiveStrategy(address(this))) == msg.sender, "Only Yieldster Strategy Minter");
         HexUtils hexUtils = HexUtils(IAPContract(APContract).stringUtils());
         if(id == 0){
             (bool success,) = address(this).call(hexUtils.fromHex(data));
