@@ -256,7 +256,6 @@ contract APContract
         external
     {
         require(vaults[msg.sender].created, "Vault is not present");
-        require(APSManagers[_vaultAPSManager], "address not a member of APS Manager list");
         vaults[msg.sender].vaultAPSManager = _vaultAPSManager;
     }
 
