@@ -9,7 +9,10 @@ const AishToken = artifacts.require("./aishToken.sol");
 const ManagementFee = artifacts.require(
 	"./delegateContracts/ManagementFee.sol"
 );
-const StrategyMinter = artifacts.require("./strategies/StrategyMinter.sol");
+const YearnItAll = artifacts.require("./strategies/YearnItAll.sol");
+const LivaOne = artifacts.require("./strategies/LivaOne.sol");
+const YearnItAllMinter = artifacts.require("./strategies/YearnItAllMinter.sol");
+const LivaOneMinter = artifacts.require("./strategies/LivaOneMinter.sol");
 const HexUtils = artifacts.require("./utils/HexUtils.sol");
 
 const StockDeposit = artifacts.require(
@@ -61,8 +64,6 @@ contract(" Deposit", function (accounts) {
 			hexUtils.address
 		);
 
-		strategyMinter = await StrategyMinter.new(apContract.address);
-
 		let groupHash = await whitelist.createGroup(accounts[1]);
 		groupId = (await groupHash.logs[0].args["1"]).toString();
 
@@ -74,10 +75,6 @@ contract(" Deposit", function (accounts) {
 		priceModule = await PriceModule.new(apContract.address);
 
 		await apContract.setPriceModule(priceModule.address);
-
-		await apContract.setStrategyMinter(strategyMinter.address);
-
-		await apContract.setStrategyExecutor(accounts[0]);
 
 		await apContract.setYieldsterExchange(exchange.address);
 
@@ -160,54 +157,63 @@ contract(" Deposit", function (accounts) {
 		);
 
 		await apContract.addProtocol(
+			"yearn Curve.fi crvCOMP",
+			"crvCOMP",
+			"0xd27Dc2D8ceF541f94FbA737079F2DFeA39B2EEf8"
+		);
+		await apContract.addProtocol(
 			"yearn Curve.fi GUSD/3Crv",
 			"crvGUSD",
-			"0x95b58a6bff3d14b7db2f5cb5f0ad413dc2940658"
+			"0xD8052918CAd9a8B3a564d7Aa4e680a0dc156380e"
 		);
 		await apContract.addProtocol(
 			"yearn Curve.fi MUSD/3Crv",
 			"crvMUSD",
-			"0x7d66cde53cc0a169cae32712fc48934e610aef14"
-		);
-		await apContract.addProtocol(
-			"yearn Curve.fi cDAI/cUSDC",
-			"crvCOMP",
-			"0xfb1d709cb959ac0ea14cad0927eabc7832e65058"
-		);
-		await apContract.addProtocol(
-			"yearn yearn.finance",
-			"YFI",
-			"0x01be23585060835e02b77ef475b0cc51aa1e0709"
-		);
-		await apContract.addProtocol(
-			"HEGIC yVault",
-			"HEGIC",
-			"0x2fa6a0728a63115e6fc1eb8496ea94e86b8cdf7b"
+			"0x3662ABD754eE1d8CB6f5F1D4E315932b36e9955B"
 		);
 
+		//Deploying Yearn It All strategy
+		const yearnItAll = await YearnItAll.new(apContract.address, [
+			"0xd27Dc2D8ceF541f94FbA737079F2DFeA39B2EEf8",
+			"0xD8052918CAd9a8B3a564d7Aa4e680a0dc156380e",
+			"0x3662ABD754eE1d8CB6f5F1D4E315932b36e9955B",
+		]);
+		const yearnItAllMinter = await YearnItAllMinter.new(
+			apContract.address,
+			yearnItAll.address
+		);
+
+		//Deploying Liva One strategy
+		const livaOne = await LivaOne.new(apContract.address, [
+			"0xd27Dc2D8ceF541f94FbA737079F2DFeA39B2EEf8",
+			"0xD8052918CAd9a8B3a564d7Aa4e680a0dc156380e",
+			"0x3662ABD754eE1d8CB6f5F1D4E315932b36e9955B",
+		]);
+		const livaOneMinter = await LivaOneMinter.new(
+			apContract.address,
+			livaOne.address
+		);
 		await apContract.addStrategy(
 			"Yearn it All",
-			"0x6f7454cba97fffe10e053187f23925a86f5c20c4",
+			yearnItAll.address,
 			[
-				"0x95b58a6bff3d14b7db2f5cb5f0ad413dc2940658",
-				"0x7d66cde53cc0a169cae32712fc48934e610aef14",
-			]
+				"0xd27Dc2D8ceF541f94FbA737079F2DFeA39B2EEf8",
+				"0xD8052918CAd9a8B3a564d7Aa4e680a0dc156380e",
+				"0x3662ABD754eE1d8CB6f5F1D4E315932b36e9955B",
+			],
+			yearnItAllMinter.address,
+			"0x92506Ee00ad88354fa25E6CbFa7d42116d6823C0"
 		);
 		await apContract.addStrategy(
-			"Smart Deposit",
-			"0x2bA49Aaa16E6afD2a993473cfB70Fa8559B523cF",
+			"Liva One",
+			livaOne.address,
 			[
-				"0x95b58a6bff3d14b7db2f5cb5f0ad413dc2940658",
-				"0x7d66cde53cc0a169cae32712fc48934e610aef14",
-			]
-		);
-		await apContract.addStrategy(
-			"Smart Withdraw",
-			"0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB",
-			[
-				"0x95b58a6bff3d14b7db2f5cb5f0ad413dc2940658",
-				"0x7d66cde53cc0a169cae32712fc48934e610aef14",
-			]
+				"0xd27Dc2D8ceF541f94FbA737079F2DFeA39B2EEf8",
+				"0xD8052918CAd9a8B3a564d7Aa4e680a0dc156380e",
+				"0x3662ABD754eE1d8CB6f5F1D4E315932b36e9955B",
+			],
+			livaOneMinter.address,
+			"0x92506Ee00ad88354fa25E6CbFa7d42116d6823C0"
 		);
 	});
 

@@ -9,7 +9,7 @@ contract YieldsterVault
 {
     /// @dev Function to Enable Emergency Break feature of the Vault.
     function enableEmergencyBreak()
-        public
+        external
     {
         require(msg.sender == IAPContract(APContract).yieldsterGOD(), "Sender not Authorized");
         emergencyConditions = 1;
@@ -17,7 +17,7 @@ contract YieldsterVault
 
     /// @dev Function to disable the Emergency Break feature of the Vault.
     function disableEmergencyBreak()
-        public
+        external
     {
         require(msg.sender == IAPContract(APContract).yieldsterGOD(), "Sender not Authorized");
         emergencyConditions = 0;
@@ -25,7 +25,7 @@ contract YieldsterVault
 
     /// @dev Function to enable Emergency Exit feature of the Vault.
     function enableEmergencyExit()
-        public
+        external
     {
         require(msg.sender == IAPContract(APContract).yieldsterGOD(), "Sender not Authorized");
         emergencyConditions = 2;
@@ -92,15 +92,15 @@ contract YieldsterVault
     /// @param _APContract Address of the APS Contract.
     /// @param _whiteListGroups List of whitelist groups that is authorized to perform interactions.
     function setup(
-        string memory _vaultName,
-        string memory _tokenName,
-        string memory _symbol,
+        string calldata _vaultName,
+        string calldata _tokenName,
+        string calldata _symbol,
         address _vaultAPSManager,
         address _vaultStrategyManager,
         address _APContract, //Need to hardcode APContract address before deploying
-        uint256[] memory _whiteListGroups
+        uint256[] calldata _whiteListGroups
     )
-        public
+        external
     {
         require(!vaultSetupCompleted, "Vault is already setup");
         vaultSetupCompleted = true;
@@ -118,7 +118,7 @@ contract YieldsterVault
     /// @dev Function that is called once after vault creation to Register the Vault with APS.
     function registerVaultWithAPS()
         onlyNormalMode
-        public
+        external
     {
         require(msg.sender == owner, "Only owner can perform this operation");
         require(!vaultRegistrationCompleted, "Vault is already registered");
@@ -132,13 +132,13 @@ contract YieldsterVault
     /// @param _disabledDepositAsset List of assets to be disabled in Deposit assets.
     /// @param _disabledWithdrawalAsset List of assets to be disabled in Withdrawal assets.
     function setVaultAssets(
-        address[] memory _enabledDepositAsset,
-        address[] memory _enabledWithdrawalAsset,
-        address[] memory _disabledDepositAsset,
-        address[] memory _disabledWithdrawalAsset
+        address[] calldata _enabledDepositAsset,
+        address[] calldata _enabledWithdrawalAsset,
+        address[] calldata _disabledDepositAsset,
+        address[] calldata _disabledWithdrawalAsset
     )
     onlyNormalMode
-    public
+    external
     {
         require(msg.sender == vaultAPSManager || msg.sender == owner, "Sender not Authorized");
         managementFeeCleanUp();
@@ -152,12 +152,12 @@ contract YieldsterVault
     /// @param _assetsToBeEnabled List of assets to be enabled in Vault for the strategy.
     function setVaultStrategyAndProtocol(
         address _vaultStrategy,
-        address[] memory _enabledStrategyProtocols,
-        address[] memory _disabledStrategyProtocols,
-        address[] memory _assetsToBeEnabled
+        address[] calldata _enabledStrategyProtocols,
+        address[] calldata _disabledStrategyProtocols,
+        address[] calldata _assetsToBeEnabled
     )
     onlyNormalMode
-    public
+    external
     {
         require(msg.sender == vaultStrategyManager || msg.sender == owner, "Sender not Authorized");
         IAPContract(APContract).setVaultStrategyAndProtocol(_vaultStrategy, _enabledStrategyProtocols, _disabledStrategyProtocols, _assetsToBeEnabled);
@@ -166,9 +166,9 @@ contract YieldsterVault
     /// @dev Function to disable a strategy along with the assets.
     /// @param _strategyAddress Address of the strategy to be disabled.
     /// @param _assetsToBeDisabled List of assets to be disabled in Vault along with strategy.
-    function disableVaultStrategy(address _strategyAddress, address[] memory _assetsToBeDisabled)
+    function disableVaultStrategy(address _strategyAddress, address[] calldata _assetsToBeDisabled)
         onlyNormalMode
-        public
+        external
     {
         require(msg.sender == vaultStrategyManager || msg.sender == owner, "Sender not Authorized");
         if(getVaultActiveStrategy() == _strategyAddress){
@@ -185,7 +185,7 @@ contract YieldsterVault
     /// @param _activeVaultStrategy Address of the strategy to be activated.
     function setVaultActiveStrategy(address _activeVaultStrategy)
         onlyNormalMode
-        public
+        external
     {
         require(msg.sender == vaultStrategyManager || msg.sender == owner, "Sender not Authorized");
         require(IAPContract(APContract)._isStrategyEnabled(address(this), _activeVaultStrategy) ,"This strategy is not enabled");
@@ -204,7 +204,7 @@ contract YieldsterVault
     /// @param _strategyAddress Address of the strategy to be deactivated.
     function deactivateVaultStrategy(address _strategyAddress)
         onlyNormalMode
-        public
+        external
     {
         require(msg.sender == vaultStrategyManager || msg.sender == owner, "Sender not Authorized");
         require(IAPContract(APContract)._isStrategyEnabled(address(this), _strategyAddress) ,"This strategy is not enabled");
@@ -229,10 +229,10 @@ contract YieldsterVault
     /// @param _smartStrategyAddress Address of smart Strategy.
     /// @param _type Type of smart strategy.
     function setVaultSmartStrategy(address _smartStrategyAddress, uint256 _type)
-        public
+        external
     {
         require(msg.sender == vaultStrategyManager || msg.sender == owner, "Sender not Authorized");
-        IAPContract(APContract).setVaultSmartStrategy(_smartStrategyAddress,_type);
+        IAPContract(APContract).setVaultSmartStrategy(_smartStrategyAddress, _type);
     }
 
 
@@ -240,11 +240,11 @@ contract YieldsterVault
     /// @param _vaultAPSManager Address of the new APS Manager.
     function changeAPSManager(address _vaultAPSManager)
         onlyNormalMode
-        public
+        external
     {
         require(IAPContract(APContract).yieldsterDAO() == msg.sender || vaultAPSManager == msg.sender, "Sender not Authorized");
-        IAPContract(APContract).changeVaultAPSManager(_vaultAPSManager);
         vaultAPSManager = _vaultAPSManager;
+        IAPContract(APContract).changeVaultAPSManager(_vaultAPSManager);
     }
 
 
@@ -252,11 +252,11 @@ contract YieldsterVault
     /// @param _strategyManager Address of the new Strategy Manager.
     function changeStrategyManager(address _strategyManager)
         onlyNormalMode
-        public
+        external
     {
         require(IAPContract(APContract).yieldsterDAO() == msg.sender || vaultStrategyManager == msg.sender, "Sender not Authorized");
-        IAPContract(APContract).changeVaultStrategyManager(_strategyManager);
         vaultStrategyManager = _strategyManager;
+        IAPContract(APContract).changeVaultStrategyManager(_strategyManager);
     }
 
     /// @dev Function to Deposit assets into the Vault.
@@ -265,7 +265,7 @@ contract YieldsterVault
     function deposit(address _tokenAddress, uint256 _amount)
         onlyNormalMode
         onlyWhitelisted
-        public
+        external
     { 
         require(IAPContract(APContract).isDepositAsset(_tokenAddress), "Not an approved deposit asset");
         managementFeeCleanUp();
@@ -279,7 +279,7 @@ contract YieldsterVault
     function withdraw(address _tokenAddress, uint256 _shares)
         onlyNormalMode
         onlyWhitelisted
-        public
+        external
     {
         require(IAPContract(APContract).isWithdrawalAsset(_tokenAddress),"Not an approved Withdrawal asset");
         require(balanceOf(msg.sender) >= _shares,"You don't have enough shares");
@@ -294,7 +294,7 @@ contract YieldsterVault
     function withdraw(uint256 _shares)
         onlyNormalMode
         onlyWhitelisted
-        public
+        external
     {
         require(balanceOf(msg.sender) >= _shares,"You don't have enough shares");
         managementFeeCleanUp();
@@ -308,6 +308,7 @@ contract YieldsterVault
         onlyNormalMode
         public
     {
+        require(msg.sender == address(this), "only Vault can perform this operation");
         address _strategy = IAPContract(APContract).getVaultActiveStrategy(address(this));
         uint256 _balance = tokenBalances.getTokenBalance(IStrategy(_strategy).want());
         if(_amount <= _balance){
@@ -329,6 +330,7 @@ contract YieldsterVault
     function safeCleanUp(address[] memory cleanUpList)
         public
     {
+        require(msg.sender == address(this), "only Vault can perform this operation");
         require(IAPContract(APContract).strategyMinter(IAPContract(APContract).getVaultActiveStrategy(address(this))) == msg.sender, "Only Yieldster Strategy Minter");
         for (uint256 i = 0; i < cleanUpList.length; i++){
             if(! (IAPContract(APContract)._isVaultAsset(cleanUpList[i]))){
