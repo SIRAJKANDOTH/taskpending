@@ -66,7 +66,7 @@ contract APContract
         mapping(address => bool) strategyProtocols;
         bool created;
         address minter;
-        address executer;
+        address executor;
     }
 
     struct SmartStrategy{
@@ -201,30 +201,24 @@ contract APContract
         emergencyVault = _emergencyVault;
     }
 
-    // @dev Function to set Yieldster strategy minter.
-    // @param _strategyMinter Address of the Yieldster strategy minter.
-    // function setStrategyMinter(address _strategyMinter)
-    //     onlyYieldsterDAO
-    //     public
-    // {
-    //     strategyMinter = _strategyMinter;
-    // }
-
-    // /// @dev Function to set Yieldster strategy executor.
-    // /// @param _strategyExecutor Address of the Yieldster strategy executor.
-    // function setStrategyExecutor(address _strategyExecutor)
-    //     onlyYieldsterDAO
-    //     public
-    // {
-    //     strategyExecutor = _strategyExecutor;
-    // }
-
-    function strategyExecutor(address _strategy) external view returns(address){
-        return strategies[_strategy].executer;
+    /// @dev Function to set strategy executor address.
+    /// @param _strategy Address of the strategy.
+    function strategyExecutor(address _strategy) 
+        external 
+        view 
+        returns(address)
+    {
+        return strategies[_strategy].executor;
 
     }
 
-    function strategyMinter(address _strategy) external view returns(address){
+    /// @dev Function to set strategy minter address.
+    /// @param _strategy Address of the strategy.
+    function strategyMinter(address _strategy) 
+        external 
+        view 
+        returns(address)
+    {
        return strategies[_strategy].minter;
 
     }
@@ -376,6 +370,7 @@ contract APContract
     /// @dev Function to get the list of management fee strategies applied to the vault.
     function getVaultManagementFee()
         public
+        view
         returns(address[] memory)
     {
         require(vaults[msg.sender].created, "Vault not present");
@@ -385,6 +380,7 @@ contract APContract
     /// @dev Function to get the deposit strategy applied to the vault.
     function getDepositStrategy()
         public
+        view
         returns(address)
     {
         require(vaults[msg.sender].created, "Vault not present");
@@ -394,6 +390,7 @@ contract APContract
     /// @dev Function to get the withdrawal strategy applied to the vault.
     function getWithdrawStrategy()
         public
+        view
         returns(address)
     {
         require(vaults[msg.sender].created, "Vault not present");
@@ -656,18 +653,20 @@ contract APContract
     /// @param _strategyName Name of the strategy.
     /// @param _strategyAddress Address of the strategy.
     /// @param _strategyAddress List of protocols present in the strategy.
+    /// @param _minter Address of strategy minter.
+    /// @param _executor Address of strategy executor.
     function addStrategy(
         string memory _strategyName,
         address _strategyAddress,
         address[] memory _strategyProtocols,
         address _minter,
-        address _executer
+        address _executor
         ) 
         public 
         onlyManager
     {
         require(!_isStrategyPresent(_strategyAddress),"Strategy already present!");
-        Strategy memory newStrategy = Strategy({ strategyName:_strategyName, created:true,minter:_minter,executer:_executer });
+        Strategy memory newStrategy = Strategy({ strategyName:_strategyName, created:true, minter:_minter, executor:_executor });
         strategies[_strategyAddress] = newStrategy;
 
         for (uint256 i = 0; i < _strategyProtocols.length; i++) {
