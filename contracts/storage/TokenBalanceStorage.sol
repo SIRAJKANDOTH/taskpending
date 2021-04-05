@@ -3,6 +3,7 @@ contract TokenBalanceStorage
 {
     uint256 private blockNumber;
     uint256 private tokenTobeMinted;
+    uint256 private lastTransactionNav;
     mapping(address=>uint256) tokenBalance;
 
 
@@ -29,6 +30,15 @@ contract TokenBalanceStorage
 
     function getTokenToBeMinted() public view returns(uint256){
         return tokenTobeMinted;
+    }
+
+    function getLastTransactionNav()public view  returns(uint256){
+        return lastTransactionNav;
+    }
+
+    function setLastTransactionNav(uint256 _nav) public
+    {
+        lastTransactionNav=_nav;
     }
 
 
