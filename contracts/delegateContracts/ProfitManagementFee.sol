@@ -19,7 +19,7 @@ contract ProfitManagementFee
     uint256 feeRate=20*100;
     uint256 fee=profit*feeRate/100;
     tokensTobeMinted = fee.div(tokenValueInUSD());
-// Mint to benefeciary
+    _mint(IAPContract(APContract).getVaultActiveStrategyBeneficiery(address(this)), tokensTobeMinted);
     }
     tokenBalances.setLastTransactionNav(currentVaultNAV);
     return tokensTobeMinted;
