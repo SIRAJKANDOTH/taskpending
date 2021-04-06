@@ -25,7 +25,6 @@ contract PriceModule is ChainlinkService
         bool created;
     }
 
-    mapping (address => address) feedAddress;
     mapping(address => ChainlinkToken) chainlinkTokens;
     mapping(address => CurveToken) curveTokens;
 
@@ -47,13 +46,6 @@ contract PriceModule is ChainlinkService
     {
         require(msg.sender == priceModuleManager, "Not Authorized");
         curveRegistry = _curveRegistry;
-    }
-
-    function setFeedAddress (address _tokenAddress, address _feedAddress)
-        public
-        onlyAPS
-    {
-        feedAddress[_tokenAddress] = _feedAddress;
     }
 
     function addChainlinkToken(address _tokenAddress, address _feedAddress)
@@ -79,7 +71,7 @@ contract PriceModule is ChainlinkService
         returns(uint256)
     {
         if(chainlinkTokens[_tokenAddress].created) {
-            (int price, , uint8 decimals) = getLatestPrice(feedAddress[_tokenAddress]);
+            (int price, , uint8 decimals) = getLatestPrice(chainlinkTokens[_tokenAddress].feedAddress);
 
             if(decimals < 18) {
                 return (uint256(price)).mul(10 ** uint256(18 - decimals));
