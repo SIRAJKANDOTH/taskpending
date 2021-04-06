@@ -2,27 +2,51 @@
 pragma solidity >=0.5.0 <0.7.0;
 import "./ChainlinkService.sol";
 import "../external/YieldsterVaultMath.sol";
+import "../interfaces/IRegistry.sol";
 
 
 contract PriceModule is ChainlinkService
 {
 
     using YieldsterVaultMath for uint256;
-    mapping (address => address) feedAddress;
-
+    
     address public priceModuleManager;
+    
     address public APContract;
 
-    constructor(address _APContract)
+    address public curveRegistry;
+
+    struct ChainlinkToken {
+        address feedAddress;
+        bool created;
+    }
+
+    struct CurveToken {
+        bool created;
+    }
+
+    mapping (address => address) feedAddress;
+    mapping(address => ChainlinkToken) chainlinkTokens;
+    mapping(address => CurveToken) curveTokens;
+
+    constructor(address _APContract, address _curveRegistry)
     public
     {
         priceModuleManager = msg.sender;
         APContract = _APContract;
+        curveRegistry = _curveRegistry;
     }
 
     modifier onlyAPS{
          require(msg.sender == APContract,"Only APS can call this function.");
         _;
+    }
+
+    function setCurveRegistry(address _curveRegistry)
+        public
+    {
+        require(msg.sender == priceModuleManager, "Not Authorized");
+        curveRegistry = _curveRegistry;
     }
 
     function setFeedAddress (address _tokenAddress, address _feedAddress)
@@ -32,27 +56,69 @@ contract PriceModule is ChainlinkService
         feedAddress[_tokenAddress] = _feedAddress;
     }
 
+    function addChainlinkToken(address _tokenAddress, address _feedAddress)
+        public
+    {
+        require(msg.sender == priceModuleManager, "Not Authorized");
+        ChainlinkToken memory newChainlinkToken = ChainlinkToken({ feedAddress:_feedAddress, created:true});
+        chainlinkTokens[_tokenAddress] = newChainlinkToken;
+    }
+
+    function addCurveToken(address _tokenAddress)
+        public
+    {
+        require(msg.sender == priceModuleManager, "Not Authorized");
+        CurveToken memory newCurveToken = CurveToken({created:true});
+        curveTokens[_tokenAddress] = newCurveToken;
+    }
+
+
     function getUSDPrice(address _tokenAddress) 
         public 
         view
         returns(uint256)
     {
-        require(feedAddress[_tokenAddress] != address(0), "This asset price is not present");
-        (int price, , uint8 decimals) = getLatestPrice(feedAddress[_tokenAddress]);
+        if(chainlinkTokens[_tokenAddress].created) {
+            (int price, , uint8 decimals) = getLatestPrice(feedAddress[_tokenAddress]);
 
-       if(decimals < 18)
-        {
-            return (uint256(price)).mul(10 ** uint256(18 - decimals));
-        }
-        else if (decimals > 18)
-        {
-            return (uint256(price)).div(uint256(decimals - 18));
-        }
-        else 
-        {
-            return uint256(price);
+            if(decimals < 18) {
+                return (uint256(price)).mul(10 ** uint256(18 - decimals));
+            }
+            else if (decimals > 18) {
+                return (uint256(price)).div(uint256(decimals - 18));
+            }
+            else {
+                return uint256(price);
+            }
+        } else if(curveTokens[_tokenAddress].created) {
+            return IRegistry(curveRegistry).get_virtual_price_from_lp_token(_tokenAddress);
+        } else {
+            revert("Token not present");
         }
     }
+
+
+    // function getUSDPrice(address _tokenAddress)  
+    //     public 
+    //     view
+    //     returns(uint256)
+    // {
+    //     require(feedAddress[_tokenAddress] != address(0), "This asset price is not present");
+    //     (int price, , uint8 decimals) = getLatestPrice(feedAddress[_tokenAddress]);
+
+    //    if(decimals < 18)
+    //     {
+    //         return (uint256(price)).mul(10 ** uint256(18 - decimals));
+    //     }
+    //     else if (decimals > 18)
+    //     {
+    //         return (uint256(price)).div(uint256(decimals - 18));
+    //     }
+    //     else 
+    //     {
+    //         return uint256(price);
+    //     }
+    // }
 
     // Use this function in testing environment other than rinkeby
 
