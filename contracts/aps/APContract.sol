@@ -67,6 +67,7 @@ contract APContract
         bool created;
         address minter;
         address executor;
+        address benefeciary
     }
 
     struct SmartStrategy{
@@ -437,6 +438,14 @@ contract APContract
         require(vaults[_vaultAddress].created, "Vault not present");
         return vaultActiveStrategy[_vaultAddress];
     }
+    function getVaultActiveStrategyBeneficiery(address _vaultAddress)
+        public
+        view
+        returns(address)
+    {
+        require(vaults[_vaultAddress].created, "Vault not present");
+        return strategies[vaultActiveStrategy[_vaultAddress]].benefeciary;
+    }
 
     /// @dev Function to Manage the vault strategies.
     /// @param _vaultStrategy Address of the strategy.
@@ -660,13 +669,14 @@ contract APContract
         address _strategyAddress,
         address[] memory _strategyProtocols,
         address _minter,
-        address _executor
+        address _executor,
+        address _benefeciary
         ) 
         public 
         onlyManager
     {
         require(!_isStrategyPresent(_strategyAddress),"Strategy already present!");
-        Strategy memory newStrategy = Strategy({ strategyName:_strategyName, created:true, minter:_minter, executor:_executor });
+        Strategy memory newStrategy = Strategy({ strategyName:_strategyName, created:true,minter:_minter,executor:_executor,benefeciary:_benefeciary });
         strategies[_strategyAddress] = newStrategy;
 
         for (uint256 i = 0; i < _strategyProtocols.length; i++) {
