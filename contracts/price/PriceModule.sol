@@ -3,6 +3,7 @@ pragma solidity >=0.5.0 <0.7.0;
 import "./ChainlinkService.sol";
 import "../external/YieldsterVaultMath.sol";
 import "../interfaces/IRegistry.sol";
+import "../interfaces/yearn/IVault.sol";
 
 
 contract PriceModule is ChainlinkService
@@ -25,8 +26,13 @@ contract PriceModule is ChainlinkService
         bool created;
     }
 
+    struct YearnToken {
+        bool created;
+    }
+
     mapping(address => ChainlinkToken) chainlinkTokens;
     mapping(address => CurveToken) curveTokens;
+    mapping(address => YearnToken) yearnTokens;
 
     constructor(address _APContract, address _curveRegistry)
     public
@@ -54,6 +60,14 @@ contract PriceModule is ChainlinkService
         require(msg.sender == priceModuleManager, "Not Authorized");
         ChainlinkToken memory newChainlinkToken = ChainlinkToken({ feedAddress:_feedAddress, created:true});
         chainlinkTokens[_tokenAddress] = newChainlinkToken;
+    }
+
+    function addYearnToken(address _tokenAddress)
+        public
+    {
+        require(msg.sender == priceModuleManager, "Not Authorized");
+        YearnToken memory newYearnToken = YearnToken({created:true});
+        yearnTokens[_tokenAddress] = newYearnToken;
     }
 
     function addCurveToken(address _tokenAddress)
@@ -84,6 +98,10 @@ contract PriceModule is ChainlinkService
             }
         } else if(curveTokens[_tokenAddress].created) {
             return IRegistry(curveRegistry).get_virtual_price_from_lp_token(_tokenAddress);
+        } else if(yearnTokens[_tokenAddress].created) {
+            address token = IVault(_tokenAddress).token();
+            uint256 tokenPrice = getUSDPrice(token);
+            return (tokenPrice.mul(IVault(_tokenAddress).getPricePerFullShare())).div(1e18);
         } else {
             revert("Token not present");
         }
