@@ -67,7 +67,7 @@ contract APContract
         bool created;
         address minter;
         address executor;
-        address benefeciary
+        address benefeciary;
     }
 
     struct SmartStrategy{
