@@ -2,22 +2,44 @@
 pragma solidity >=0.5.0 <0.7.0;
 import "./ChainlinkService.sol";
 import "../external/YieldsterVaultMath.sol";
+import "../interfaces/IRegistry.sol";
+import "../interfaces/yearn/IVault.sol";
 
 
 contract PriceModule is ChainlinkService
 {
 
     using YieldsterVaultMath for uint256;
-    mapping (address => address) feedAddress;
-
+    
     address public priceModuleManager;
+    
     address public APContract;
 
-    constructor(address _APContract)
+    address public curveRegistry;
+
+    struct ChainlinkToken {
+        address feedAddress;
+        bool created;
+    }
+
+    struct CurveToken {
+        bool created;
+    }
+
+    struct YearnToken {
+        bool created;
+    }
+
+    mapping(address => ChainlinkToken) chainlinkTokens;
+    mapping(address => CurveToken) curveTokens;
+    mapping(address => YearnToken) yearnTokens;
+
+    constructor(address _APContract, address _curveRegistry)
     public
     {
         priceModuleManager = msg.sender;
         APContract = _APContract;
+        curveRegistry = _curveRegistry;
     }
 
     modifier onlyAPS{
@@ -25,34 +47,88 @@ contract PriceModule is ChainlinkService
         _;
     }
 
-    function setFeedAddress (address _tokenAddress, address _feedAddress)
+    function setCurveRegistry(address _curveRegistry)
         public
-        onlyAPS
     {
-        feedAddress[_tokenAddress] = _feedAddress;
+        require(msg.sender == priceModuleManager, "Not Authorized");
+        curveRegistry = _curveRegistry;
     }
+
+    function addChainlinkToken(address _tokenAddress, address _feedAddress)
+        public
+    {
+        require(msg.sender == priceModuleManager, "Not Authorized");
+        ChainlinkToken memory newChainlinkToken = ChainlinkToken({ feedAddress:_feedAddress, created:true});
+        chainlinkTokens[_tokenAddress] = newChainlinkToken;
+    }
+
+    function addYearnToken(address _tokenAddress)
+        public
+    {
+        require(msg.sender == priceModuleManager, "Not Authorized");
+        YearnToken memory newYearnToken = YearnToken({created:true});
+        yearnTokens[_tokenAddress] = newYearnToken;
+    }
+
+    function addCurveToken(address _tokenAddress)
+        public
+    {
+        require(msg.sender == priceModuleManager, "Not Authorized");
+        CurveToken memory newCurveToken = CurveToken({created:true});
+        curveTokens[_tokenAddress] = newCurveToken;
+    }
+
 
     function getUSDPrice(address _tokenAddress) 
         public 
         view
         returns(uint256)
     {
-        require(feedAddress[_tokenAddress] != address(0), "This asset price is not present");
-        (int price, , uint8 decimals) = getLatestPrice(feedAddress[_tokenAddress]);
+        if(chainlinkTokens[_tokenAddress].created) {
+            (int price, , uint8 decimals) = getLatestPrice(chainlinkTokens[_tokenAddress].feedAddress);
 
-       if(decimals < 18)
-        {
-            return (uint256(price)).mul(10 ** uint256(18 - decimals));
-        }
-        else if (decimals > 18)
-        {
-            return (uint256(price)).div(uint256(decimals - 18));
-        }
-        else 
-        {
-            return uint256(price);
+            if(decimals < 18) {
+                return (uint256(price)).mul(10 ** uint256(18 - decimals));
+            }
+            else if (decimals > 18) {
+                return (uint256(price)).div(uint256(decimals - 18));
+            }
+            else {
+                return uint256(price);
+            }
+        } else if(curveTokens[_tokenAddress].created) {
+            return IRegistry(curveRegistry).get_virtual_price_from_lp_token(_tokenAddress);
+        } else if(yearnTokens[_tokenAddress].created) {
+            address token = IVault(_tokenAddress).token();
+            uint256 tokenPrice = getUSDPrice(token);
+            return (tokenPrice.mul(IVault(_tokenAddress).getPricePerFullShare())).div(1e18);
+        } else {
+            revert("Token not present");
         }
     }
+
+
+    // function getUSDPrice(address _tokenAddress)  
+    //     public 
+    //     view
+    //     returns(uint256)
+    // {
+    //     require(feedAddress[_tokenAddress] != address(0), "This asset price is not present");
+    //     (int price, , uint8 decimals) = getLatestPrice(feedAddress[_tokenAddress]);
+
+    //    if(decimals < 18)
+    //     {
+    //         return (uint256(price)).mul(10 ** uint256(18 - decimals));
+    //     }
+    //     else if (decimals > 18)
+    //     {
+    //         return (uint256(price)).div(uint256(decimals - 18));
+    //     }
+    //     else 
+    //     {
+    //         return uint256(price);
+    //     }
+    // }
 
     // Use this function in testing environment other than rinkeby
 

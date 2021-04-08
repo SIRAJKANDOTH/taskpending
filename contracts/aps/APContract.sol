@@ -598,12 +598,10 @@ contract APContract
     /// @dev Function to add an asset to the Yieldster.
     /// @param _symbol Symbol of the asset.
     /// @param _name Name of the asset.
-    /// @param _feedAddress feed address of the asset.
     /// @param _tokenAddress Address of the asset.
     function addAsset(
         string memory _symbol, 
         string memory _name,
-        address _feedAddress,
         address _tokenAddress
         ) 
         public 
@@ -611,8 +609,7 @@ contract APContract
     {
         require(!_isAssetPresent(_tokenAddress),"Asset already present!");
         Asset memory newAsset = Asset({name:_name, symbol:_symbol, created:true});
-        IPriceModule(priceModule).setFeedAddress(_tokenAddress, _feedAddress);
-        assets[_tokenAddress]=newAsset;
+        assets[_tokenAddress] = newAsset;
     }
 
     /// @dev Function to remove an asset from the Yieldster.

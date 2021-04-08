@@ -4,6 +4,5 @@ pragma experimental ABIEncoderV2;
 
 interface IPriceModule
 {
-    function setFeedAddress (address , address ) external;
     function getUSDPrice(address ) external view returns(uint256);
 }
