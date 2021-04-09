@@ -48,7 +48,7 @@ contract APContract
         bool created;
     }
 
-    struct Vault{
+    struct Vault {
         mapping(address => bool) vaultAssets;
         mapping(address => bool) vaultDepositAssets;
         mapping(address => bool) vaultWithdrawalAssets;
@@ -59,6 +59,12 @@ contract APContract
         address vaultStrategyManager;
         uint256[] whitelistGroup;
         bool created;
+    }
+
+    struct VaultActiveStrategy {
+        mapping(address => bool) isActiveStrategy;
+        mapping(address => uint256) activeStrategyIndex;
+        address[] activeStrategyList;
     }
 
     struct Strategy{
@@ -83,6 +89,8 @@ contract APContract
     mapping(address => mapping(address => mapping(address => bool))) vaultStrategyEnabledProtocols;
 
     mapping(address => address) vaultActiveStrategy;
+
+    mapping(address => VaultActiveStrategy) vaultActiveStrategies;
     
     mapping(address => Asset) assets;
 
@@ -416,7 +424,9 @@ contract APContract
     {
         require(vaults[msg.sender].created, "Vault not present");
         require(strategies[_strategyAddress].created, "Strategy not present");
-        vaultActiveStrategy[msg.sender] = _strategyAddress;
+        vaultActiveStrategies[msg.sender].isActiveStrategy[_strategyAddress] = true;
+        vaultActiveStrategies[msg.sender].activeStrategyIndex[_strategyAddress] = vaultActiveStrategies[msg.sender].activeStrategyList.length;
+        vaultActiveStrategies[msg.sender].activeStrategyList.push(_strategyAddress);
     }
 
     /// @dev Function to deactivate a vault strategy.
@@ -426,25 +436,41 @@ contract APContract
     {
         require(vaults[msg.sender].created, "Vault not present");
         require(vaultActiveStrategy[msg.sender] == _strategyAddress, "Provided strategy is not active");
-        vaultActiveStrategy[msg.sender] = address(0);
+        vaultActiveStrategies[msg.sender].isActiveStrategy[_strategyAddress] = false;
+
+        if(vaultActiveStrategies[msg.sender].activeStrategyList.length == 1) {
+            vaultActiveStrategies[msg.sender].activeStrategyList.pop();
+        } else {
+            uint256 index = vaultActiveStrategies[msg.sender].activeStrategyIndex[_strategyAddress];
+            uint256 lastIndex = vaultActiveStrategies[msg.sender].activeStrategyList.length - 1;
+            delete vaultActiveStrategies[msg.sender].activeStrategyList[index];
+            vaultActiveStrategies[msg.sender].activeStrategyIndex[vaultActiveStrategies[msg.sender].activeStrategyList[lastIndex]] = index;
+            vaultActiveStrategies[msg.sender].activeStrategyList[index] = vaultActiveStrategies[msg.sender].activeStrategyList[lastIndex];
+            vaultActiveStrategies[msg.sender].activeStrategyList.pop();
+        }
     }
 
     /// @dev Function to get vault active strategy.
     function getVaultActiveStrategy(address _vaultAddress)
         public
         view
-        returns(address)
+        returns(address[] memory)
     {
         require(vaults[_vaultAddress].created, "Vault not present");
-        return vaultActiveStrategy[_vaultAddress];
+        return vaultActiveStrategies[_vaultAddress].activeStrategyList;
     }
     function getVaultActiveStrategyBeneficiery(address _vaultAddress)
         public
         view
-        returns(address)
+        returns(address[] memory)
     {
         require(vaults[_vaultAddress].created, "Vault not present");
-        return strategies[vaultActiveStrategy[_vaultAddress]].benefeciary;
+        address[] memory beneficiaryList;
+        for(uint256 i = 0; i < vaultActiveStrategies[_vaultAddress].activeStrategyList.length; i++) {
+            address strategyAddress = vaultActiveStrategies[_vaultAddress].activeStrategyList[i];
+            beneficiaryList[i] = strategies[strategyAddress].benefeciary;
+        }
+        return beneficiaryList;
     }
 
     /// @dev Function to Manage the vault strategies.
