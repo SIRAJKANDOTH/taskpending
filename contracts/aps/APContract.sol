@@ -106,6 +106,8 @@ contract APContract
     
     mapping(address => bool) APSManagers;
 
+    mapping(address => address) minterStrategyMap;
+
     
     /// @dev Constructor function.
     /// @param _MasterCopy Address of Yieldster safe master copy.
@@ -231,6 +233,19 @@ contract APContract
        return strategies[_strategy].minter;
 
     }
+
+    /// @dev Function to get strategy address from minter.
+    /// @param _minter Address of the minter.
+    function getStrategyFromMinter(address _minter) 
+        external 
+        view 
+        returns(address)
+    {
+       return minterStrategyMap[_minter];
+
+    }
+
+
 
     /// @dev Function to set Yieldster Exchange.
     /// @param _yieldsterExchange Address of the Yieldster exchange.
@@ -705,8 +720,9 @@ contract APContract
         onlyManager
     {
         require(!_isStrategyPresent(_strategyAddress),"Strategy already present!");
-        Strategy memory newStrategy = Strategy({ strategyName:_strategyName, created:true,minter:_minter,executor:_executor,benefeciary:_benefeciary });
+        Strategy memory newStrategy = Strategy({ strategyName:_strategyName, created:true, minter:_minter, executor:_executor, benefeciary:_benefeciary });
         strategies[_strategyAddress] = newStrategy;
+        minterStrategyMap[_minter] = _strategyAddress;
 
         for (uint256 i = 0; i < _strategyProtocols.length; i++) {
             address protocol = _strategyProtocols[i];

@@ -301,11 +301,58 @@ contract YieldsterVault
 
     /// @dev Function to invest in the Active Vault strategy.
     /// @param _amount Amount of strategy want tokens to be invested.
-    function earn(uint256 _amount) 
+    // function earn(uint256 _amount) 
+    //     onlyNormalMode
+    //     public
+    // {
+    //     require(msg.sender == address(this), "only Vault can perform this operation");
+    //     address _strategy = IAPContract(APContract).getVaultActiveStrategy(address(this));
+    //     uint256 _balance = tokenBalances.getTokenBalance(IStrategy(_strategy).want());
+    //     if(_amount <= _balance){
+    //         IERC20(IStrategy(_strategy).want()).approve(_strategy, _amount);
+    //         IStrategy(_strategy).deposit(_amount);
+    //         tokenBalances.setTokenBalance(IStrategy(_strategy).want(),_balance.sub(_amount));
+    //     }
+    //     else{
+    //         (bool result, ) = IAPContract(APContract).yieldsterExchange().delegatecall(abi.encodeWithSignature("exchangeToken(address,uint256)",IStrategy(_strategy).want(),_amount));
+    //         revertDelegate(result);
+    //         IERC20(IStrategy(_strategy).want()).approve(_strategy, _amount);
+    //         IStrategy(_strategy).deposit(_amount);
+    //         tokenBalances.setTokenBalance(IStrategy(_strategy).want(),tokenBalances.getTokenBalance(IStrategy(_strategy).want()).sub(_amount));
+    //     }
+    // }
+    function earn(uint256 navToInvest) 
         onlyNormalMode
         public
     {
         require(msg.sender == address(this), "only Vault can perform this operation");
+        address[] memory tokenList = new address[](assets.length);
+        uint256[] memory amountList = new uint256[](assets.length);
+        uint256 index;
+        uint256 currentNav;
+
+        for(uint256 i = 0; i < assetList.length; i++) {
+            uint256 tokenBalance = tokenBalances.getTokenBalance(assetList[i]);
+            if(tokenBalance > 0) { 
+                uint256 tokenNav = ((IAPContract(APContract).getUSDPrice(assetList[i])).mul(tokenBalance)).div(1e18);
+                if(tokenNav <= (sub(navToInvest, currentNav))) {
+                    tokenBalances.setTokenBalance(assetList[i], 0);
+                    tokenList[index] = assetList[i];
+                    amountList[index] = tokenBalance;
+                    currentNav += tokenNav;
+                    index++;
+                } else if(tokenNav > (sub(navToInvest, currentNav))) {
+                    uint256 requiredNav = sub(tokenNav, sub(navToInvest, currentNav));
+                    uint256 requiredAmount = (requiredNav.mul(1e18)).div(IAPContract(APContract).getUSDPrice(assetList[i]));
+                    tokenBalances.setTokenBalance(assetList[i], sub(tokenBalance, requiredAmount));
+                    tokenList[index] = assetList[i];
+                    amountList[index] = requiredAmount;
+                    currentNav += requiredNav;
+                    index++;
+                }
+            }
+        }
+
         address _strategy = IAPContract(APContract).getVaultActiveStrategy(address(this));
         uint256 _balance = tokenBalances.getTokenBalance(IStrategy(_strategy).want());
         if(_amount <= _balance){
