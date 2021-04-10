@@ -221,7 +221,7 @@ contract APContract
 
     }
 
-    /// @dev Function to set strategy minter address.
+    /// @dev Function to get strategy minter address.
     /// @param _strategy Address of the strategy.
     function strategyMinter(address _strategy) 
         external 
@@ -459,18 +459,24 @@ contract APContract
         require(vaults[_vaultAddress].created, "Vault not present");
         return vaultActiveStrategies[_vaultAddress].activeStrategyList;
     }
-    function getVaultActiveStrategyBeneficiery(address _vaultAddress)
+
+    function isStrategyActive(address _vaultAddress, address _strategyAddress)
         public
         view
-        returns(address[] memory)
+        returns(bool)
+    {
+        return vaultActiveStrategies[_vaultAddress].isActiveStrategy[_strategyAddress];
+    }
+
+    function getVaultActiveStrategyBeneficiery(address _vaultAddress, address _strategyAddress)
+        public
+        view
+        returns(address)
     {
         require(vaults[_vaultAddress].created, "Vault not present");
-        address[] memory beneficiaryList;
-        for(uint256 i = 0; i < vaultActiveStrategies[_vaultAddress].activeStrategyList.length; i++) {
-            address strategyAddress = vaultActiveStrategies[_vaultAddress].activeStrategyList[i];
-            beneficiaryList[i] = strategies[strategyAddress].benefeciary;
-        }
-        return beneficiaryList;
+        require(strategies[_strategyAddress].created, "Strategy not present");
+        require(vaultActiveStrategies[_vaultAddress].isActiveStrategy[_strategyAddress], "Strategy not Active");
+        return strategies[_strategyAddress].benefeciary;
     }
 
     /// @dev Function to Manage the vault strategies.
