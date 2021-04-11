@@ -15,13 +15,14 @@ contract YearnItAllZapper
     ERC20,
     ERC20Detailed 
 {
-
+// ToDO: change protocol, withdraw to strategy
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
     
 // yearn vault - need to confirm address
 
     address curveZapper = 0x462991D18666c578F787e9eC0A74Cd18D2971E5F;
+    address zapOutZontract= 0xB0880df8420974ef1b040111e5e0e95f05F8fee1;
     address oneInch = 0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB;
     address APContract;
 
@@ -100,17 +101,6 @@ contract YearnItAllZapper
                 _shares += getMintValue(getDepositNAV(_tokens[i], _amounts[i]));
             }
         }
-        // IERC20 _token = IERC20(IVault(safeActiveProtocol[msg.sender]).token());
-        // if(totalSupply() == 0)
-        // {
-        //     _shares = _amount;
-        // }
-        // else
-        // {
-        //     _shares = getMintValue(getDepositNAV(_tokenAddress, _amount));
-        // }
-        // _token.transferFrom(msg.sender, address(this), _amount);
-        // IVault(safeActiveProtocol[msg.sender]).deposit(_amount);
         if(_shares>0){
             _mint(msg.sender, _shares);
         }
@@ -166,22 +156,21 @@ contract YearnItAllZapper
 
 
 
-    function withdraw(uint256 _shares) 
+    function withdraw(uint256 _shares,address _withrawalAsset) 
         onlyRegisteredSafe
         external
+        returns(address,uint256)
     {
-        require(balanceOf(msg.sender) >= _shares,"You don't have enough shares");
-        address _tokenAddress = IVault(safeActiveProtocol[msg.sender]).token();
-        IERC20 _token = IERC20(IVault(safeActiveProtocol[msg.sender]).token());
-        address _protocolAddress = safeActiveProtocol[msg.sender];
-        uint256 tokenUSD = IAPContract(APContract).getUSDPrice(_tokenAddress);
+        require(balanceOf(msg.sender) >= _shares,"Not enough shares");
         uint256 strategyTokenValueInUSD = (_shares.mul(getStrategyNAV())).div(totalSupply());
-        uint256 tokenCount = (strategyTokenValueInUSD.mul(1e18)).div(uint256(tokenUSD));
-        uint256 protocolTokenUSD = IAPContract(APContract).getUSDPrice(_protocolAddress);
-        uint256 _protocolShares = (strategyTokenValueInUSD.mul(1e18)).div(uint256(protocolTokenUSD));
-        IVault(safeActiveProtocol[msg.sender]).withdraw(_protocolShares);
+        uint256 vaultTokenPriceInUSD=IAPContract(APContract).getUSDPrice(safeActiveProtocol[msg.sender]);
+        // Number of tokens tob removed from liquidity
+        uint256 vaultTokensToRemoved=strategyTokenValueInUSD.mul(1e18).div(vaultTokenPriceInUSD);
+        // 1 percentage of slipage
+        uint256 minTokensCount=vaultTokensToRemoved - vaultTokensToRemoved.div(100);
         _burn(msg.sender, _shares);
-        _token.transfer(msg.sender, tokenCount);
+        uint256 returnedTokens=IZapper(zapOutZontract).ZapOut(msg.sender,_withrawalAsset,safeActiveProtocol[msg.sender],2,vaultTokensToRemoved,minTokensCount);
+        return (_withrawalAsset,returnedTokens);        
     }
 
 
@@ -192,26 +181,27 @@ contract YearnItAllZapper
 
 
     // Withdraw all Protocol balance to Strategy
-    function withdrawAll() public 
-    {
-        _withdrawAllSafeBalance();
-    }
+    // function withdrawAll() public 
+    // {
+    //     _withdrawAllSafeBalance();
+    // }
 
     // Withdraw all protocol assets to safe
-    function withdrawAllToSafe() 
+    function withdrawAllToSafe(address _withdrawalToken) 
         public 
         onlyRegisteredSafe
     {
         uint256 SafeProtocolBalance = _getProtocolBalanceForSafe();
-        _withdrawAllSafeBalance();
-        address _protocolAddress = safeActiveProtocol[msg.sender];
-        uint256 protocolTokenUSD = IAPContract(APContract).getUSDPrice(_protocolAddress);
-        address _tokenAddress = IVault(safeActiveProtocol[msg.sender]).token();
-        IERC20 _token = IERC20(IVault(safeActiveProtocol[msg.sender]).token());
-        uint256 tokenUSD = IAPContract(APContract).getUSDPrice(_tokenAddress);
-        uint256 tokensToGive = (SafeProtocolBalance.mul(uint256(protocolTokenUSD))).div(uint256(tokenUSD));
-        _burn(msg.sender, balanceOf(msg.sender));
-        _token.transfer(msg.sender, tokensToGive);
+        return withdraw(SafeProtocolBalance,_withdrawalToken);
+        // _withdrawAllSafeBalance();
+        // address _protocolAddress = safeActiveProtocol[msg.sender];
+        // uint256 protocolTokenUSD = IAPContract(APContract).getUSDPrice(_protocolAddress);
+        // address _tokenAddress = IVault(safeActiveProtocol[msg.sender]).token();
+        // IERC20 _token = IERC20(IVault(safeActiveProtocol[msg.sender]).token());
+        // uint256 tokenUSD = IAPContract(APContract).getUSDPrice(_tokenAddress);
+        // uint256 tokensToGive = (SafeProtocolBalance.mul(uint256(protocolTokenUSD))).div(uint256(tokenUSD));
+        // _burn(msg.sender, balanceOf(msg.sender));
+        // _token.transfer(msg.sender, tokensToGive);
     }
 
     function want() external view returns (address)
@@ -241,7 +231,7 @@ contract YearnItAllZapper
         require(protocols[_protocol], "Not an Enabled Protocols");
         require(IAPContract(APContract)._isStrategyProtocolEnabled(msg.sender, address(this), _protocol), "This protocol is not enabled for this safe");
         uint256 oldProtocolBalance = _getProtocolBalanceForSafe();
-        withdrawAll();
+        _withdrawAllSafeBalance();
         address _withdrawalAsset = IVault(safeActiveProtocol[msg.sender]).token();
         uint256 _balance = IERC20(_withdrawalAsset).balanceOf(address(this));
 

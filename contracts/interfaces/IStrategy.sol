@@ -7,7 +7,7 @@ interface IStrategy {
     function deposit(address[] calldata,uint256[] calldata) external;
     function deposit(uint256) external;
 
-    function withdraw(uint256) external;
+    function withdraw(uint256) external returns(address,uint256);
 
     function withdrawAll() external ;
 
