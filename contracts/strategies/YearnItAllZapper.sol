@@ -23,7 +23,6 @@ contract YearnItAllZapper
 
     address curveZapper = 0x462991D18666c578F787e9eC0A74Cd18D2971E5F;
     address zapOutZontract= 0xB0880df8420974ef1b040111e5e0e95f05F8fee1;
-    address oneInch = 0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB;
     address APContract;
 
     address[] public protocolList;
