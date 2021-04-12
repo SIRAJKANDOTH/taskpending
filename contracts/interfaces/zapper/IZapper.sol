@@ -31,7 +31,7 @@ interface IZapper{
     @return toTokensReceived
      */
     function ZapOut(
-        address payable _toWhomToIsspublicue,
+        address payable _toWhomToIssue,
         address _ToTokenContractAddress,
         address _fromYVaultAddress,
         uint16 _vaultType,
