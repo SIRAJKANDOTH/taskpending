@@ -81,33 +81,30 @@ contract YearnItAllZapper
         isRegistered[msg.sender] = false;
     }
 
-    function deposit(address[] memory _tokens,uint256[] memory _amounts,uint256 _count) 
+    function deposit(address _depositAsset,uint256 _amount) 
         onlyRegisteredSafe
         public 
     {
         uint256 _shares;
         address _yVault = safeActiveProtocol[msg.sender];
-        for (uint256 i=0;i<_count;i++)
+        IERC20(_depositAsset).transferFrom(msg.sender, address(this), _amount);
+        uint256 yvtokenPriceInUSD=IAPContract(APContract).getUSDPrice(_yVault);
+        uint256 strategyshareInUSD=_amount.mul(IAPContract(APContract).getUSDPrice(_depositAsset)).div(1e18);
+        uint256 equivalentyvTokenCount=strategyshareInUSD.mul(1e18).div(yvtokenPriceInUSD);
+        uint256 minReturnTokens=equivalentyvTokenCount-equivalentyvTokenCount.div(100);
+        IERC20(_depositAsset).approve(curveZapper,  _amount);
+        bytes memory swapData;
+        IZapper(curveZapper).ZapInCurveVault(_depositAsset, _amount,_depositAsset,_yVault,minReturnTokens,address(0),swapData,address(0));
+        if(totalSupply()==0)
         {
-            IERC20(_tokens[i]).transferFrom(msg.sender, address(this), _amounts[i]);
-            uint256 yvtokenPriceInUSD=IAPContract(APContract).getUSDPrice(_yVault);
-            uint256 strategyshareInUSD=_amounts[i].mul(IAPContract(APContract).getUSDPrice(_tokens[i])).div(1e18);
-            uint256 equivalentyvTokenCount=strategyshareInUSD.mul(1e18).div(yvtokenPriceInUSD);
-            uint256 minReturnTokens=equivalentyvTokenCount-equivalentyvTokenCount.div(100);
-            IERC20(_tokens[i]).approve(curveZapper,  _amounts[i]);
-            bytes memory swapData;
-            IZapper(curveZapper).ZapInCurveVault(_tokens[i], _amounts[i],_tokens[i],_yVault,minReturnTokens,address(0),swapData,address(0));
-            if(totalSupply()==0&&i==0)
-            {
-            
-            _mint(msg.sender,_amounts[i]);
-            
-            }
-            else{
-                 _shares += getMintValue(getDepositNAV(_tokens[i], _amounts[i]));
-            }
-            
+        
+        _shares=_amount;
+        
         }
+        else{
+                _shares = getMintValue(getDepositNAV(_depositAsset, _amount));
+        }
+            
         if(_shares>0){
             _mint(msg.sender, _shares);
         }
