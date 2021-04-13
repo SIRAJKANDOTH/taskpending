@@ -1,6 +1,5 @@
 pragma solidity >=0.5.0 <0.7.0;
 import "../common/MasterCopy.sol";
-import "../external/YieldsterVaultMath.sol";
 import "../token/ERC1155/ERC1155Receiver.sol";
 import "../token/ERC20Detailed.sol";
 import "../whitelist/Whitelist.sol";
@@ -10,8 +9,8 @@ import "../interfaces/IStrategy.sol";
 import "../utils/HexUtils.sol";
 import "./TokenBalanceStorage.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 contract VaultStorage 
     is 
     MasterCopy, 
@@ -34,7 +33,7 @@ contract VaultStorage
 
     uint256[] internal whiteListGroups;
     address[] internal assetList;
-    mapping(address=>bool) isAssetDeposited;
+    mapping(address => bool) isAssetDeposited;
 
     // Whitelist internal whiteList;
 
@@ -49,33 +48,36 @@ contract VaultStorage
         pure
         internal
     {
-        if(!delegateStatus){
+        if(!delegateStatus) {
             revert("Operation perfomed Failed");
         }
     }
+
     /// @dev Function to return the NAV of the Vault.
     function getVaultNAV() 
         public 
         view 
         returns (uint256) 
     {
-        address _strategy = IAPContract(APContract).getVaultActiveStrategy(address(this));
+        address[] memory strategies = IAPContract(APContract).getVaultActiveStrategy(address(this));
         uint256 nav = 0;
         for (uint256 i = 0; i < assetList.length; i++) {
-            if(tokenBalances.getTokenBalance(assetList[i]) > 0){
+            if(tokenBalances.getTokenBalance(assetList[i]) > 0) {
                 uint256 tokenUSD = IAPContract(APContract).getUSDPrice(assetList[i]);
-                nav += (tokenBalances.getTokenBalance(assetList[i]).mul(uint256(tokenUSD)));       
+                nav += tokenBalances.getTokenBalance(assetList[i]).mul(tokenUSD);       
             }
         }
-        if(_strategy == address(0)){
+        if(strategies.length == 0) {
+            return nav.div(1e18);
+        } else {
+            for (uint256 i = 0; i < strategies.length; i++) {
+                if(IERC20(strategies[i]).balanceOf(address(this)) > 0) {
+                    uint256 strategyTokenUSD = IStrategy(strategies[i]).tokenValueInUSD();
+                    nav += IERC20(strategies[i]).balanceOf(address(this)).mul(strategyTokenUSD);       
+                }
+            }
             return nav.div(1e18);
         }
-        else if(IERC20(_strategy).balanceOf(address(this)) > 0){
-            uint256 _strategyBalance = IERC20(_strategy).balanceOf(address(this));
-            uint256 strategyTokenUsd = IStrategy(_strategy).tokenValueInUSD();
-            return (nav + (_strategyBalance.mul(strategyTokenUsd)).div(1e18)).div(1e18);
-        }
-        return nav.div(1e18);
     }
 
     /// @dev Function to return the NAV of the Vault excluding Strategy Tokens.
@@ -85,10 +87,10 @@ contract VaultStorage
         returns (uint256) 
     {
         uint256 nav = 0;
-        for (uint256 i = 0; i < assetList.length; i++){
-            if(tokenBalances.getTokenBalance(assetList[i]) > 0){
+        for (uint256 i = 0; i < assetList.length; i++) {
+            if(tokenBalances.getTokenBalance(assetList[i]) > 0) {
                 uint256 tokenUSD = IAPContract(APContract).getUSDPrice(assetList[i]);
-                nav += (tokenBalances.getTokenBalance(assetList[i]).mul(uint256(tokenUSD)));       
+                nav += (tokenBalances.getTokenBalance(assetList[i]).mul(tokenUSD));       
             }
         }
         return nav.div(1e18);
@@ -103,7 +105,7 @@ contract VaultStorage
         returns (uint256)
     {
         uint256 tokenUSD = IAPContract(APContract).getUSDPrice(_tokenAddress);
-        return (_amount.mul(uint256(tokenUSD))).div(1e18);
+        return (_amount.mul(tokenUSD)).div(1e18);
     }
 
     /// @dev Function to get the amount of Vault Tokens to be minted for the deposit NAV.
@@ -113,7 +115,7 @@ contract VaultStorage
         view
         returns (uint256)
     {
-        return (depositNAV.mul(totalSupply())).div( getVaultNAV());
+        return (depositNAV.mul(totalSupply())).div(getVaultNAV());
     }
 
     /// @dev Function to return Value of the Vault Token.
@@ -122,10 +124,9 @@ contract VaultStorage
         view 
         returns(uint256)
     {
-        if(getVaultNAV() == 0 || totalSupply() == 0){
+        if(getVaultNAV() == 0 || totalSupply() == 0) {
             return 0;
-        }
-        else{
+        } else {
             return (getVaultNAV().mul(1e18)).div(totalSupply());
         }
     }

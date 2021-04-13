@@ -15,20 +15,29 @@ contract StockWithdraw
         public
     {
         uint256 tokenUSD = IAPContract(APContract).getUSDPrice(_tokenAddress);
-        uint256 safeTokenVaulueInUSD = (_shares.mul(getVaultNAV())).div(totalSupply());
-        uint256 tokenCount = (safeTokenVaulueInUSD.mul(1e18)).div(uint256(tokenUSD));
+        uint256 safeTokenValueUSD = (_shares.mul(getVaultNAV())).div(totalSupply());
+        uint256 tokenCount = (safeTokenValueUSD.mul(1e18)).div(tokenUSD);
         
-        if(tokenCount <= tokenBalances.getTokenBalance(_tokenAddress)){
+        if(tokenCount <= tokenBalances.getTokenBalance(_tokenAddress)) {
+            tokenBalances.setTokenBalance(_tokenAddress,tokenBalances.getTokenBalance(_tokenAddress).sub(tokenCount));
             _burn(msg.sender, _shares);
             IERC20(_tokenAddress).transfer(msg.sender,tokenCount);
-            tokenBalances.setTokenBalance(_tokenAddress,tokenBalances.getTokenBalance(_tokenAddress).sub(tokenCount));
-        }
-        else{
+
+        } else {
             uint256 need = tokenCount - tokenBalances.getTokenBalance(_tokenAddress);
-            IAPContract(APContract).yieldsterExchange().delegatecall(abi.encodeWithSignature("exchangeToken(address,uint256)",_tokenAddress,need));
+
+            if(safeTokenValueUSD > getVaultNAVWithoutStrategyToken()) {
+            //find the strategy who has exceeded the max portfolio allocation 
+            address strategy;
+
+            (address withdrawalToken, uint256 withdrawalAmount) = IStrategy(strategy).withdraw(_tokenAddress, need);
+            }
+            (bool success,) = IAPContract(APContract).yieldsterExchange().delegatecall(abi.encodeWithSignature("exchangeToken(address,uint256)",_tokenAddress,need));
+            if(!success) revert("transaction failed");
+            tokenBalances.setTokenBalance(_tokenAddress, tokenBalances.getTokenBalance(_tokenAddress).sub(tokenCount));
             _burn(msg.sender, _shares);
             IERC20(_tokenAddress).transfer(msg.sender,tokenCount);
-            tokenBalances.setTokenBalance(_tokenAddress,tokenBalances.getTokenBalance(_tokenAddress).sub(tokenCount));
+
         }
     }
 
@@ -42,7 +51,7 @@ contract StockWithdraw
 
         if(IAPContract(APContract).getVaultActiveStrategy(address(this)) != address(0)){
             uint256 safeStrategyBalance = IERC20(IAPContract(APContract).getVaultActiveStrategy(address(this))).balanceOf(address(this));
-            if(safeStrategyBalance > 0){
+            if(safeStrategyBalance > 0) {
                 uint256 strategyShares = (_shares.mul(safeStrategyBalance)).div(safeTotalSupply); 
                 IERC20(IAPContract(APContract).getVaultActiveStrategy(address(this))).transfer(msg.sender,strategyShares);
             }

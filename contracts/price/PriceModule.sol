@@ -42,9 +42,11 @@ contract PriceModule is ChainlinkService
         curveRegistry = _curveRegistry;
     }
 
-    modifier onlyAPS{
-         require(msg.sender == APContract,"Only APS can call this function.");
-        _;
+    function setManager(address _manager)
+        public
+    {
+        require(msg.sender == priceModuleManager, "Not Authorized");
+        priceModuleManager = _manager;
     }
 
     function setCurveRegistry(address _curveRegistry)
