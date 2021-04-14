@@ -24,6 +24,9 @@ contract YearnItAllZapper
     address curveZapper = 0x462991D18666c578F787e9eC0A74Cd18D2971E5F;
     address zapOutZontract= 0xB0880df8420974ef1b040111e5e0e95f05F8fee1;
     address APContract;
+    address owner;
+    //  1% slipage
+    uint256 slipage=100;
 
     address[] public protocolList;
     mapping(address => bool) private protocols;
@@ -34,6 +37,11 @@ contract YearnItAllZapper
     {
         require( isRegistered[msg.sender], "Not a registered Safe");
         _;
+    }
+
+    modifier onlyOwner{
+        require(msg.sender==owner,"Only permitted to owner");
+          _;
     }
 
 
@@ -47,6 +55,7 @@ contract YearnItAllZapper
             protocols[_protocols[i]] = true;
             protocolList.push(_protocols[i]);
         }
+        owner=msg.sender;
     }
 
     function setActiveProtocol(address _protocol)
@@ -56,6 +65,11 @@ contract YearnItAllZapper
         require(protocols[_protocol], "This protocol is not present in the strategy");
         require(IAPContract(APContract)._isStrategyProtocolEnabled(msg.sender, address(this), _protocol), "This protocol is not enabled for this safe");
         safeActiveProtocol[msg.sender] = _protocol;
+    }
+
+    function setSlipage(uint256 _slipage) public onlyOwner{
+        require(_slipage<10000,"Give the percentage");
+        slipage=_slipage;
     }
 
     function getActiveProtocol(address _safeAddress)
@@ -91,7 +105,7 @@ contract YearnItAllZapper
         uint256 yvtokenPriceInUSD=IAPContract(APContract).getUSDPrice(_yVault);
         uint256 strategyshareInUSD=_amount.mul(IAPContract(APContract).getUSDPrice(_depositAsset)).div(1e18);
         uint256 equivalentyvTokenCount=strategyshareInUSD.mul(1e18).div(yvtokenPriceInUSD);
-        uint256 minReturnTokens=equivalentyvTokenCount-equivalentyvTokenCount.div(100);
+        uint256 minReturnTokens=equivalentyvTokenCount-equivalentyvTokenCount.mul(slipage).div(10000);
         IERC20(_depositAsset).approve(curveZapper,  _amount);
         bytes memory swapData;
         IZapper(curveZapper).ZapInCurveVault(_depositAsset, _amount,_depositAsset,_yVault,minReturnTokens,address(0),swapData,address(0));
@@ -171,7 +185,7 @@ contract YearnItAllZapper
         // Number of tokens tob removed from liquidity
         uint256 vaultTokensToRemoved=strategyTokenValueInUSD.mul(1e18).div(vaultTokenPriceInUSD);
         // 1 percentage of slipage
-        uint256 minTokensCount=vaultTokensToRemoved - vaultTokensToRemoved.div(100);
+        uint256 minTokensCount=vaultTokensToRemoved - vaultTokensToRemoved.mul(slipage).div(10000);
         _burn(msg.sender, _shares);
 
         uint256 returnedTokens=IZapper(zapOutZontract).ZapOut(msg.sender,_withrawalAsset,safeActiveProtocol[msg.sender],2,vaultTokensToRemoved,minTokensCount);
@@ -184,7 +198,7 @@ contract YearnItAllZapper
         uint256 _shares= _getProtocolBalanceForSafe();
         uint256 strategyTokenValueInUSD = (_shares.mul(getStrategyNAV())).div(totalSupply());
         uint256 tokensToBeChanged=strategyTokenValueInUSD.mul(1e18).div(IAPContract(APContract).getUSDPrice(safeActiveProtocol[msg.sender]));
-        uint256 mintokens=tokensToBeChanged-tokensToBeChanged.div(100);
+        uint256 mintokens=tokensToBeChanged-tokensToBeChanged.mul(slipage).div(10000);
         IERC20(safeActiveProtocol[msg.sender]).approve(curveZapper, tokensToBeChanged);
         bytes memory swapData;
         IZapper(curveZapper).ZapInCurveVault(safeActiveProtocol[msg.sender], tokensToBeChanged,safeActiveProtocol[msg.sender],_protocol,mintokens,address(0),swapData,address(0));
