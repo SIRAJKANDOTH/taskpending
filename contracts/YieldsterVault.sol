@@ -384,7 +384,14 @@ contract YieldsterVault
             if(!success){
                 revert("transaction failed");
             }
-        }    
+        } 
+        else if(id==2){
+            (bool success,) = IAPContract(APContract).getWithdrawStrategy().delegatecall(hexUtils.fromHex(data));
+            if(!success){
+                revert("Failed");
+            }
+
+        }   
     }
 
     function onERC1155BatchReceived(
