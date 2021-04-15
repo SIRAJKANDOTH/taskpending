@@ -348,6 +348,23 @@ contract YieldsterVault
         }
     }
 
+    function approvedAssetCleanUp(address[] memory _assetList,uint256[] memory _amount,address[] memory reciever) public{
+        require(msg.sender == address(this), "only Vault can perform this operation"); 
+        for (uint256 i = 0; i < _assetList.length; i++){
+             if((IAPContract(APContract)._isVaultAsset(_assetList[i]))){
+                 uint256 unmintedShare=IERC20(_assetList[i]).balanceOf(address(this)).sub(tokenBalances.getTokenBalance(_assetList[i]));
+                 if(unmintedShare<=_amount[i])
+                 {
+                     uint256 tokensToBeMinted=getMintValue(getDepositNAV(_assetList[i],_amount[i]));
+                     _mint(reciever[i], tokensToBeMinted);
+
+                       tokenBalances.setTokenBalance(_assetList[i],tokenBalances.getTokenBalance(_assetList[i]).add(unmintedShare));
+                 }
+             }
+        } 
+
+    }
+
     /// @dev Function to perform operation on Receivel of ERC1155 token from Yieldster Strategy Minter.
     function onERC1155Received(
         address ,
