@@ -29,11 +29,14 @@ contract YieldsterVault
     {
         require(msg.sender == IAPContract(APContract).yieldsterGOD(), "Sender not Authorized");
         emergencyConditions = 2;
-        address vaultActiveStrategy = getVaultActiveStrategy();
+        address[] memory vaultActiveStrategy = getVaultActiveStrategy();
 
-        if(vaultActiveStrategy != address(0)){
-            IStrategy(getVaultActiveStrategy()).withdrawAllToSafe();
-            IStrategy(getVaultActiveStrategy()).deRegisterSafe();
+        for(uint256 i = 0; i < vaultActiveStrategy.length; i++ ){
+            if(vaultActiveStrategy[i] != address(0)) {
+                IStrategy(vaultActiveStrategy[i]).withdrawAllToSafe();
+                IStrategy(vaultActiveStrategy[i]).deRegisterSafe();
+
+            }
         }
         for(uint256 i = 0; i < assetList.length; i++ ){   
             IERC20 token = IERC20(assetList[i]);
@@ -171,11 +174,11 @@ contract YieldsterVault
         external
     {
         require(msg.sender == vaultStrategyManager || msg.sender == owner, "Sender not Authorized");
-        if(getVaultActiveStrategy() == _strategyAddress){
+        if(IAPContract(APContract).isStrategyActive(address(this), _strategyAddress)){
             if(IERC20(_strategyAddress).balanceOf(address(this)) > 0){
-                IStrategy(getVaultActiveStrategy()).withdrawAllToSafe();
+                IStrategy(_strategyAddress).withdrawAllToSafe();
             }
-            IStrategy(getVaultActiveStrategy()).deRegisterSafe();
+            IStrategy(_strategyAddress).deRegisterSafe();
             IAPContract(APContract).deactivateVaultStrategy(_strategyAddress);
         }
         IAPContract(APContract).disableVaultStrategy(_strategyAddress, _assetsToBeDisabled);
@@ -189,12 +192,6 @@ contract YieldsterVault
     {
         require(msg.sender == vaultStrategyManager || msg.sender == owner, "Sender not Authorized");
         require(IAPContract(APContract)._isStrategyEnabled(address(this), _activeVaultStrategy) ,"This strategy is not enabled");
-        if(getVaultActiveStrategy() != address(0)){
-            if(IERC20(getVaultActiveStrategy()).balanceOf(address(this)) > 0){
-                IStrategy(getVaultActiveStrategy()).withdrawAllToSafe();
-            }
-            IStrategy(getVaultActiveStrategy()).deRegisterSafe();
-        }
         IAPContract(APContract).setVaultActiveStrategy(_activeVaultStrategy);
         IStrategy(_activeVaultStrategy).registerSafe();        
     }
@@ -208,11 +205,11 @@ contract YieldsterVault
     {
         require(msg.sender == vaultStrategyManager || msg.sender == owner, "Sender not Authorized");
         require(IAPContract(APContract)._isStrategyEnabled(address(this), _strategyAddress) ,"This strategy is not enabled");
-        require(getVaultActiveStrategy() == _strategyAddress, "This strategy is not active right now");
+        require(IAPContract(APContract).isStrategyActive(address(this), _strategyAddress), "This strategy is not active right now");
         if(IERC20(_strategyAddress).balanceOf(address(this)) > 0){
-            IStrategy(getVaultActiveStrategy()).withdrawAllToSafe();
+            IStrategy(_strategyAddress).withdrawAllToSafe();
         }
-        IStrategy(getVaultActiveStrategy()).deRegisterSafe();
+        IStrategy(_strategyAddress).deRegisterSafe();
         IAPContract(APContract).deactivateVaultStrategy(_strategyAddress);        
     }
 
@@ -220,7 +217,7 @@ contract YieldsterVault
     function getVaultActiveStrategy()
         public
         view
-        returns(address)
+        returns(address[] memory)
     {
         return IAPContract(APContract).getVaultActiveStrategy(address(this));
     }
@@ -302,26 +299,34 @@ contract YieldsterVault
         revertDelegate(result);
     }
 
-    /// @dev Function to invest in the Active Vault strategy.
-    /// @param _amount Amount of strategy want tokens to be invested.
-    function earn(uint256 _amount) 
+    function earn(uint256 navToInvest) 
         onlyNormalMode
         public
     {
-        require(msg.sender == address(this), "only Vault can perform this operation");
-        address _strategy = IAPContract(APContract).getVaultActiveStrategy(address(this));
-        uint256 _balance = tokenBalances.getTokenBalance(IStrategy(_strategy).want());
-        if(_amount <= _balance){
-            IERC20(IStrategy(_strategy).want()).approve(_strategy, _amount);
-            IStrategy(_strategy).deposit(_amount);
-            tokenBalances.setTokenBalance(IStrategy(_strategy).want(),_balance.sub(_amount));
-        }
-        else{
-            (bool result, ) = IAPContract(APContract).yieldsterExchange().delegatecall(abi.encodeWithSignature("exchangeToken(address,uint256)",IStrategy(_strategy).want(),_amount));
-            revertDelegate(result);
-            IERC20(IStrategy(_strategy).want()).approve(_strategy, _amount);
-            IStrategy(_strategy).deposit(_amount);
-            tokenBalances.setTokenBalance(IStrategy(_strategy).want(),tokenBalances.getTokenBalance(IStrategy(_strategy).want()).sub(_amount));
+        address strategy = IAPContract(APContract).getStrategyFromMinter(msg.sender);
+        require(IAPContract(APContract).isStrategyActive(address(this),strategy),"Strategy inactive");
+        uint256 currentNav;
+
+        for(uint256 i = 0; i < assetList.length; i++) {
+            uint256 tokenBalance = tokenBalances.getTokenBalance(assetList[i]);
+            if(tokenBalance > 0) { 
+                uint256 tokenNav = ((IAPContract(APContract).getUSDPrice(assetList[i])).mul(tokenBalance)).div(1e18);
+                if(tokenNav <= (navToInvest.sub(currentNav))) {
+                    tokenBalances.setTokenBalance(assetList[i], 0);
+                    currentNav += tokenNav;
+                    IERC20(assetList[i]).approve(strategy, tokenBalance);
+                    IStrategy(strategy).deposit(assetList[i], tokenBalance);
+                } else if(tokenNav > (navToInvest.sub(currentNav))) {
+                    uint256 requiredNav = tokenNav.sub(navToInvest.sub(currentNav));
+                    uint256 requiredAmount = (requiredNav.mul(1e18)).div(IAPContract(APContract).getUSDPrice(assetList[i]));
+                    tokenBalances.setTokenBalance(assetList[i], tokenBalance.sub(requiredAmount));
+                    currentNav += requiredNav;
+                    IERC20(assetList[i]).approve(strategy, requiredAmount);
+                    IStrategy(strategy).deposit(assetList[i], requiredAmount);
+                    break;
+                }
+                if(currentNav >= navToInvest) break;
+            }
         }
     }
 
@@ -331,11 +336,12 @@ contract YieldsterVault
         public
     {
         require(msg.sender == address(this), "only Vault can perform this operation");
-        require(IAPContract(APContract).strategyMinter(IAPContract(APContract).getVaultActiveStrategy(address(this))) == msg.sender, "Only Yieldster Strategy Minter");
+        //replace this require with the address of the clean up minter
+        // require(IAPContract(APContract).strategyMinter(IAPContract(APContract).getVaultActiveStrategy(address(this))) == msg.sender, "Only Yieldster Strategy Minter");
         for (uint256 i = 0; i < cleanUpList.length; i++){
-            if(! (IAPContract(APContract)._isVaultAsset(cleanUpList[i]))){
+            if(! (IAPContract(APContract)._isVaultAsset(cleanUpList[i]))) {
                 uint256 _amount = IERC20(cleanUpList[i]).balanceOf(address(this));
-                if(_amount > 0){
+                if(_amount > 0) {
                     IERC20(cleanUpList[i]).transfer(IAPContract(APContract).yieldsterTreasury(), _amount);
                 }
             }
@@ -371,13 +377,10 @@ contract YieldsterVault
     onlyNormalMode
     returns(bytes4)
     {
-        require(IAPContract(APContract).strategyMinter(IAPContract(APContract).getVaultActiveStrategy(address(this))) == msg.sender, "Only Yieldster Strategy Minter");
         HexUtils hexUtils = HexUtils(IAPContract(APContract).stringUtils());
-        if(id == 0){
+        if(id == 0) {
             (bool success,) = address(this).call(hexUtils.fromHex(data));
-            if(!success){
-                revert("transaction failed");
-            }
+            if(!success) revert("transaction failed");
         }
         else if(id == 1){
             (bool success,) = IAPContract(APContract).getVaultActiveStrategy(address(this)).call(hexUtils.fromHex(data));

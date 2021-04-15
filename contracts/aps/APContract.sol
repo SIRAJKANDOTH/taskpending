@@ -48,7 +48,7 @@ contract APContract
         bool created;
     }
 
-    struct Vault{
+    struct Vault {
         mapping(address => bool) vaultAssets;
         mapping(address => bool) vaultDepositAssets;
         mapping(address => bool) vaultWithdrawalAssets;
@@ -59,6 +59,12 @@ contract APContract
         address vaultStrategyManager;
         uint256[] whitelistGroup;
         bool created;
+    }
+
+    struct VaultActiveStrategy {
+        mapping(address => bool) isActiveStrategy;
+        mapping(address => uint256) activeStrategyIndex;
+        address[] activeStrategyList;
     }
 
     struct Strategy{
@@ -83,6 +89,8 @@ contract APContract
     mapping(address => mapping(address => mapping(address => bool))) vaultStrategyEnabledProtocols;
 
     mapping(address => address) vaultActiveStrategy;
+
+    mapping(address => VaultActiveStrategy) vaultActiveStrategies;
     
     mapping(address => Asset) assets;
 
@@ -97,6 +105,8 @@ contract APContract
     mapping(address => address) safeOwner;
     
     mapping(address => bool) APSManagers;
+
+    mapping(address => address) minterStrategyMap;
 
     
     /// @dev Constructor function.
@@ -218,7 +228,7 @@ contract APContract
 
     }
 
-    /// @dev Function to set strategy minter address.
+    /// @dev Function to get strategy minter address.
     /// @param _strategy Address of the strategy.
     function strategyMinter(address _strategy) 
         external 
@@ -228,6 +238,19 @@ contract APContract
        return strategies[_strategy].minter;
 
     }
+
+    /// @dev Function to get strategy address from minter.
+    /// @param _minter Address of the minter.
+    function getStrategyFromMinter(address _minter) 
+        external 
+        view 
+        returns(address)
+    {
+       return minterStrategyMap[_minter];
+
+    }
+
+
 
     /// @dev Function to set Yieldster Exchange.
     /// @param _yieldsterExchange Address of the Yieldster exchange.
@@ -421,7 +444,9 @@ contract APContract
     {
         require(vaults[msg.sender].created, "Vault not present");
         require(strategies[_strategyAddress].created, "Strategy not present");
-        vaultActiveStrategy[msg.sender] = _strategyAddress;
+        vaultActiveStrategies[msg.sender].isActiveStrategy[_strategyAddress] = true;
+        vaultActiveStrategies[msg.sender].activeStrategyIndex[_strategyAddress] = vaultActiveStrategies[msg.sender].activeStrategyList.length;
+        vaultActiveStrategies[msg.sender].activeStrategyList.push(_strategyAddress);
     }
 
     /// @dev Function to deactivate a vault strategy.
@@ -431,25 +456,47 @@ contract APContract
     {
         require(vaults[msg.sender].created, "Vault not present");
         require(vaultActiveStrategy[msg.sender] == _strategyAddress, "Provided strategy is not active");
-        vaultActiveStrategy[msg.sender] = address(0);
+        vaultActiveStrategies[msg.sender].isActiveStrategy[_strategyAddress] = false;
+
+        if(vaultActiveStrategies[msg.sender].activeStrategyList.length == 1) {
+            vaultActiveStrategies[msg.sender].activeStrategyList.pop();
+        } else {
+            uint256 index = vaultActiveStrategies[msg.sender].activeStrategyIndex[_strategyAddress];
+            uint256 lastIndex = vaultActiveStrategies[msg.sender].activeStrategyList.length - 1;
+            delete vaultActiveStrategies[msg.sender].activeStrategyList[index];
+            vaultActiveStrategies[msg.sender].activeStrategyIndex[vaultActiveStrategies[msg.sender].activeStrategyList[lastIndex]] = index;
+            vaultActiveStrategies[msg.sender].activeStrategyList[index] = vaultActiveStrategies[msg.sender].activeStrategyList[lastIndex];
+            vaultActiveStrategies[msg.sender].activeStrategyList.pop();
+        }
     }
 
     /// @dev Function to get vault active strategy.
     function getVaultActiveStrategy(address _vaultAddress)
         public
         view
-        returns(address)
+        returns(address[] memory)
     {
         require(vaults[_vaultAddress].created, "Vault not present");
-        return vaultActiveStrategy[_vaultAddress];
+        return vaultActiveStrategies[_vaultAddress].activeStrategyList;
     }
-    function getVaultActiveStrategyBeneficiery(address _vaultAddress)
+
+    function isStrategyActive(address _vaultAddress, address _strategyAddress)
+        public
+        view
+        returns(bool)
+    {
+        return vaultActiveStrategies[_vaultAddress].isActiveStrategy[_strategyAddress];
+    }
+
+    function getVaultActiveStrategyBeneficiery(address _vaultAddress, address _strategyAddress)
         public
         view
         returns(address)
     {
         require(vaults[_vaultAddress].created, "Vault not present");
-        return strategies[vaultActiveStrategy[_vaultAddress]].benefeciary;
+        require(strategies[_strategyAddress].created, "Strategy not present");
+        require(vaultActiveStrategies[_vaultAddress].isActiveStrategy[_strategyAddress], "Strategy not Active");
+        return strategies[_strategyAddress].benefeciary;
     }
 
     /// @dev Function to Manage the vault strategies.
@@ -678,8 +725,9 @@ contract APContract
         onlyManager
     {
         require(!_isStrategyPresent(_strategyAddress),"Strategy already present!");
-        Strategy memory newStrategy = Strategy({ strategyName:_strategyName, created:true,minter:_minter,executor:_executor,benefeciary:_benefeciary });
+        Strategy memory newStrategy = Strategy({ strategyName:_strategyName, created:true, minter:_minter, executor:_executor, benefeciary:_benefeciary });
         strategies[_strategyAddress] = newStrategy;
+        minterStrategyMap[_minter] = _strategyAddress;
 
         for (uint256 i = 0; i < _strategyProtocols.length; i++) {
             address protocol = _strategyProtocols[i];

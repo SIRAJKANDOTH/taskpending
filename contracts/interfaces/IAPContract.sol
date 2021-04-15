@@ -70,10 +70,14 @@ interface IAPContract{
     function isWithdrawalAsset(address ) external view returns(bool);
 
     function getConverter( address , address) external view returns(address);
-    function getVaultActiveStrategy(address)external view returns(address);
-    function getVaultActiveStrategyBeneficiery(address)external view returns(address);
 
-    
+    function getVaultActiveStrategy(address) external view returns(address[] memory);
+
+    function isStrategyActive(address, address) external  view returns(bool);
+
+    function getStrategyFromMinter(address ) external view returns(address);
+
+    function getVaultActiveStrategyBeneficiery(address, address) external view returns(address);
 
     function _isStrategyProtocolEnabled(address, address, address) external view returns(bool);
 

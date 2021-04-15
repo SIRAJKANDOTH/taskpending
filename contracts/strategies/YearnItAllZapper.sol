@@ -184,12 +184,22 @@ contract YearnItAllZapper
         uint256 vaultTokenPriceInUSD=IAPContract(APContract).getUSDPrice(safeActiveProtocol[msg.sender]);
         // Number of tokens tob removed from liquidity
         uint256 vaultTokensToRemoved=strategyTokenValueInUSD.mul(1e18).div(vaultTokenPriceInUSD);
-        // 1 percentage of slipage
-        uint256 minTokensCount=vaultTokensToRemoved - vaultTokensToRemoved.mul(slipage).div(10000);
+         uint256 minTokensCount=vaultTokensToRemoved - vaultTokensToRemoved.mul(slipage).div(10000);
         _burn(msg.sender, _shares);
+        if(_withrawalAsset==address(0))
+        {
+            IERC20(safeActiveProtocol[msg.sender]).transfere(msg.sender,vaultTokensToRemoved);
+            return (safeActiveProtocol[msg.sender],vaultTokensToRemoved);   
 
-        uint256 returnedTokens=IZapper(zapOutZontract).ZapOut(msg.sender,_withrawalAsset,safeActiveProtocol[msg.sender],2,vaultTokensToRemoved,minTokensCount);
-        return (_withrawalAsset,returnedTokens);        
+        }
+        else{
+            uint256 returnedTokens=IZapper(zapOutZontract).ZapOut(msg.sender,_withrawalAsset,safeActiveProtocol[msg.sender],2,vaultTokensToRemoved,minTokensCount);
+            return (_withrawalAsset,returnedTokens);   
+            
+        }
+        // 1 percentage of slipage
+
+             
     }
 
 
