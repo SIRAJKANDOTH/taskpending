@@ -77,7 +77,7 @@ interface IAPContract{
 
     function getStrategyFromMinter(address ) external view returns(address);
 
-    function getVaultActiveStrategyBeneficiery(address, address) external view returns(address);
+    function getStrategyManagementDetails(address, address) external view returns(address, uint256);
 
     function _isStrategyProtocolEnabled(address, address, address) external view returns(bool);
 

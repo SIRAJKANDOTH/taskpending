@@ -41,8 +41,7 @@ contract Exchange
         if(exchangedAmount > 0) {
             return exchangedAmount;
         } else {
-            uint256 aquiredToken;
-            uint256 currentNav;
+            uint256 aquiredToken; uint256 currentNav; uint256 swappedAmount;
 
             for(uint256 i = 0; i < assetList.length; i++ ) {
                 if(nav > currentNav) {
@@ -51,14 +50,14 @@ contract Exchange
                     uint256 haveTokenNav = (haveTokenUSD.mul(haveTokenCount)).div(1e18);
                     if(haveTokenNav <= (nav-currentNav)) {
                         (uint256 returnAmount, uint256[] memory distribution) = IExchange(oneInch).getExpectedReturn(assetList[i], targetToken, haveTokenCount, 0, 0);
-                        uint256 swapedAmount = IExchange(oneInch).swap(assetList[i], targetToken, returnAmount, haveTokenCount, distribution, 0);
-                        aquiredToken += swapedAmount;
+                        swappedAmount = IExchange(oneInch).swap(assetList[i], targetToken, returnAmount, haveTokenCount, distribution, 0);
+                        aquiredToken += swappedAmount;
                         currentNav += haveTokenCount;
                     } else {
                         uint256 tokensToExchange = ((haveTokenNav - (nav-currentNav)).mul(1e18)).div(haveTokenUSD);
                         (uint256 returnAmount, uint256[] memory distribution) = IExchange(oneInch).getExpectedReturn(assetList[i], targetToken, tokensToExchange, 0, 0);
-                        uint256 swapedAmount = IExchange(oneInch).swap(assetList[i], targetToken, returnAmount, tokensToExchange, distribution, 0);
-                        aquiredToken += swapedAmount;
+                        swappedAmount = IExchange(oneInch).swap(assetList[i], targetToken, returnAmount, tokensToExchange, distribution, 0);
+                        aquiredToken += swappedAmount;
                         currentNav += haveTokenCount;
                     }
                 }

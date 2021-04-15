@@ -299,33 +299,21 @@ contract YieldsterVault
         revertDelegate(result);
     }
 
-    function earn(uint256 navToInvest) 
+    /// @dev Function to deposit vault assets to strategy
+    /// @param _assets list of asset address to deposit
+    /// @param _amount list of asset amounts to deposit
+    function earn(address[] memory _assets, uint256[] memory _amount) 
         onlyNormalMode
         public
     {
         address strategy = IAPContract(APContract).getStrategyFromMinter(msg.sender);
         require(IAPContract(APContract).isStrategyActive(address(this),strategy),"Strategy inactive");
-        uint256 currentNav;
 
-        for(uint256 i = 0; i < assetList.length; i++) {
-            uint256 tokenBalance = tokenBalances.getTokenBalance(assetList[i]);
-            if(tokenBalance > 0) { 
-                uint256 tokenNav = ((IAPContract(APContract).getUSDPrice(assetList[i])).mul(tokenBalance)).div(1e18);
-                if(tokenNav <= (navToInvest.sub(currentNav))) {
-                    tokenBalances.setTokenBalance(assetList[i], 0);
-                    currentNav += tokenNav;
-                    IERC20(assetList[i]).approve(strategy, tokenBalance);
-                    IStrategy(strategy).deposit(assetList[i], tokenBalance);
-                } else if(tokenNav > (navToInvest.sub(currentNav))) {
-                    uint256 requiredNav = tokenNav.sub(navToInvest.sub(currentNav));
-                    uint256 requiredAmount = (requiredNav.mul(1e18)).div(IAPContract(APContract).getUSDPrice(assetList[i]));
-                    tokenBalances.setTokenBalance(assetList[i], tokenBalance.sub(requiredAmount));
-                    currentNav += requiredNav;
-                    IERC20(assetList[i]).approve(strategy, requiredAmount);
-                    IStrategy(strategy).deposit(assetList[i], requiredAmount);
-                    break;
-                }
-                if(currentNav >= navToInvest) break;
+        for(uint256 i = 0; i < _assets.length; i++) {
+            uint256 tokenBalance = tokenBalances.getTokenBalance(_assets[i]);
+            if(tokenBalance > _amount[i]) { 
+                IERC20(_assets[i]).approve(strategy, _amount[i]);
+                IStrategy(strategy).deposit(_assets[i], _amount[i]);
             }
         }
     }

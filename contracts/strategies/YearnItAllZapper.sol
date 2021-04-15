@@ -188,7 +188,7 @@ contract YearnItAllZapper
         _burn(msg.sender, _shares);
         if(_withrawalAsset==address(0))
         {
-            IERC20(safeActiveProtocol[msg.sender]).transfere(msg.sender,vaultTokensToRemoved);
+            IERC20(safeActiveProtocol[msg.sender]).transfer(msg.sender,vaultTokensToRemoved);
             return (safeActiveProtocol[msg.sender],vaultTokensToRemoved);   
 
         }
