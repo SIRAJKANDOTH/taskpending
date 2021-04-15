@@ -15,7 +15,7 @@ contract LockStorage{
     }
 
     function addRequest(address _withdrawer,address _asset, uint256 _amount) external{
-        // require(IAPContract(apContract));
+        require(IAPContract(apContract).isVault(msg.sender),"Not a registered vault!");
         vaultWithdrawalRequests[msg.sender].requestedAddresses.push(_withdrawer);
         vaultWithdrawalRequests[msg.sender].withdrawalAsset.push(_asset);
         vaultWithdrawalRequests[msg.sender].amounts.push(_amount);
@@ -23,6 +23,7 @@ contract LockStorage{
     }
 
     function clearWithdrawals() public{
+        require(IAPContract(apContract).isVault(msg.sender),"Not a registered vault!");
         vaultWithdrawalRequests[msg.sender]=WithdrawlStorage( new address[](0), new address[](0), new uint256[](0));
     }
 

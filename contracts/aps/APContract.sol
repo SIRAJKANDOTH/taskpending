@@ -149,6 +149,11 @@ contract APContract
     }
 
 
+    function isVault( address _address) public view returns(bool){
+       return vaults[_address].created;
+    }
+
+
     /// @dev Function to add APS manager to Yieldster.
     /// @param _manager Address of the manager.
     function addManager(address _manager) 

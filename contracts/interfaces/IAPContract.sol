@@ -83,5 +83,6 @@ interface IAPContract{
 
     function setVaultSmartStrategy(address, uint256) external;
 
-    function stringUtils() external view returns(address);   
+    function stringUtils() external view returns(address); 
+    function isVault( address) external view returns(bool); 
 }
