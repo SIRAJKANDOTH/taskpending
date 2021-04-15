@@ -8,6 +8,47 @@ contract StockWithdraw
     VaultStorage
 {
 
+    function getStrategyWithHighestNav()
+        view
+        internal    
+        returns(address, uint256)
+    {
+        address[] memory strategies = IAPContract(APContract).getVaultActiveStrategy(address(this));
+        address strategyWithHighestNav;
+        uint256 highestNav;
+        for(uint256 i = 0; i < strategies.length; i++) {
+            uint256 strategyNav = (IStrategy(strategies[i]).balanceOf(address(this)).mul(IStrategy(strategies[i]).tokenValueInUSD())).div(1e18);
+            if(strategyNav > highestNav) {
+                strategyWithHighestNav = strategies[i];
+                highestNav = strategyNav;
+            }
+        }
+        return (strategyWithHighestNav, highestNav);
+    }
+
+    function exchange(address toToken, uint256 nav)
+        internal
+        returns(uint256)
+    {
+        (bool success, bytes memory data) = IAPContract(APContract).yieldsterExchange().delegatecall(abi.encodeWithSignature("exchangeTokens(address,uint256)", toToken, nav));
+        if(!success) revert("transaction failed");
+        uint256 exchangeReturn = abi.decode(data, (uint256));
+        return exchangeReturn;
+    }
+
+    function withdrawFromStrategy(address strategy, uint256 shares, address tokenPrefered)
+        internal
+        returns(uint256, uint256)
+    {
+        (address returnToken, uint256 returnAmount) = IStrategy(strategy).withdraw(shares, tokenPrefered);
+        if(returnToken == tokenPrefered) {
+            return (returnAmount, 0) ;
+        } else {
+            uint256 returnNav = (returnAmount.mul(IAPContract(APContract).getUSDPrice(returnToken))).div(1e18);
+            return (0, returnNav);
+        }
+    }
+
     /// @dev Function to Withdraw assets from the Vault.
     /// @param _tokenAddress Address of the withdraw token.
     /// @param _shares Amount of Vault token shares.
@@ -15,8 +56,7 @@ contract StockWithdraw
         public
     {
         uint256 tokenUSD = IAPContract(APContract).getUSDPrice(_tokenAddress);
-        uint256 safeTokenValueUSD = (_shares.mul(getVaultNAV())).div(totalSupply());
-        uint256 tokenCount = (safeTokenValueUSD.mul(1e18)).div(tokenUSD);
+        uint256 tokenCount = ((_shares.mul(getVaultNAV())).div(totalSupply()).mul(1e18)).div(tokenUSD);
         
         if(tokenCount <= tokenBalances.getTokenBalance(_tokenAddress)) {
             tokenBalances.setTokenBalance(_tokenAddress,tokenBalances.getTokenBalance(_tokenAddress).sub(tokenCount));
@@ -24,79 +64,52 @@ contract StockWithdraw
             IERC20(_tokenAddress).transfer(msg.sender,tokenCount);
 
         } else {
-            uint256 have = tokenBalances.getTokenBalance(_tokenAddress);
-            uint256 need = tokenCount - have;
-            uint256 needNav = (need.mul(tokenUSD)).div(1e18);
-            uint256 haveNavInOtherTokens = getVaultNAVWithoutStrategyToken() - (have.mul(tokenUSD)).div(1e18);
-            uint256 towardsNeedWithSlippage = have;
+            uint256 needNav = ((tokenCount - (tokenBalances.getTokenBalance(_tokenAddress))).mul(tokenUSD)).div(1e18);
+            uint256 haveNavInOtherTokens = getVaultNAVWithoutStrategyToken() - ((tokenBalances.getTokenBalance(_tokenAddress)).mul(tokenUSD)).div(1e18);
+            uint256 towardsNeedWithSlippage = (tokenBalances.getTokenBalance(_tokenAddress));
             uint256 navFromStrategyWithdraw;
 
-            if(safeTokenValueUSD > getVaultNAVWithoutStrategyToken()) {
+            if((_shares.mul(getVaultNAV())).div(totalSupply()) > getVaultNAVWithoutStrategyToken()) {
                 address[] memory strategies = IAPContract(APContract).getVaultActiveStrategy(address(this));
-                uint256 strategyWithdrawNav = safeTokenValueUSD - getVaultNAVWithoutStrategyToken();
-                address strategyWithHighestNav;
-                uint256 highestNav;
-                for(uint256 i = 0; i < strategies.length; i++) {
-                    uint256 strategyNav = (IStrategy(strategies[i]).balanceOf(address(this)).mul(IStrategy(strategies[i]).tokenValueInUSD())).div(1e18);
-                    if(strategyNav > highestNav) {
-                        strategyWithHighestNav = strategies[i];
-                        highestNav = strategyNav;
-                    }
-                }
+                uint256 strategyWithdrawNav = (_shares.mul(getVaultNAV())).div(totalSupply()) - getVaultNAVWithoutStrategyToken();
+                (address strategyWithHighestNav, uint256 highestNav) = getStrategyWithHighestNav();
 
                 if(highestNav >= strategyWithdrawNav) {
-                    uint256 sharesToWithdraw = (strategyWithdrawNav.mul(1e18)).div(IStrategy(strategyWithHighestNav).tokenValueInUSD());
-                    (address returnToken, uint256 returnAmount) = IStrategy(strategyWithHighestNav).withdraw(sharesToWithdraw, _tokenAddress);
-                    if(returnToken == _tokenAddress) {
-                        towardsNeedWithSlippage += returnAmount;
-                    } else {
-                        uint256 returnNav = (returnAmount.mul(IAPContract(APContract).getUSDPrice(returnToken))).div(1e18);
-                        navFromStrategyWithdraw += returnNav;
-                    }
-
+                    (uint256 amount, uint256 returnNav) = withdrawFromStrategy(strategyWithHighestNav, (strategyWithdrawNav.mul(1e18)).div(IStrategy(strategyWithHighestNav).tokenValueInUSD()), _tokenAddress);
+                    towardsNeedWithSlippage += amount;
+                    navFromStrategyWithdraw += returnNav;
                 } else {
                     uint256 currentNav;
                     for(uint256 i = 0; i < strategies.length; i++) {
                         if(currentNav < strategyWithdrawNav) {
                             uint256 strategyNav = (IStrategy(strategies[i]).balanceOf(address(this)).mul(IStrategy(strategies[i]).tokenValueInUSD())).div(1e18);
                             if(strategyNav <= (strategyWithdrawNav - currentNav)) {
-                                (address returnToken, uint256 returnAmount) = IStrategy(strategyWithHighestNav).withdraw(IStrategy(strategies[i]).balanceOf(address(this)), _tokenAddress);
-                                if(returnToken == _tokenAddress) {
-                                    have += returnAmount;
-                                } else {
-                                    uint256 returnNav = (returnAmount.mul(IAPContract(APContract).getUSDPrice(returnToken))).div(1e18);
-                                    navFromStrategyWithdraw += returnNav;
-                                }
+                                (uint256 amount, uint256 returnNav) = withdrawFromStrategy(strategies[i], IStrategy(strategies[i]).balanceOf(address(this)), _tokenAddress);
+                                towardsNeedWithSlippage += amount;
+                                navFromStrategyWithdraw += returnNav;
+                                currentNav += strategyNav;
                             } else {
                                 uint256 toWithdrawNav = strategyNav - (strategyWithdrawNav - currentNav);
                                 uint256 toWithdrawShares = (toWithdrawNav.mul(1e18)).div(IStrategy(strategies[i]).tokenValueInUSD());
-                                (address returnToken, uint256 returnAmount) = IStrategy(strategyWithHighestNav).withdraw(toWithdrawShares, _tokenAddress);
-                                if(returnToken == _tokenAddress) {
-                                    have += returnAmount;
-                                } else {
-                                    uint256 returnNav = (returnAmount.mul(IAPContract(APContract).getUSDPrice(returnToken))).div(1e18);
-                                    navFromStrategyWithdraw += returnNav;
-                                }
+                                (uint256 amount, uint256 returnNav) = withdrawFromStrategy(strategies[i], toWithdrawShares, _tokenAddress);
+                                towardsNeedWithSlippage += amount;
+                                navFromStrategyWithdraw += returnNav;
+                                currentNav += toWithdrawNav;
                             }
                         }
                     }
                 }
-                (bool success, bytes memory data) = IAPContract(APContract).yieldsterExchange().delegatecall(abi.encodeWithSignature("exchangeToken(address,uint256)", _tokenAddress, haveNavInOtherTokens + navFromStrategyWithdraw));
-                uint256 exchangeReturn = abi.decode(data, (uint256));
-                if(!success) revert("transaction failed");
 
+                uint256 exchangeReturn = exchange(_tokenAddress, haveNavInOtherTokens + navFromStrategyWithdraw);
                 tokenBalances.setTokenBalance(_tokenAddress, tokenBalances.getTokenBalance(_tokenAddress).sub(exchangeReturn + towardsNeedWithSlippage));
                 _burn(msg.sender, _shares);
-                IERC20(_tokenAddress).transfer(msg.sender, tokenCount);
+                IERC20(_tokenAddress).transfer(msg.sender, exchangeReturn + towardsNeedWithSlippage);
 
             } else {
-                (bool success, bytes memory data) = IAPContract(APContract).yieldsterExchange().delegatecall(abi.encodeWithSignature("exchangeToken(address,uint256)", _tokenAddress, needNav));
-                uint256 exchangeReturn = abi.decode(data, (uint256));
-                if(!success) revert("transaction failed");
-
+                uint256 exchangeReturn = exchange(_tokenAddress, needNav);
                 tokenBalances.setTokenBalance(_tokenAddress, tokenBalances.getTokenBalance(_tokenAddress).sub(exchangeReturn + towardsNeedWithSlippage));
                 _burn(msg.sender, _shares);
-                IERC20(_tokenAddress).transfer(msg.sender, tokenCount);
+                IERC20(_tokenAddress).transfer(msg.sender, exchangeReturn + towardsNeedWithSlippage);
             }
         }
     }
