@@ -74,6 +74,7 @@ contract APContract
         address minter;
         address executor;
         address benefeciary;
+        uint256 managementFeePercentage;
     }
 
     struct SmartStrategy{
@@ -488,15 +489,15 @@ contract APContract
         return vaultActiveStrategies[_vaultAddress].isActiveStrategy[_strategyAddress];
     }
 
-    function getVaultActiveStrategyBeneficiery(address _vaultAddress, address _strategyAddress)
+    function getStrategyManagementDetails(address _vaultAddress, address _strategyAddress)
         public
         view
-        returns(address)
+        returns(address, uint256)
     {
         require(vaults[_vaultAddress].created, "Vault not present");
         require(strategies[_strategyAddress].created, "Strategy not present");
         require(vaultActiveStrategies[_vaultAddress].isActiveStrategy[_strategyAddress], "Strategy not Active");
-        return strategies[_strategyAddress].benefeciary;
+        return (strategies[_strategyAddress].benefeciary, strategies[_strategyAddress].managementFeePercentage);
     }
 
     /// @dev Function to Manage the vault strategies.
@@ -719,13 +720,14 @@ contract APContract
         address[] memory _strategyProtocols,
         address _minter,
         address _executor,
-        address _benefeciary
+        address _benefeciary,
+        uint256 _managementFeePercentage
         ) 
         public 
         onlyManager
     {
         require(!_isStrategyPresent(_strategyAddress),"Strategy already present!");
-        Strategy memory newStrategy = Strategy({ strategyName:_strategyName, created:true, minter:_minter, executor:_executor, benefeciary:_benefeciary });
+        Strategy memory newStrategy = Strategy({ strategyName:_strategyName, created:true, minter:_minter, executor:_executor, benefeciary:_benefeciary, managementFeePercentage: _managementFeePercentage});
         strategies[_strategyAddress] = newStrategy;
         minterStrategyMap[_minter] = _strategyAddress;
 
