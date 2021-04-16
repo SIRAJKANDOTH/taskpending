@@ -37,7 +37,7 @@ contract LockedWithdraw
                 // withdrawal logic
             }
         }
-        lockStorage.clearWithdrawals()
+        lockStorage.clearWithdrawals();
     }
 
 }

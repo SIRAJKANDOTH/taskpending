@@ -371,10 +371,10 @@ contract YieldsterVault
             if(!success) revert("transaction failed");
         }
         else if(id == 1){
-            (bool success,) = IAPContract(APContract).getVaultActiveStrategy(address(this)).call(hexUtils.fromHex(data));
-            if(!success){
-                revert("transaction failed");
-            }
+            address strategy = IAPContract(APContract).getStrategyFromMinter(msg.sender);
+            require(IAPContract(APContract).isStrategyActive(address(this),strategy), "Strategy inactive");
+            (bool success,) = strategy.call(hexUtils.fromHex(data));
+            if(!success) revert("transaction failed");
         } 
         else if(id==2){
             (bool success,) = IAPContract(APContract).getWithdrawStrategy().delegatecall(hexUtils.fromHex(data));

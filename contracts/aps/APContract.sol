@@ -6,7 +6,6 @@ import "../interfaces/IPriceModule.sol";
 
 contract APContract
 {
-    address public MasterCopy;
 
     address public yieldsterDAO;
 
@@ -111,12 +110,10 @@ contract APContract
 
     
     /// @dev Constructor function.
-    /// @param _MasterCopy Address of Yieldster safe master copy.
     /// @param _whitelistModule Address of whitelist module.
     /// @param _platformManagementFee Address of platform management fee strategy.
     /// @param _stringUtils Address of string utils.
     constructor(
-        address _MasterCopy, 
         address _whitelistModule,
         address _platformManagementFee,
         address _stringUtils
@@ -128,7 +125,6 @@ contract APContract
         yieldsterGOD = msg.sender;
         emergencyVault = msg.sender;
         APSManagers[msg.sender] = true;
-        MasterCopy = _MasterCopy;
         whitelistModule = _whitelistModule;
         platFormManagementFee = _platformManagementFee;
         stringUtils = _stringUtils;
