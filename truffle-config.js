@@ -11,7 +11,7 @@ module.exports = {
 			port: 8545,
 			network_id: "*", // Match any network id
 			websockets: true,
-			gasPrice: 300000000000,
+			gasPrice: 80000000000,
 		},
 		rinkeby: {
 			network_id: "4",
