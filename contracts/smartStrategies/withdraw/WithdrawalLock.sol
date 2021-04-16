@@ -143,9 +143,10 @@ contract LockedWithdraw
         } else {
             uint256 haveNavInOtherTokens = getVaultNAVWithoutStrategyToken() - ((tokenBalances.getTokenBalance(_tokenAddress)).mul(tokenUSD)).div(1e18);
             uint256 towardsNeedWithSlippage = (tokenBalances.getTokenBalance(_tokenAddress));
-            uint256 navFromStrategyWithdraw;
+            
 
             if((_shares.mul(getVaultNAV())).div(totalSupply()) > getVaultNAVWithoutStrategyToken()) {
+                uint256 navFromStrategyWithdraw;
                 uint256 strategyWithdrawNav = (_shares.mul(getVaultNAV())).div(totalSupply()) - getVaultNAVWithoutStrategyToken();
                 (address strategyWithHighestNav, uint256 highestNav) = getStrategyWithHighestNav();
 
