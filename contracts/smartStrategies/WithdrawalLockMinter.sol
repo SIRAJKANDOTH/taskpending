@@ -5,16 +5,16 @@ import "../interfaces/IAPContract.sol";
 contract WithdrawalLockMinter is ERC1155
 {
     address public APContract;
-        address private strategy;
-        address private owner;
-        address private executor;
+    address private strategy;
+    address private owner;
+    address private executor;
 
-    constructor(address _APContract,address _strategyAddress) public ERC1155("https://game.example/api/item/{id}.json") 
+    constructor(address _APContract, address _strategyAddress) public ERC1155("https://game.example/api/item/{id}.json") 
     {
         APContract = _APContract;
-        strategy=_strategyAddress;
-        owner=msg.sender;
-        executor=msg.sender;
+        strategy =_strategyAddress;
+        owner = msg.sender;
+        executor = msg.sender;
     }
 
     modifier onlyOwner{
@@ -27,7 +27,7 @@ contract WithdrawalLockMinter is ERC1155
         string memory instruction, 
         uint256 instruction_type
         ) 
-        public
+    public
     {
         require(IAPContract(APContract).strategyExecutor(strategy) == msg.sender, "Not a approved executer");
         _mint(safeAddress, instruction_type, 10**18, bytes(instruction));

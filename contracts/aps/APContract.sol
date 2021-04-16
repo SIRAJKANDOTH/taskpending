@@ -33,6 +33,8 @@ contract APContract
 
     address public stockWithdraw;
 
+    address public safeMinter;
+
     uint public test = 0;
 
     struct Asset{
@@ -78,17 +80,25 @@ contract APContract
 
     struct SmartStrategy{
         string smartStrategyName;
+        address minter;
+        address executor;
         bool created;
  
     }
 
+    struct vaultActiveManagemetFee {
+        mapping(address => bool) isActiveManagementFee;
+        mapping(address => uint256) activeManagementFeeIndex;
+        address[] activeManagementFeeList;
+    }
+
+    mapping(address => vaultActiveManagemetFee) managementFeeStrategies;
+
     event VaultCreation(address vaultAddress);
 
-    mapping(address => address[]) managementFeeStrategies;
+    // mapping(address => address[]) managementFeeStrategies;
 
     mapping(address => mapping(address => mapping(address => bool))) vaultStrategyEnabledProtocols;
-
-    mapping(address => address) vaultActiveStrategy;
 
     mapping(address => VaultActiveStrategy) vaultActiveStrategies;
     
@@ -236,6 +246,15 @@ contract APContract
 
     }
 
+    /// @dev Function to set Safe Minter.
+    /// @param _safeMinter Address of the Safe Minter.
+    function setSafeMinter(address _safeMinter)
+        onlyYieldsterDAO
+        public
+    {
+        safeMinter = _safeMinter;
+    }
+
     /// @dev Function to get strategy address from minter.
     /// @param _minter Address of the minter.
     function getStrategyFromMinter(address _minter) 
@@ -346,7 +365,11 @@ contract APContract
             created : true
             });
         vaults[msg.sender] = newVault;
-        managementFeeStrategies[msg.sender] = [platFormManagementFee];
+
+        managementFeeStrategies[msg.sender].isActiveManagementFee[platFormManagementFee] = true;
+        managementFeeStrategies[msg.sender].activeManagementFeeIndex[platFormManagementFee] = managementFeeStrategies[msg.sender].activeManagementFeeList.length;
+        managementFeeStrategies[msg.sender].activeManagementFeeList.push(platFormManagementFee);
+        // managementFeeStrategies[msg.sender] = [platFormManagementFee];
     }
 
     /// @dev Function to Manage the vault assets.
@@ -400,7 +423,7 @@ contract APContract
         returns(address[] memory)
     {
         require(vaults[msg.sender].created, "Vault not present");
-        return managementFeeStrategies[msg.sender];
+        return managementFeeStrategies[msg.sender].activeManagementFeeList;
     }
 
     /// @dev Function to get the deposit strategy applied to the vault.
@@ -431,7 +454,31 @@ contract APContract
     {
         require(vaults[_vaultAddress].created, "Vault not present");
         require(vaults[_vaultAddress].vaultStrategyManager == msg.sender, "Sender not Authorized");
-        managementFeeStrategies[_vaultAddress].push(_managementFeeAddress);
+        managementFeeStrategies[_vaultAddress].isActiveManagementFee[_managementFeeAddress] = true;
+        managementFeeStrategies[_vaultAddress].activeManagementFeeIndex[_managementFeeAddress] = managementFeeStrategies[_vaultAddress].activeManagementFeeList.length;
+        managementFeeStrategies[_vaultAddress].activeManagementFeeList.push(_managementFeeAddress);
+        // managementFeeStrategies[_vaultAddress].push(_managementFeeAddress);
+    }
+
+    /// @dev Function to deactivate a vault strategy.
+    /// @param _managementFeeAddress Address of the Management Fee Strategy.
+    function removeManagementFeeStrategies(address _vaultAddress, address _managementFeeAddress)
+        public
+    {
+        require(vaults[_vaultAddress].created, "Vault not present");
+        require(managementFeeStrategies[_vaultAddress].isActiveManagementFee[_managementFeeAddress], "Provided ManagementFee is not active");
+        managementFeeStrategies[_vaultAddress].isActiveManagementFee[_managementFeeAddress] = false;
+
+        if(managementFeeStrategies[_vaultAddress].activeManagementFeeList.length == 1) {
+            managementFeeStrategies[_vaultAddress].activeManagementFeeList.pop();
+        } else {
+            uint256 index = managementFeeStrategies[_vaultAddress].activeManagementFeeIndex[_managementFeeAddress];
+            uint256 lastIndex = managementFeeStrategies[_vaultAddress].activeManagementFeeList.length - 1;
+            delete managementFeeStrategies[_vaultAddress].activeManagementFeeList[index];
+            managementFeeStrategies[_vaultAddress].activeManagementFeeIndex[managementFeeStrategies[_vaultAddress].activeManagementFeeList[lastIndex]] = index;
+            managementFeeStrategies[_vaultAddress].activeManagementFeeList[index] = managementFeeStrategies[_vaultAddress].activeManagementFeeList[lastIndex];
+            managementFeeStrategies[_vaultAddress].activeManagementFeeList.pop();
+        }
     }
 
     /// @dev Function to set vault active strategy.
@@ -452,7 +499,7 @@ contract APContract
         public
     {
         require(vaults[msg.sender].created, "Vault not present");
-        require(vaultActiveStrategy[msg.sender] == _strategyAddress, "Provided strategy is not active");
+        require(vaultActiveStrategies[msg.sender].isActiveStrategy[_strategyAddress], "Provided strategy is not active");
         vaultActiveStrategies[msg.sender].isActiveStrategy[_strategyAddress] = false;
 
         if(vaultActiveStrategies[msg.sender].activeStrategyList.length == 1) {
@@ -760,16 +807,21 @@ contract APContract
     /// @param _smartStrategyAddress Address of the smart strategy.
     function addSmartStrategy(
         string memory _smartStrategyName,
-        address _smartStrategyAddress
+        address _smartStrategyAddress,
+        address _minter,
+        address _executor
         ) 
         public 
         onlyManager
     {
         require(!_isSmartStrategyPresent(_smartStrategyAddress),"Smart Strategy already present!");
         SmartStrategy memory newSmartStrategy = SmartStrategy
-            ({ smartStrategyName : _smartStrategyName,
+            ({  smartStrategyName : _smartStrategyName,
+                minter : _minter,
+                executor : _executor,
                 created : true });
         smartStrategies[_smartStrategyAddress] = newSmartStrategy;
+        minterStrategyMap[_minter] = _smartStrategyAddress;
     }
 
     /// @dev Function to remove a smart strategy from Yieldster.

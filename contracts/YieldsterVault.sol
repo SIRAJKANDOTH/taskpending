@@ -307,7 +307,7 @@ contract YieldsterVault
         public
     {
         address strategy = IAPContract(APContract).getStrategyFromMinter(msg.sender);
-        require(IAPContract(APContract).isStrategyActive(address(this),strategy),"Strategy inactive");
+        require(IAPContract(APContract).isStrategyActive(address(this), strategy), "Strategy inactive");
 
         for(uint256 i = 0; i < _assets.length; i++) {
             uint256 tokenBalance = tokenBalances.getTokenBalance(_assets[i]);
@@ -324,8 +324,6 @@ contract YieldsterVault
         public
     {
         require(msg.sender == address(this), "only Vault can perform this operation");
-        //replace this require with the address of the clean up minter
-        // require(IAPContract(APContract).strategyMinter(IAPContract(APContract).getVaultActiveStrategy(address(this))) == msg.sender, "Only Yieldster Strategy Minter");
         for (uint256 i = 0; i < cleanUpList.length; i++){
             if(! (IAPContract(APContract)._isVaultAsset(cleanUpList[i]))) {
                 uint256 _amount = IERC20(cleanUpList[i]).balanceOf(address(this));
@@ -336,7 +334,7 @@ contract YieldsterVault
         }
     }
 
-    function approvedAssetCleanUp(address[] memory _assetList,uint256[] memory _amount,address[] memory reciever) public{
+    function approvedAssetCleanUp(address[] memory _assetList,uint256[] memory _amount,address[] memory reciever) public {
         require(msg.sender == address(this), "only Vault can perform this operation"); 
         for (uint256 i = 0; i < _assetList.length; i++){
              if((IAPContract(APContract)._isVaultAsset(_assetList[i]))){
@@ -367,21 +365,28 @@ contract YieldsterVault
     {
         HexUtils hexUtils = HexUtils(IAPContract(APContract).stringUtils());
         if(id == 0) {
+            require(IAPContract(APContract).safeMinter() == msg.sender, "Only Safe Minter");
             (bool success,) = address(this).call(hexUtils.fromHex(data));
-            if(!success) revert("transaction failed");
+            if(!success) revert("Failed");
         }
         else if(id == 1){
-            address strategy = IAPContract(APContract).getStrategyFromMinter(msg.sender);
-            require(IAPContract(APContract).isStrategyActive(address(this),strategy), "Strategy inactive");
-            (bool success,) = strategy.call(hexUtils.fromHex(data));
-            if(!success) revert("transaction failed");
+            require(IAPContract(APContract).isStrategyActive(address(this),IAPContract(APContract).getStrategyFromMinter(msg.sender)), "Strategy inactive");
+            (bool success,) = IAPContract(APContract).getStrategyFromMinter(msg.sender).call(hexUtils.fromHex(data));
+            if(!success) revert("Failed");
         } 
-        else if(id==2){
-            (bool success,) = IAPContract(APContract).getWithdrawStrategy().delegatecall(hexUtils.fromHex(data));
+        else if(id == 2){
+            require(IAPContract(APContract).getStrategyFromMinter(msg.sender) == IAPContract(APContract).getDepositStrategy(), "Not Deposit strategy");
+            (bool success,) = IAPContract(APContract).getStrategyFromMinter(msg.sender).delegatecall(hexUtils.fromHex(data));
             if(!success){
                 revert("Failed");
             }
-
+        }   
+        else if(id == 3){
+            require(IAPContract(APContract).getStrategyFromMinter(msg.sender) == IAPContract(APContract).getWithdrawStrategy(), "Not Withdraw strategy");
+            (bool success,) = IAPContract(APContract).getStrategyFromMinter(msg.sender).delegatecall(hexUtils.fromHex(data));
+            if(!success){
+                revert("Failed");
+            }
         }   
     }
 

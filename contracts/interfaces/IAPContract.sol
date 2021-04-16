@@ -47,6 +47,8 @@ interface IAPContract{
 
     function getDepositStrategy() external returns(address);
 
+    function safeMinter() external returns(address);
+    
     function getWithdrawStrategy() external returns(address);
 
     function changeVaultAPSManager(address) external;

@@ -38,6 +38,8 @@ contract Exchange
         IExchange(oneInch).getExpectedReturn(fromToken, toToken, amount, 0, 0);
         IERC20(fromToken).approve(oneInch, amount);
         uint256 returnedTokenCount = IExchange(oneInch).swap(fromToken, toToken, amount, returnAmount, distribution, 0);
+        tokenBalances.setTokenBalance(fromToken, tokenBalances.getTokenBalance(fromToken).sub(amount));
+        tokenBalances.setTokenBalance(toToken, tokenBalances.getTokenBalance(toToken).add(returnedTokenCount));
         return returnedTokenCount;
     }
 
