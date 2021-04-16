@@ -96,18 +96,12 @@ contract StockWithdraw
         if(tokenCount <= tokenBalances.getTokenBalance(_tokenAddress)) {
             updateAndTransferTokens(_tokenAddress, tokenBalances.getTokenBalance(_tokenAddress).sub(tokenCount), _shares, tokenCount );
 
-            // tokenBalances.setTokenBalance(_tokenAddress, tokenBalances.getTokenBalance(_tokenAddress).sub(tokenCount));
-            // _burn(msg.sender, _shares);
-            // IERC20(_tokenAddress).transfer(msg.sender,tokenCount);
-
         } else {
-            // uint256 needNav = ((tokenCount - (tokenBalances.getTokenBalance(_tokenAddress))).mul(tokenUSD)).div(1e18);
             uint256 haveNavInOtherTokens = getVaultNAVWithoutStrategyToken() - ((tokenBalances.getTokenBalance(_tokenAddress)).mul(tokenUSD)).div(1e18);
             uint256 towardsNeedWithSlippage = (tokenBalances.getTokenBalance(_tokenAddress));
             uint256 navFromStrategyWithdraw;
 
             if((_shares.mul(getVaultNAV())).div(totalSupply()) > getVaultNAVWithoutStrategyToken()) {
-                // address[] memory strategies = IAPContract(APContract).getVaultActiveStrategy(address(this));
                 uint256 strategyWithdrawNav = (_shares.mul(getVaultNAV())).div(totalSupply()) - getVaultNAVWithoutStrategyToken();
                 (address strategyWithHighestNav, uint256 highestNav) = getStrategyWithHighestNav();
 
@@ -116,25 +110,6 @@ contract StockWithdraw
                     towardsNeedWithSlippage += amount;
                     navFromStrategyWithdraw += returnNav;
                 } else {
-                    // uint256 currentNav;
-                    // for(uint256 i = 0; i < strategies.length; i++) {
-                    //     if(currentNav < strategyWithdrawNav) {
-                    //         uint256 strategyNav = (IStrategy(strategies[i]).balanceOf(address(this)).mul(IStrategy(strategies[i]).tokenValueInUSD())).div(1e18);
-                    //         if(strategyNav <= (strategyWithdrawNav - currentNav)) {
-                    //             (uint256 amount, uint256 returnNav) = withdrawFromStrategy(strategies[i], IStrategy(strategies[i]).balanceOf(address(this)), _tokenAddress);
-                    //             towardsNeedWithSlippage += amount;
-                    //             navFromStrategyWithdraw += returnNav;
-                    //             currentNav += strategyNav;
-                    //         } else {
-                    //             uint256 toWithdrawNav = strategyNav - (strategyWithdrawNav - currentNav);
-                    //             uint256 toWithdrawShares = (toWithdrawNav.mul(1e18)).div(IStrategy(strategies[i]).tokenValueInUSD());
-                    //             (uint256 amount, uint256 returnNav) = withdrawFromStrategy(strategies[i], toWithdrawShares, _tokenAddress);
-                    //             towardsNeedWithSlippage += amount;
-                    //             navFromStrategyWithdraw += returnNav;
-                    //             currentNav += toWithdrawNav;
-                    //         }
-                    //     }
-                    // }
                     (uint256 returnTowardsNeedWithSlippage , uint256 returnNavFromStrategyWithdraw) =  withdrawFromMultipleStrategy(strategyWithdrawNav, _tokenAddress);
                     towardsNeedWithSlippage += returnTowardsNeedWithSlippage;
                     navFromStrategyWithdraw += returnNavFromStrategyWithdraw;
@@ -142,17 +117,10 @@ contract StockWithdraw
 
                 uint256 exchangeReturn = exchange(_tokenAddress, haveNavInOtherTokens + navFromStrategyWithdraw);
                 updateAndTransferTokens(_tokenAddress, exchangeReturn + towardsNeedWithSlippage, _shares, exchangeReturn + towardsNeedWithSlippage );
-                // tokenBalances.setTokenBalance(_tokenAddress, tokenBalances.getTokenBalance(_tokenAddress).sub(exchangeReturn + towardsNeedWithSlippage));
-                // _burn(msg.sender, _shares);
-                // IERC20(_tokenAddress).transfer(msg.sender, exchangeReturn + towardsNeedWithSlippage);
 
             } else {
                 uint256 exchangeReturn = exchange(_tokenAddress, ((tokenCount - (tokenBalances.getTokenBalance(_tokenAddress))).mul(tokenUSD)).div(1e18));
                 updateAndTransferTokens(_tokenAddress, exchangeReturn + towardsNeedWithSlippage, _shares, exchangeReturn + towardsNeedWithSlippage );
-
-                // tokenBalances.setTokenBalance(_tokenAddress, tokenBalances.getTokenBalance(_tokenAddress).sub(exchangeReturn + towardsNeedWithSlippage));
-                // _burn(msg.sender, _shares);
-                // IERC20(_tokenAddress).transfer(msg.sender, exchangeReturn + towardsNeedWithSlippage);
             }
         }
     }
