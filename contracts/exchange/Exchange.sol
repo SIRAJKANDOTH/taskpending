@@ -35,9 +35,9 @@ contract Exchange
         returns(uint256)
     {
         (uint256 returnAmount, uint256[] memory distribution) = 
-        IExchange(oneInch).getExpectedReturn(fromToken, toToken, amount, 0, 0);
-        IERC20(fromToken).approve(oneInch, amount);
-        uint256 returnedTokenCount = IExchange(oneInch).swap(fromToken, toToken, amount, returnAmount, distribution, 0);
+        IExchange(IAPContract(APContract).oneInch()).getExpectedReturn(fromToken, toToken, amount, 0, 0);
+        IERC20(fromToken).approve(IAPContract(APContract).oneInch(), amount);
+        uint256 returnedTokenCount = IExchange(IAPContract(APContract).oneInch()).swap(fromToken, toToken, amount, returnAmount, distribution, 0);
         tokenBalances.setTokenBalance(fromToken, tokenBalances.getTokenBalance(fromToken).sub(amount));
         tokenBalances.setTokenBalance(toToken, tokenBalances.getTokenBalance(toToken).add(returnedTokenCount));
         return returnedTokenCount;

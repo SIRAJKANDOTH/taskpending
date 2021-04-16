@@ -4,14 +4,17 @@ contract TokenBalanceStorage
     uint256 private blockNumber;
     uint256 private tokenTobeMinted;
     uint256 private lastTransactionNav;
+    address private owner;
     mapping(address=>uint256) tokenBalance;
 
 
-    constructor() public{
-         blockNumber = block.number;
+    constructor() public {
+        blockNumber = block.number;
+        owner = msg.sender;
     }
 
-    function setTokenBalance(address _tokenAddress, uint256 _balance) public{
+    function setTokenBalance(address _tokenAddress, uint256 _balance) public {
+        require(msg.sender == owner, "only Owner");
         tokenBalance[_tokenAddress] = _balance;
     }
 
@@ -19,7 +22,8 @@ contract TokenBalanceStorage
         return tokenBalance[_token];
     }
     
-    function setTokenTobeMinted(uint256 _count) public{
+    function setTokenTobeMinted(uint256 _count) public {
+        require(msg.sender == owner, "only Owner");
         blockNumber = block.number;
         tokenTobeMinted = _count;
     }
@@ -38,6 +42,7 @@ contract TokenBalanceStorage
 
     function setLastTransactionNav(uint256 _nav) public
     {
+        require(msg.sender == owner, "only Owner");
         lastTransactionNav=_nav;
     }
 

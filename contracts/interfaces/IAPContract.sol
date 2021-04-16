@@ -48,6 +48,10 @@ interface IAPContract{
     function getDepositStrategy() external returns(address);
 
     function safeMinter() external returns(address);
+
+    function cleanUp() external returns(address);
+
+    function oneInch() external returns(address);
     
     function getWithdrawStrategy() external returns(address);
 

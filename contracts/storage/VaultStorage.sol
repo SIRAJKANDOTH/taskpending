@@ -28,7 +28,6 @@ contract VaultStorage
     address public owner;
     address public vaultAPSManager;
     address public vaultStrategyManager;
-    address oneInch;
     string public vaultName;
 
     uint256[] internal whiteListGroups;
@@ -51,6 +50,14 @@ contract VaultStorage
         if(!delegateStatus) {
             revert("Operation perfomed Failed");
         }
+    }
+
+    function getTokenBalance(address _tokenAddress)
+        view
+        public
+        returns(uint256)
+    {
+        return tokenBalances.getTokenBalance(_tokenAddress);
     }
 
     /// @dev Function to return the NAV of the Vault.

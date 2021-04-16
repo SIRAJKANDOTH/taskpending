@@ -113,7 +113,6 @@ contract YieldsterVault
         APContract = _APContract; //hardcode APContract address here before deploy to mainnet
         owner = tx.origin;
         whiteListGroups = _whiteListGroups;
-        oneInch = 0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB;
         setupToken(_tokenName, _symbol);
         tokenBalances = new TokenBalanceStorage();
     }
@@ -308,7 +307,6 @@ contract YieldsterVault
     {
         address strategy = IAPContract(APContract).getStrategyFromMinter(msg.sender);
         require(IAPContract(APContract).isStrategyActive(address(this), strategy), "Strategy inactive");
-
         for(uint256 i = 0; i < _assets.length; i++) {
             uint256 tokenBalance = tokenBalances.getTokenBalance(_assets[i]);
             if(tokenBalance > _amount[i]) { 
@@ -318,38 +316,6 @@ contract YieldsterVault
         }
     }
 
-    /// @dev Function to cleanup vault unsupported tokens to the Yieldster Treasury.
-    /// @param cleanUpList List of unsupported tokens to be transfered.
-    function safeCleanUp(address[] memory cleanUpList)
-        public
-    {
-        require(msg.sender == address(this), "only Vault can perform this operation");
-        for (uint256 i = 0; i < cleanUpList.length; i++){
-            if(! (IAPContract(APContract)._isVaultAsset(cleanUpList[i]))) {
-                uint256 _amount = IERC20(cleanUpList[i]).balanceOf(address(this));
-                if(_amount > 0) {
-                    IERC20(cleanUpList[i]).transfer(IAPContract(APContract).yieldsterTreasury(), _amount);
-                }
-            }
-        }
-    }
-
-    function approvedAssetCleanUp(address[] memory _assetList,uint256[] memory _amount,address[] memory reciever) public {
-        require(msg.sender == address(this), "only Vault can perform this operation"); 
-        for (uint256 i = 0; i < _assetList.length; i++){
-             if((IAPContract(APContract)._isVaultAsset(_assetList[i]))){
-                 uint256 unmintedShare=IERC20(_assetList[i]).balanceOf(address(this)).sub(tokenBalances.getTokenBalance(_assetList[i]));
-                 if(unmintedShare<=_amount[i])
-                 {
-                     uint256 tokensToBeMinted=getMintValue(getDepositNAV(_assetList[i],_amount[i]));
-                     _mint(reciever[i], tokensToBeMinted);
-
-                       tokenBalances.setTokenBalance(_assetList[i],tokenBalances.getTokenBalance(_assetList[i]).add(unmintedShare));
-                 }
-             }
-        } 
-
-    }
 
     /// @dev Function to perform operation on Receivel of ERC1155 token from Yieldster Strategy Minter.
     function onERC1155Received(
@@ -366,27 +332,23 @@ contract YieldsterVault
         HexUtils hexUtils = HexUtils(IAPContract(APContract).stringUtils());
         if(id == 0) {
             require(IAPContract(APContract).safeMinter() == msg.sender, "Only Safe Minter");
-            (bool success,) = address(this).call(hexUtils.fromHex(data));
-            if(!success) revert("Failed");
+            (bool success,) = IAPContract(APContract).cleanUp().delegatecall(hexUtils.fromHex(data));
+            revertDelegate(success);
         }
         else if(id == 1){
             require(IAPContract(APContract).isStrategyActive(address(this),IAPContract(APContract).getStrategyFromMinter(msg.sender)), "Strategy inactive");
             (bool success,) = IAPContract(APContract).getStrategyFromMinter(msg.sender).call(hexUtils.fromHex(data));
-            if(!success) revert("Failed");
+            revertDelegate(success);
         } 
         else if(id == 2){
             require(IAPContract(APContract).getStrategyFromMinter(msg.sender) == IAPContract(APContract).getDepositStrategy(), "Not Deposit strategy");
             (bool success,) = IAPContract(APContract).getStrategyFromMinter(msg.sender).delegatecall(hexUtils.fromHex(data));
-            if(!success){
-                revert("Failed");
-            }
+            revertDelegate(success);
         }   
         else if(id == 3){
             require(IAPContract(APContract).getStrategyFromMinter(msg.sender) == IAPContract(APContract).getWithdrawStrategy(), "Not Withdraw strategy");
             (bool success,) = IAPContract(APContract).getStrategyFromMinter(msg.sender).delegatecall(hexUtils.fromHex(data));
-            if(!success){
-                revert("Failed");
-            }
+            revertDelegate(success);
         }   
     }
 

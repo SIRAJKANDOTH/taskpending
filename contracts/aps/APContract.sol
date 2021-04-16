@@ -29,11 +29,17 @@ contract APContract
 
     address public platFormManagementFee;
 
+    address public profitManagementFee;
+
     address public stockDeposit;
 
     address public stockWithdraw;
 
     address public safeMinter;
+
+    address public cleanUp;
+
+    address public oneInch;
 
     uint public test = 0;
 
@@ -92,11 +98,9 @@ contract APContract
         address[] activeManagementFeeList;
     }
 
-    mapping(address => vaultActiveManagemetFee) managementFeeStrategies;
-
     event VaultCreation(address vaultAddress);
 
-    // mapping(address => address[]) managementFeeStrategies;
+    mapping(address => vaultActiveManagemetFee) managementFeeStrategies;
 
     mapping(address => mapping(address => mapping(address => bool))) vaultStrategyEnabledProtocols;
 
@@ -119,14 +123,15 @@ contract APContract
     mapping(address => address) minterStrategyMap;
 
     
-    /// @dev Constructor function.
-    /// @param _whitelistModule Address of whitelist module.
-    /// @param _platformManagementFee Address of platform management fee strategy.
-    /// @param _stringUtils Address of string utils.
     constructor(
         address _whitelistModule,
         address _platformManagementFee,
-        address _stringUtils
+        address _profitManagementFee,
+        address _stringUtils,
+        address _yieldsterExchange,
+        address _oneInch,
+        address _priceModule,
+        address _cleanUp
     ) 
     public
     {
@@ -138,6 +143,11 @@ contract APContract
         whitelistModule = _whitelistModule;
         platFormManagementFee = _platformManagementFee;
         stringUtils = _stringUtils;
+        yieldsterExchange = _yieldsterExchange;
+        oneInch = _oneInch;
+        priceModule = _priceModule;
+        cleanUp = _cleanUp;
+        profitManagementFee = _profitManagementFee;
     }
 
     /// @dev Function to add proxy Factory address to Yieldster.
@@ -255,6 +265,24 @@ contract APContract
         safeMinter = _safeMinter;
     }
 
+    /// @dev Function to set cleanup contract.
+    /// @param _cleanUp Address of the clean up contract.
+    function setCleanUp(address _cleanUp)
+        onlyYieldsterDAO
+        public
+    {
+        cleanUp = _cleanUp;
+    }
+
+    /// @dev Function to set oneInch address.
+    /// @param _oneInch Address of the oneInch.
+    function setOneInch(address _oneInch)
+        onlyYieldsterDAO
+        public
+    {
+        oneInch = _oneInch;
+    }
+
     /// @dev Function to get strategy address from minter.
     /// @param _minter Address of the minter.
     function getStrategyFromMinter(address _minter) 
@@ -265,8 +293,6 @@ contract APContract
        return minterStrategyMap[_minter];
 
     }
-
-
 
     /// @dev Function to set Yieldster Exchange.
     /// @param _yieldsterExchange Address of the Yieldster exchange.
@@ -366,10 +392,15 @@ contract APContract
             });
         vaults[msg.sender] = newVault;
 
+        //applying Platform management fee
         managementFeeStrategies[msg.sender].isActiveManagementFee[platFormManagementFee] = true;
         managementFeeStrategies[msg.sender].activeManagementFeeIndex[platFormManagementFee] = managementFeeStrategies[msg.sender].activeManagementFeeList.length;
         managementFeeStrategies[msg.sender].activeManagementFeeList.push(platFormManagementFee);
-        // managementFeeStrategies[msg.sender] = [platFormManagementFee];
+
+        //applying Profit management fee
+        managementFeeStrategies[msg.sender].isActiveManagementFee[profitManagementFee] = true;
+        managementFeeStrategies[msg.sender].activeManagementFeeIndex[profitManagementFee] = managementFeeStrategies[msg.sender].activeManagementFeeList.length;
+        managementFeeStrategies[msg.sender].activeManagementFeeList.push(profitManagementFee);
     }
 
     /// @dev Function to Manage the vault assets.
@@ -457,7 +488,6 @@ contract APContract
         managementFeeStrategies[_vaultAddress].isActiveManagementFee[_managementFeeAddress] = true;
         managementFeeStrategies[_vaultAddress].activeManagementFeeIndex[_managementFeeAddress] = managementFeeStrategies[_vaultAddress].activeManagementFeeList.length;
         managementFeeStrategies[_vaultAddress].activeManagementFeeList.push(_managementFeeAddress);
-        // managementFeeStrategies[_vaultAddress].push(_managementFeeAddress);
     }
 
     /// @dev Function to deactivate a vault strategy.

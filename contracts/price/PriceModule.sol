@@ -13,8 +13,6 @@ contract PriceModule is ChainlinkService
     
     address public priceModuleManager;
     
-    address public APContract;
-
     address public curveRegistry;
 
     struct ChainlinkToken {
@@ -34,11 +32,10 @@ contract PriceModule is ChainlinkService
     mapping(address => CurveToken) curveTokens;
     mapping(address => YearnToken) yearnTokens;
 
-    constructor(address _APContract, address _curveRegistry)
+    constructor(address _curveRegistry)
     public
     {
         priceModuleManager = msg.sender;
-        APContract = _APContract;
         curveRegistry = _curveRegistry;
     }
 

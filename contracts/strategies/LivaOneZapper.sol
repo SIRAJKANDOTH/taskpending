@@ -10,7 +10,7 @@ import "../interfaces/yearn/IVault.sol";
 import "../interfaces/zapper/IZapper.sol";
 import "../interfaces/IExchange.sol";
 
-contract LivaOnelZapper 
+contract LivaOneZapper 
     is 
     ERC20,
     ERC20Detailed 
