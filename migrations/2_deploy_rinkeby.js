@@ -1,7 +1,7 @@
 const YieldsterVault = artifacts.require("./YieldsterVault.sol");
-// const Whitelist = artifacts.require("./whitelist/Whitelist.sol");
+const Whitelist = artifacts.require("./whitelist/Whitelist.sol");
 const APContract = artifacts.require("./aps/APContract.sol");
-// const PriceModule = artifacts.require("./price/PriceModule.sol");
+const PriceModule = artifacts.require("./price/PriceModule.sol");
 const ProxyFactory = artifacts.require(
 	"./proxies/YieldsterVaultProxyFactory.sol"
 );
@@ -35,17 +35,17 @@ module.exports = async (deployer) => {
 	await deployer.deploy(ProfitManagementFee);
 	const profitManagementFee = await ProfitManagementFee.deployed();
 
-	// await deployer.deploy(Whitelist);
-	// const whitelist = await Whitelist.deployed();
+	await deployer.deploy(Whitelist);
+	const whitelist = await Whitelist.deployed();
 
 	await deployer.deploy(HexUtils);
 	const hexUtils = await HexUtils.deployed();
 
-	// await deployer.deploy(
-	// 	PriceModule,
-	// 	"0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5"
-	// );
-	// const priceModule = await PriceModule.deployed();
+	await deployer.deploy(
+		PriceModule,
+		"0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5"
+	);
+	const priceModule = await PriceModule.deployed();
 
 	await deployer.deploy(Exchange);
 	const exchange = await Exchange.deployed();
@@ -55,13 +55,13 @@ module.exports = async (deployer) => {
 
 	await deployer.deploy(
 		APContract,
-		"0xf8C992D12DC8a15e156869058717baC13d383F26",
+		whitelist.address,
 		managementFee.address,
 		profitManagementFee.address,
 		hexUtils.address,
 		exchange.address,
 		"0xC586BeF4a0992C495Cf22e1aeEE4E446CECDee0E",
-		"0x7dF98189D32aa4e92649dBe5d837126bE4e53d1B",
+		priceModule.address,
 		cleanUp.address
 	);
 	const apContract = await APContract.deployed();
@@ -104,8 +104,6 @@ module.exports = async (deployer) => {
 	await deployer.deploy(LivaOneMinter, apContract.address, livaOne.address);
 	const livaOneMinter = await LivaOneMinter.deployed();
 
-	await apContract.setYieldsterExchange(exchange.address);
-
 	await apContract.setStockDepositWithdraw(
 		stockDeposit.address,
 		stockWithdraw.address
@@ -128,16 +126,6 @@ module.exports = async (deployer) => {
 		"LINK",
 		"LINK Coin",
 		"0x01be23585060835e02b77ef475b0cc51aa1e0709"
-	);
-	await apContract.addAsset(
-		"BNB",
-		"Binance Coin",
-		"0x030b0a08ecadde5ac33859a48d87416946c966a1"
-	);
-	await apContract.addAsset(
-		"fnx",
-		"FinanceX token",
-		"0xd729a77e319e059b4467c402e173c552e63a6c55"
 	);
 
 	//adding protocols
