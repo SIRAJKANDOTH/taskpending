@@ -2,26 +2,16 @@ const YieldsterVault = artifacts.require("./YieldsterVault.sol");
 const Whitelist = artifacts.require("./whitelist/Whitelist.sol");
 const APContract = artifacts.require("./aps/APContract.sol");
 const PriceModule = artifacts.require("./price/PriceModule.sol");
-const ProxyFactory = artifacts.require(
-	"./proxies/YieldsterVaultProxyFactory.sol"
-);
-const PlatformManagementFee = artifacts.require(
-	"./delegateContracts/ManagementFee.sol"
-);
-const ProfitManagementFee = artifacts.require(
-	"./delegateContracts/ProfitManagementFee.sol"
-);
+const ProxyFactory = artifacts.require("./proxies/YieldsterVaultProxyFactory.sol");
+const PlatformManagementFee = artifacts.require("./delegateContracts/ManagementFee.sol");
+const ProfitManagementFee = artifacts.require("./delegateContracts/ProfitManagementFee.sol");
 const YearnItAll = artifacts.require("./strategies/YearnItAllZapper.sol");
 const LivaOne = artifacts.require("./strategies/LivaOneZapper.sol");
 const YearnItAllMinter = artifacts.require("./strategies/YearnItAllMinter.sol");
 const LivaOneMinter = artifacts.require("./strategies/LivaOneMinter.sol");
 const HexUtils = artifacts.require("./utils/HexUtils.sol");
-const StockDeposit = artifacts.require(
-	"./smartStrategies/deposit/StockDeposit.sol"
-);
-const StockWithdraw = artifacts.require(
-	"./smartStrategies/deposit/StockWithdraw.sol"
-);
+const StockDeposit = artifacts.require("./smartStrategies/deposit/StockDeposit.sol");
+const StockWithdraw = artifacts.require("./smartStrategies/deposit/StockWithdraw.sol");
 const Exchange = artifacts.require("./exchange/Exchange.sol");
 const CleanUp = artifacts.require("./cleanUp/CleanUp.sol");
 
@@ -46,6 +36,10 @@ module.exports = async (deployer) => {
 		"0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5"
 	);
 	const priceModule = await PriceModule.deployed();
+
+	await priceModule.addToken("0x5592ec0cfb4dbc12d3ab100b257153436a1f0fea", "0x2bA49Aaa16E6afD2a993473cfB70Fa8559B523cF", '1')
+	await priceModule.addToken("0x4dbcdf9b62e891a7cec5a2568c3f4faf9e8abe2b", "0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB", '1')
+	await priceModule.addToken("0x01be23585060835e02b77ef475b0cc51aa1e0709", "0xd8bD0a1cB028a31AA859A21A3758685a95dE4623", '1')
 
 	await deployer.deploy(Exchange);
 	const exchange = await Exchange.deployed();

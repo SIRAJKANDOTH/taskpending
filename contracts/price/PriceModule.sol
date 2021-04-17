@@ -4,6 +4,8 @@ import "./ChainlinkService.sol";
 import "../external/YieldsterVaultMath.sol";
 import "../interfaces/IRegistry.sol";
 import "../interfaces/yearn/IVault.sol";
+import "../interfaces/IYieldsterVault.sol";
+import "../interfaces/IYieldsterStrategy.sol";
 
 
 contract PriceModule is ChainlinkService
@@ -15,22 +17,13 @@ contract PriceModule is ChainlinkService
     
     address public curveRegistry;
 
-    struct ChainlinkToken {
+    struct Token {
         address feedAddress;
+        uint256 tokenType;
         bool created;
     }
 
-    struct CurveToken {
-        bool created;
-    }
-
-    struct YearnToken {
-        bool created;
-    }
-
-    mapping(address => ChainlinkToken) chainlinkTokens;
-    mapping(address => CurveToken) curveTokens;
-    mapping(address => YearnToken) yearnTokens;
+    mapping(address => Token) tokens;
 
     constructor(address _curveRegistry)
     public
@@ -40,41 +33,29 @@ contract PriceModule is ChainlinkService
     }
 
     function setManager(address _manager)
-        public
+        external
     {
         require(msg.sender == priceModuleManager, "Not Authorized");
         priceModuleManager = _manager;
     }
 
+    function addToken(
+        address _tokenAddress, 
+        address _feedAddress, 
+        uint256 _tokenType
+    )
+    external
+    {
+        require(msg.sender == priceModuleManager, "Not Authorized");
+        Token memory newToken = Token({ feedAddress:_feedAddress, tokenType: _tokenType, created:true});
+        tokens[_tokenAddress] = newToken;
+    }
+
     function setCurveRegistry(address _curveRegistry)
-        public
+        external
     {
         require(msg.sender == priceModuleManager, "Not Authorized");
         curveRegistry = _curveRegistry;
-    }
-
-    function addChainlinkToken(address _tokenAddress, address _feedAddress)
-        public
-    {
-        require(msg.sender == priceModuleManager, "Not Authorized");
-        ChainlinkToken memory newChainlinkToken = ChainlinkToken({ feedAddress:_feedAddress, created:true});
-        chainlinkTokens[_tokenAddress] = newChainlinkToken;
-    }
-
-    function addYearnToken(address _tokenAddress)
-        public
-    {
-        require(msg.sender == priceModuleManager, "Not Authorized");
-        YearnToken memory newYearnToken = YearnToken({created:true});
-        yearnTokens[_tokenAddress] = newYearnToken;
-    }
-
-    function addCurveToken(address _tokenAddress)
-        public
-    {
-        require(msg.sender == priceModuleManager, "Not Authorized");
-        CurveToken memory newCurveToken = CurveToken({created:true});
-        curveTokens[_tokenAddress] = newCurveToken;
     }
 
 
@@ -83,8 +64,10 @@ contract PriceModule is ChainlinkService
         view
         returns(uint256)
     {
-        if(chainlinkTokens[_tokenAddress].created) {
-            (int price, , uint8 decimals) = getLatestPrice(chainlinkTokens[_tokenAddress].feedAddress);
+        require(tokens[_tokenAddress].created, "Token not present");
+
+        if(tokens[_tokenAddress].tokenType == 1) {
+            (int price, , uint8 decimals) = getLatestPrice(tokens[_tokenAddress].feedAddress);
 
             if(decimals < 18) {
                 return (uint256(price)).mul(10 ** uint256(18 - decimals));
@@ -95,41 +78,25 @@ contract PriceModule is ChainlinkService
             else {
                 return uint256(price);
             }
-        } else if(curveTokens[_tokenAddress].created) {
+
+        } else if(tokens[_tokenAddress].tokenType == 2) {
             return IRegistry(curveRegistry).get_virtual_price_from_lp_token(_tokenAddress);
-        } else if(yearnTokens[_tokenAddress].created) {
+
+        } else if(tokens[_tokenAddress].tokenType == 3) {
             address token = IVault(_tokenAddress).token();
             uint256 tokenPrice = getUSDPrice(token);
             return (tokenPrice.mul(IVault(_tokenAddress).getPricePerFullShare())).div(1e18);
+
+        } else if(tokens[_tokenAddress].tokenType == 4) {
+            return IYieldsterStrategy(_tokenAddress).tokenValueInUSD();
+
+        } else if(tokens[_tokenAddress].tokenType == 5) {
+            return IYieldsterVault(_tokenAddress).tokenValueInUSD();
+
         } else {
             revert("Token not present");
         }
     }
-
-
-    // function getUSDPrice(address _tokenAddress)  
-    //     public 
-    //     view
-    //     returns(uint256)
-    // {
-    //     require(feedAddress[_tokenAddress] != address(0), "This asset price is not present");
-    //     (int price, , uint8 decimals) = getLatestPrice(feedAddress[_tokenAddress]);
-
-    //    if(decimals < 18)
-    //     {
-    //         return (uint256(price)).mul(10 ** uint256(18 - decimals));
-    //     }
-    //     else if (decimals > 18)
-    //     {
-    //         return (uint256(price)).div(uint256(decimals - 18));
-    //     }
-    //     else 
-    //     {
-    //         return uint256(price);
-    //     }
-    // }
-
-    // Use this function in testing environment other than rinkeby
 
     // function getUSDPrice(address _tokenAddress) 
     //     public 
