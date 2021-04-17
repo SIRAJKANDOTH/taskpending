@@ -153,6 +153,7 @@ module.exports = async (deployer) => {
 		"0x92506Ee00ad88354fa25E6CbFa7d42116d6823C0",
 		"2000000000000000"
 	);
+	
 	await apContract.addStrategy(
 		"Liva One",
 		livaOne.address,
