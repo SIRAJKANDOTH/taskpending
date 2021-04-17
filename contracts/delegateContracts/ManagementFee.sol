@@ -11,7 +11,6 @@ contract ManagementFee
         uint256 blockDifference = uint256(block.number).sub(tokenBalances.getLastTransactionBlockNumber());
         uint256 vaultNAV = getVaultNAV();
         if(vaultNAV > 0) {
-            // uint256 tokensPriceTobeMinted= (((uint256(1 + 2/100) ** uint256(1/2628000)) ** blockDifference).sub(1)).mul(vaultNAV);
             uint256 navIntrest = vaultNAV.mul(blockDifference.mul(1e18)).mul(uint256(2).mul(1e18)).div(uint256(262800000).mul(1e36));
             uint256 tokensTobeMinted = navIntrest.mul(1e18).div(tokenValueInUSD());
             _mint(IAPContract(APContract).yieldsterDAO(), tokensTobeMinted);

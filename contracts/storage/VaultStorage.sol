@@ -34,7 +34,6 @@ contract VaultStorage
     address[] internal assetList;
     mapping(address => bool) isAssetDeposited;
 
-    // Whitelist internal whiteList;
 
     // Token balance storage keeps track of tokens that are deposited to safe without worrying direct depoited assets affesting the NAV;
     TokenBalanceStorage tokenBalances;
@@ -47,9 +46,8 @@ contract VaultStorage
         pure
         internal
     {
-        if(!delegateStatus) {
-            revert("Operation perfomed Failed");
-        }
+        if(!delegateStatus) revert("Operation perfomed Failed");
+
     }
 
     function getTokenBalance(address _tokenAddress)
