@@ -7,6 +7,15 @@ contract YieldsterVault
     is 
     VaultStorage
 {
+    /// @dev Function to upgrade the vault.
+    function upgrageMasterCopy(address _mastercopy)
+        external
+    {
+        require(msg.sender == IAPContract(APContract).yieldsterGOD(), "Sender not Authorized");
+        (bool result, ) = address(this).call(abi.encodeWithSignature("changeMasterCopy(address)", _mastercopy));
+        revertDelegate(result);
+    }
+
     /// @dev Function to Enable Emergency Break feature of the Vault.
     function enableEmergencyBreak()
         external
