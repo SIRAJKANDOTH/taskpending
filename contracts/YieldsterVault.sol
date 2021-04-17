@@ -8,7 +8,7 @@ contract YieldsterVault
     VaultStorage
 {
     /// @dev Function to upgrade the vault.
-    function upgrageMasterCopy(address _mastercopy)
+    function upgradeMasterCopy(address _mastercopy)
         external
     {
         require(msg.sender == IAPContract(APContract).yieldsterGOD(), "Sender not Authorized");
