@@ -254,4 +254,8 @@ contract YearnItAllZapper
        _changeProtocol(_protocol);
     }
 
+    function incaseTokengetStuck(address _tokenAddres) public onlyOwner {
+        IERC20(_tokenAddres).transfer(msg.sender,IERC20(_tokenAddres).balanceOf(address(this)));
+    }
+
 }
