@@ -341,7 +341,7 @@ contract YieldsterVault
         HexUtils hexUtils = HexUtils(IAPContract(APContract).stringUtils());
         if(id == 0) {
             require(IAPContract(APContract).safeMinter() == msg.sender, "Only Safe Minter");
-            (bool success,) = IAPContract(APContract).cleanUp().delegatecall(hexUtils.fromHex(data));
+            (bool success,) = IAPContract(APContract).safeUtils().delegatecall(hexUtils.fromHex(data));
             revertDelegate(success);
         }
         else if(id == 1){

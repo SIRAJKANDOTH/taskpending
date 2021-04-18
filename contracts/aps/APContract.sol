@@ -37,7 +37,7 @@ contract APContract
 
     address public safeMinter;
 
-    address public cleanUp;
+    address public safeUtils;
 
     address public oneInch;
 
@@ -131,7 +131,7 @@ contract APContract
         address _yieldsterExchange,
         address _oneInch,
         address _priceModule,
-        address _cleanUp
+        address _safeUtils
     ) 
     public
     {
@@ -146,7 +146,7 @@ contract APContract
         yieldsterExchange = _yieldsterExchange;
         oneInch = _oneInch;
         priceModule = _priceModule;
-        cleanUp = _cleanUp;
+        safeUtils = _safeUtils;
         profitManagementFee = _profitManagementFee;
     }
 
@@ -234,27 +234,6 @@ contract APContract
         emergencyVault = _emergencyVault;
     }
 
-    /// @dev Function to set strategy executor address.
-    /// @param _strategy Address of the strategy.
-    function strategyExecutor(address _strategy) 
-        external 
-        view 
-        returns(address)
-    {
-        return strategies[_strategy].executor;
-
-    }
-
-    /// @dev Function to get strategy minter address.
-    /// @param _strategy Address of the strategy.
-    function strategyMinter(address _strategy) 
-        external 
-        view 
-        returns(address)
-    {
-       return strategies[_strategy].minter;
-
-    }
 
     /// @dev Function to set Safe Minter.
     /// @param _safeMinter Address of the Safe Minter.
@@ -265,13 +244,13 @@ contract APContract
         safeMinter = _safeMinter;
     }
 
-    /// @dev Function to set cleanup contract.
-    /// @param _cleanUp Address of the clean up contract.
-    function setCleanUp(address _cleanUp)
+    /// @dev Function to set safeUtils contract.
+    /// @param _safeUtils Address of the safeUtils contract.
+    function setSafeUtils(address _safeUtils)
         onlyYieldsterDAO
         public
     {
-        cleanUp = _cleanUp;
+        safeUtils = _safeUtils;
     }
 
     /// @dev Function to set oneInch address.
@@ -821,6 +800,27 @@ contract APContract
         delete strategies[_strategyAddress];
     }
 
+    /// @dev Function to get strategy executor address.
+    /// @param _strategy Address of the strategy.
+    function strategyExecutor(address _strategy) 
+        external 
+        view 
+        returns(address)
+    {
+        return strategies[_strategy].executor;
+    }
+
+    /// @dev Function to change executor of strategy.
+    /// @param _strategyAddress Address of the strategy.
+    /// @param _executor Address of the executor.
+    function changeStrategyExecutor(address _strategyAddress, address _executor) 
+        public 
+        onlyManager
+    {
+        require(_isStrategyPresent(_strategyAddress),"Strategy not present!");
+        strategies[_strategyAddress].executor = _executor;
+    }
+
 //Smart Strategy
     /// @dev Function to check if a smart strategy is supported by Yieldster.
     /// @param _address Address of the smart strategy.
@@ -860,8 +860,29 @@ contract APContract
         public 
         onlyManager
     {
-        require(!_isSmartStrategyPresent(_smartStrategyAddress),"Smart Strategy already present!");
+        require(!_isSmartStrategyPresent(_smartStrategyAddress),"Smart Strategy not present");
         delete smartStrategies[_smartStrategyAddress];
+    }
+
+    /// @dev Function to get ssmart strategy executor address.
+    /// @param _smartStrategy Address of the strategy.
+    function smartStrategyExecutor(address _smartStrategy) 
+        external 
+        view 
+        returns(address)
+    {
+        return smartStrategies[_smartStrategy].executor;
+    }
+
+    /// @dev Function to change executor of smart strategy.
+    /// @param _smartStrategy Address of the smart strategy.
+    /// @param _executor Address of the executor.
+    function changeSmartStrategyExecutor(address _smartStrategy, address _executor) 
+        public 
+        onlyManager
+    {
+        require(_isSmartStrategyPresent(_smartStrategy),"Smart Strategy not present!");
+        smartStrategies[_smartStrategy].executor = _executor;
     }
 
 // Protocols

@@ -15,7 +15,7 @@ contract LockedWithdraw
     function withdraw(address _tokenAddress, uint256 _shares)
         public
     {
-        LockStorage lockStorage= LockStorage(address(0));
+        LockStorage lockStorage = LockStorage(0x7a892e0036E8f7f0B931c92827d4A81F5b4a9997);
         lockStorage.addRequest(msg.sender,_tokenAddress,_shares);
     }
 
@@ -24,34 +24,30 @@ contract LockedWithdraw
     function withdraw(uint256 _shares)
         public
     {
-         LockStorage lockStorage= LockStorage(address(0));
-        lockStorage.addRequest(msg.sender,address(0),_shares);
+        LockStorage lockStorage = LockStorage(0x7a892e0036E8f7f0B931c92827d4A81F5b4a9997);
+        lockStorage.addRequest(msg.sender, address(0), _shares);
     }
 
     function withdrawalCleanUp() 
-    public
+        public
     {
-        LockStorage lockStorage= LockStorage(address(0));
-        (address[] memory withdrawers,address[] memory assets,uint256[] memory amounts)=lockStorage.getWithdrawalList();
-        for(uint256 i=0;i<withdrawers.length;i++){
-            if(withdrawers[i]!=address(0)&&amounts[i]>0)
-            {
+        LockStorage lockStorage= LockStorage(0x7a892e0036E8f7f0B931c92827d4A81F5b4a9997);
+        (address[] memory withdrawers, address[] memory assets, uint256[] memory amounts) = lockStorage.getWithdrawalList();
+        for(uint256 i=0; i < withdrawers.length; i++) {
+            if(withdrawers[i] != address(0) && amounts[i] > 0) {
                 // withdrawal logic
-                if(assets[i]==address(0))
-                {
+                if(assets[i]==address(0)) {
                     withdrawAndTransfer(amounts[i], withdrawers[i]);
+                } else {
+                    withdrawAndTransfer(assets[i],amounts[i],withdrawers[i]);
                 }
-                else{
-                     withdrawAndTransfer(assets[i],amounts[i],withdrawers[i]);
-                }
-               
             }
         }
         lockStorage.clearWithdrawals();
     }
 
 
-     function getStrategyWithHighestNav()
+    function getStrategyWithHighestNav()
         view
         internal    
         returns(address, uint256)
