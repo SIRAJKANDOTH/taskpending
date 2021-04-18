@@ -45,9 +45,15 @@ contract LivaOneZapper
     }
 
 
+    function addProtocol(address _protocolAddress) public onlyOwner{
+        require(_protocolAddress!=address(0),"Zero address");
+        protocolList.push(_protocolAddress);
+    }
+
+
     constructor(address _APContract, address[] memory _protocols) 
     public 
-    ERC20Detailed("YRNITALL", "Yearn it all", 18)
+    ERC20Detailed("LVAONE", "LIVA ONE", 18)
     {
         APContract = _APContract;
         for (uint256 i = 0; i < _protocols.length; i++) {
