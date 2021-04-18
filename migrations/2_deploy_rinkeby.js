@@ -14,6 +14,7 @@ const StockDeposit = artifacts.require("./smartStrategies/deposit/StockDeposit.s
 const StockWithdraw = artifacts.require("./smartStrategies/deposit/StockWithdraw.sol");
 const Exchange = artifacts.require("./exchange/Exchange.sol");
 const CleanUp = artifacts.require("./cleanUp/CleanUp.sol");
+const OneInch = artifacts.require("./oneInchMock/OneInch.sol");
 
 module.exports = async (deployer) => {
 	await deployer.deploy(YieldsterVault);
@@ -50,6 +51,9 @@ module.exports = async (deployer) => {
 	await deployer.deploy(CleanUp);
 	const cleanUp = await CleanUp.deployed();
 
+	await deployer.deploy(OneInch);
+	const oneInch = await OneInch.deployed();
+
 	await deployer.deploy(
 		APContract,
 		whitelist.address,
@@ -57,7 +61,7 @@ module.exports = async (deployer) => {
 		profitManagementFee.address,
 		hexUtils.address,
 		exchange.address,
-		"0xC586BeF4a0992C495Cf22e1aeEE4E446CECDee0E",
+		oneInch.address,
 		priceModule.address,
 		cleanUp.address
 	);
