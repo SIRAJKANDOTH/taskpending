@@ -12,6 +12,7 @@ module.exports = async (deployer) => {
         yieldsterVaultMasterCopy.address,
         apContract.address
     );
+    const proxyFactory = await ProxyFactory.deployed();
 
     console.log("Adding proxy factory to the APContract")
     await apContract.addProxyFactory(proxyFactory.address);

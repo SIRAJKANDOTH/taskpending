@@ -7,7 +7,7 @@ module.exports = async (deployer) => {
 
     await deployer.deploy(
         SafeMinter,
-        accounts[0]
+        "0x5091aF48BEB623b3DA0A53F726db63E13Ff91df9"
     );
     const safeMinter = await SafeMinter.deployed();
 
