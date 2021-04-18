@@ -50,12 +50,11 @@ contract LivaOneZapper
     ERC20Detailed("YRNITALL", "Yearn it all", 18)
     {
         APContract = _APContract;
-        for (uint256 i = 0; i < _protocols.length; i++) 
-        {
+        for (uint256 i = 0; i < _protocols.length; i++) {
             protocols[_protocols[i]] = true;
             protocolList.push(_protocols[i]);
         }
-        owner=msg.sender;
+        owner = msg.sender;
     }
 
     function setActiveProtocol(address _protocol)
@@ -67,8 +66,11 @@ contract LivaOneZapper
         safeActiveProtocol[msg.sender] = _protocol;
     }
 
-    function setSlipage(uint256 _slipage) public onlyOwner{
-        require(_slipage<10000,"Give the percentage");
+    function setSlipage(uint256 _slipage) 
+        public 
+        onlyOwner
+    {
+        require(_slipage < 10000, "Give the percentage");
         slipage=_slipage;
     }
 
@@ -102,24 +104,21 @@ contract LivaOneZapper
         uint256 _shares;
         address _yVault = safeActiveProtocol[msg.sender];
         IERC20(_depositAsset).transferFrom(msg.sender, address(this), _amount);
-        uint256 yvtokenPriceInUSD=IAPContract(APContract).getUSDPrice(_yVault);
-        uint256 strategyshareInUSD=_amount.mul(IAPContract(APContract).getUSDPrice(_depositAsset)).div(1e18);
-        uint256 equivalentyvTokenCount=strategyshareInUSD.mul(1e18).div(yvtokenPriceInUSD);
-        uint256 minReturnTokens=equivalentyvTokenCount-equivalentyvTokenCount.mul(slipage).div(10000);
+        uint256 yvtokenPriceInUSD = IAPContract(APContract).getUSDPrice(_yVault);
+        uint256 strategyshareInUSD = _amount.mul(IAPContract(APContract).getUSDPrice(_depositAsset)).div(1e18);
+        uint256 equivalentyvTokenCount = strategyshareInUSD.mul(1e18).div(yvtokenPriceInUSD);
+        uint256 minReturnTokens = equivalentyvTokenCount - equivalentyvTokenCount.mul(slipage).div(10000);
         IERC20(_depositAsset).approve(curveZapper,  _amount);
         bytes memory swapData;
         IZapper(curveZapper).ZapInCurveVault(_depositAsset, _amount,_depositAsset,_yVault,minReturnTokens,address(0),swapData,address(0));
-        if(totalSupply()==0)
-        {
-        
-        _shares=_amount;
-        
-        }
-        else{
-                _shares = getMintValue(getDepositNAV(_depositAsset, _amount));
+
+        if(totalSupply() == 0) {
+            _shares=_amount;
+        } else {
+            _shares = getMintValue(getDepositNAV(_depositAsset, _amount));
         }
             
-        if(_shares>0){
+        if(_shares > 0) {
             _mint(msg.sender, _shares);
         }
     }
@@ -140,10 +139,8 @@ contract LivaOneZapper
         returns (uint256) 
     {
         uint256 strategyNAV = 0;
-        for (uint256 i = 0; i < protocolList.length; i++) 
-        {
-            if(IERC20(protocolList[i]).balanceOf(address(this)) > 0)
-            {
+        for (uint256 i = 0; i < protocolList.length; i++) {
+            if(IERC20(protocolList[i]).balanceOf(address(this)) > 0) {
                 uint256 tokenUSD = IAPContract(APContract).getUSDPrice(protocolList[i]);
                 strategyNAV += (IERC20(protocolList[i]).balanceOf(address(this)).mul(uint256(tokenUSD)));       
             }
@@ -162,12 +159,9 @@ contract LivaOneZapper
 
     function tokenValueInUSD() public view returns(uint256)
     {
-        if(getStrategyNAV() == 0 || totalSupply() == 0)
-        {
+        if(getStrategyNAV() == 0 || totalSupply() == 0) {
             return 0;
-        }
-        else
-        {
+        } else {
             return (getStrategyNAV().mul(1e18)).div(totalSupply());
         }
     }
@@ -183,35 +177,30 @@ contract LivaOneZapper
         uint256 strategyTokenValueInUSD = (_shares.mul(getStrategyNAV())).div(totalSupply());
         uint256 vaultTokenPriceInUSD=IAPContract(APContract).getUSDPrice(safeActiveProtocol[msg.sender]);
         // Number of tokens tob removed from liquidity
-        uint256 vaultTokensToRemoved=strategyTokenValueInUSD.mul(1e18).div(vaultTokenPriceInUSD);
-         uint256 minTokensCount=vaultTokensToRemoved - vaultTokensToRemoved.mul(slipage).div(10000);
+        uint256 vaultTokensToRemoved = strategyTokenValueInUSD.mul(1e18).div(vaultTokenPriceInUSD);
+        uint256 minTokensCount = vaultTokensToRemoved - vaultTokensToRemoved.mul(slipage).div(10000);
         _burn(msg.sender, _shares);
-        if(_withrawalAsset==address(0))
-        {
+        if(_withrawalAsset == address(0)) {
             IERC20(safeActiveProtocol[msg.sender]).transfer(msg.sender,vaultTokensToRemoved);
             return (safeActiveProtocol[msg.sender],vaultTokensToRemoved);   
-
-        }
-        else{
+        } else {
             uint256 returnedTokens=IZapper(zapOutZontract).ZapOut(msg.sender,_withrawalAsset,safeActiveProtocol[msg.sender],2,vaultTokensToRemoved,minTokensCount);
             return (_withrawalAsset,returnedTokens);   
-            
         }
         // 1 percentage of slipage
 
-             
     }
 
 
     function _changeProtocol(address _protocol) private
     {
-        uint256 _shares= _getProtocolBalanceForSafe();
+        uint256 _shares = _getProtocolBalanceForSafe();
         uint256 strategyTokenValueInUSD = (_shares.mul(getStrategyNAV())).div(totalSupply());
-        uint256 tokensToBeChanged=strategyTokenValueInUSD.mul(1e18).div(IAPContract(APContract).getUSDPrice(safeActiveProtocol[msg.sender]));
-        uint256 mintokens=tokensToBeChanged-tokensToBeChanged.mul(slipage).div(10000);
+        uint256 tokensToBeChanged = strategyTokenValueInUSD.mul(1e18).div(IAPContract(APContract).getUSDPrice(safeActiveProtocol[msg.sender]));
+        uint256 mintokens = tokensToBeChanged-tokensToBeChanged.mul(slipage).div(10000);
         IERC20(safeActiveProtocol[msg.sender]).approve(curveZapper, tokensToBeChanged);
         bytes memory swapData;
-        IZapper(curveZapper).ZapInCurveVault(safeActiveProtocol[msg.sender], tokensToBeChanged,safeActiveProtocol[msg.sender],_protocol,mintokens,address(0),swapData,address(0));
+        IZapper(curveZapper).ZapInCurveVault(safeActiveProtocol[msg.sender], tokensToBeChanged, safeActiveProtocol[msg.sender], _protocol, mintokens, address(0),swapData,address(0));
         safeActiveProtocol[msg.sender] = _protocol;
     }
 
