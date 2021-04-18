@@ -18,7 +18,7 @@ module.exports = {
 			provider: () => {
 				return new HDWalletProvider(mnemonic, token);
 			},
-			gasPrice: 25000000000, // 25 Gwei
+			gasPrice: 75000000000, // 75 Gwei
 			networkCheckTimeout: 10000000,
 			skipDryRun: true,
 		},

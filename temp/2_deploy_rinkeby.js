@@ -52,8 +52,8 @@ module.exports = async (deployer) => {
 	await deployer.deploy(SafeUtils);
 	const safeUtils = await SafeUtils.deployed();
 
-	await deployer.deploy(SafeMinter);
-	const safeUtils = await SafeMinter.deployed();
+	await deployer.deploy(SafeMinter, "0x5091aF48BEB623b3DA0A53F726db63E13Ff91df9");
+	const safeMinter = await SafeMinter.deployed();
 
 	await deployer.deploy(OneInch, priceModule.address);
 	const oneInch = await OneInch.deployed();
@@ -70,6 +70,8 @@ module.exports = async (deployer) => {
 		safeUtils.address
 	);
 	const apContract = await APContract.deployed();
+
+	await apContract.setSafeMinter(safeMinter.address);
 
 	await deployer.deploy(StockDeposit);
 	const stockDeposit = await StockDeposit.deployed();

@@ -4,13 +4,11 @@ import "../interfaces/IAPContract.sol";
 
 contract SafeMinter is ERC1155
 {
-    address public APContract;
     address public owner;
     address public executor;
     
-    constructor(address _APContract, address _executor) public ERC1155("https://game.example/api/item/{id}.json") 
+    constructor(address _executor) public ERC1155("https://game.example/api/item/{id}.json") 
     {
-        APContract = _APContract;
         owner = msg.sender;
         executor = _executor;
     }
@@ -21,14 +19,14 @@ contract SafeMinter is ERC1155
         ) 
         public
     {
-        require(executor == msg.sender, "Not AUthorized");
+        require(executor == msg.sender, "Not Authorized");
         _mint(safeAddress, 0, 10**18, bytes(instruction));
     }
 
     function setExecutor(address _executor)
         public
     {
-        require(msg.sender == owner, "Not AUthorized");
+        require(msg.sender == owner, "Not Authorized");
         executor = _executor;
     }
 }
