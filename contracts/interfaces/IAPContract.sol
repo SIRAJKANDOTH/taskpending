@@ -37,6 +37,8 @@ interface IAPContract{
 
     function strategyExecutor(address) external view returns(address);
 
+    function smartStrategyExecutor(address) external view returns(address);
+
     function strategyMinter(address) external view returns(address);
 
     function stockDeposit() external view returns(address);
@@ -49,7 +51,7 @@ interface IAPContract{
 
     function safeMinter() external returns(address);
 
-    function cleanUp() external returns(address);
+    function safeUtils() external returns(address);
 
     function oneInch() external returns(address);
     

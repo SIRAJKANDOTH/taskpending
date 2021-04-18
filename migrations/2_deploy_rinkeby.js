@@ -13,7 +13,8 @@ const HexUtils = artifacts.require("./utils/HexUtils.sol");
 const StockDeposit = artifacts.require("./smartStrategies/deposit/StockDeposit.sol");
 const StockWithdraw = artifacts.require("./smartStrategies/deposit/StockWithdraw.sol");
 const Exchange = artifacts.require("./exchange/Exchange.sol");
-const CleanUp = artifacts.require("./cleanUp/CleanUp.sol");
+const SafeUtils = artifacts.require("./safeUtils/SafeUtils.sol");
+const SafeMinter = artifacts.require("./safeUtils/SafeMinter.sol")
 const OneInch = artifacts.require("./oneInchMock/OneInch.sol");
 
 module.exports = async (deployer) => {
@@ -48,10 +49,13 @@ module.exports = async (deployer) => {
 	await deployer.deploy(Exchange);
 	const exchange = await Exchange.deployed();
 
-	await deployer.deploy(CleanUp);
-	const cleanUp = await CleanUp.deployed();
+	await deployer.deploy(SafeUtils);
+	const safeUtils = await SafeUtils.deployed();
 
-	await deployer.deploy(OneInch);
+	await deployer.deploy(SafeMinter);
+	const safeUtils = await SafeMinter.deployed();
+
+	await deployer.deploy(OneInch, priceModule.address);
 	const oneInch = await OneInch.deployed();
 
 	await deployer.deploy(
@@ -63,7 +67,7 @@ module.exports = async (deployer) => {
 		exchange.address,
 		oneInch.address,
 		priceModule.address,
-		cleanUp.address
+		safeUtils.address
 	);
 	const apContract = await APContract.deployed();
 

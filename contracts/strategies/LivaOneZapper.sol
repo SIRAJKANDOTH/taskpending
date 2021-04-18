@@ -46,7 +46,7 @@ contract LivaOneZapper
 
 
     function addProtocol(address _protocolAddress) public onlyOwner{
-        require(_protocolAddress!=address(0),"Zero address");
+        require(_protocolAddress != address(0),"Zero address");
         protocolList.push(_protocolAddress);
     }
 

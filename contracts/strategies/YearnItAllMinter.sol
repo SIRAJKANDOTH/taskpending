@@ -14,12 +14,11 @@ contract YearnItAllMinter is ERC1155
 
     function mintStrategy(
         address safeAddress,
-        string memory instruction, 
-        uint256 instruction_type
+        string memory instruction
         ) 
-        public
+    public
     {
         require(IAPContract(APContract).strategyExecutor(strategy) == msg.sender, "Only Yieldster Strategy Executor");
-        _mint(safeAddress, instruction_type, 10**18, bytes(instruction));
+        _mint(safeAddress, 1, 10**18, bytes(instruction));
     }
 }

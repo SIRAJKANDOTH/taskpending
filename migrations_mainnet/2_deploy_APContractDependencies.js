@@ -2,7 +2,7 @@ const PlatformManagementFee = artifacts.require("./delegateContracts/ManagementF
 const ProfitManagementFee = artifacts.require("./delegateContracts/ProfitManagementFee.sol");
 const HexUtils = artifacts.require("./utils/HexUtils.sol");
 const Exchange = artifacts.require("./exchange/Exchange.sol");
-const CleanUp = artifacts.require("./cleanUp/CleanUp.sol");
+const SafeUtils = artifacts.require("./safeUtils/SafeUtils.sol");
 
 module.exports = async (deployer) => {
 
@@ -14,6 +14,6 @@ module.exports = async (deployer) => {
 	
 	await deployer.deploy(Exchange);
 	
-	await deployer.deploy(CleanUp);
+	await deployer.deploy(SafeUtils);
 	
 };
