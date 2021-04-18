@@ -3,7 +3,7 @@ const PlatformManagementFee = artifacts.require("./delegateContracts/ManagementF
 const ProfitManagementFee = artifacts.require("./delegateContracts/ProfitManagementFee.sol");
 const HexUtils = artifacts.require("./utils/HexUtils.sol");
 const Exchange = artifacts.require("./exchange/Exchange.sol");
-const CleanUp = artifacts.require("./cleanUp/CleanUp.sol");
+const SafeUtils = artifacts.require("./safeUtils/SafeUtils.sol");
 const Whitelist = artifacts.require("./whitelist/Whitelist.sol");
 const PriceModule = artifacts.require("./price/PriceModule.sol");
 const OneInch = artifacts.require("./oneInchMock/OneInch.sol");
@@ -14,7 +14,7 @@ module.exports = async (deployer) => {
 	const exchange = await Exchange.deployed();
 	const managementFee = await PlatformManagementFee.deployed();
 	const profitManagementFee = await ProfitManagementFee.deployed();
-	const cleanUp = await CleanUp.deployed();
+	const safeUtils = await SafeUtils.deployed();
 	const whitelist = await Whitelist.deployed();
 	const priceModule = await PriceModule.deployed();
 	const oneInch = await OneInch.deployed();
@@ -28,7 +28,7 @@ module.exports = async (deployer) => {
 		exchange.address,
 		oneInch.address,
 		priceModule.address,
-		cleanUp.address
+		safeUtils.address
 	);
 
 };

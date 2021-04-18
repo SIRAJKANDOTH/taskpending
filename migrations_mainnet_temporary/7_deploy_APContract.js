@@ -3,7 +3,7 @@ const PlatformManagementFee = artifacts.require("./delegateContracts/ManagementF
 const ProfitManagementFee = artifacts.require("./delegateContracts/ProfitManagementFee.sol");
 const HexUtils = artifacts.require("./utils/HexUtils.sol");
 const Exchange = artifacts.require("./exchange/Exchange.sol");
-const CleanUp = artifacts.require("./cleanUp/CleanUp.sol");
+const SafeUtils = artifacts.require("./safeUtils/SafeUtils.sol");
 
 module.exports = async (deployer) => {
 	
@@ -11,7 +11,7 @@ module.exports = async (deployer) => {
 	const exchange = await Exchange.deployed();
 	const managementFee = await PlatformManagementFee.deployed();
 	const profitManagementFee = await ProfitManagementFee.deployed();
-	const cleanUp = await CleanUp.deployed();
+	const safeUtils = await SafeUtils.deployed();
 
 	await deployer.deploy(
 		APContract,
@@ -22,7 +22,7 @@ module.exports = async (deployer) => {
 		exchange.address,
 		"0xC586BeF4a0992C495Cf22e1aeEE4E446CECDee0E",
 		"0x7dF98189D32aa4e92649dBe5d837126bE4e53d1B",
-		cleanUp.address
+		safeUtils.address
 	);
 
 };
