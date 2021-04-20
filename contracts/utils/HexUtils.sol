@@ -42,9 +42,9 @@ contract HexUtils
     {
         uint8 decimals = ERC20Detailed(tokenAddress).decimals();
         if(decimals < 18) {
-            return tokenCount.mul(uint256(18 - decimals));
+            return tokenCount.mul(10**uint256(18 - decimals));
         } else if (decimals > 18) {
-            return tokenCount.div(uint256(decimals - 18));
+            return tokenCount.div(10**uint256(decimals - 18));
         } else {
             return tokenCount;
         }
@@ -57,9 +57,9 @@ contract HexUtils
     {
         uint8 decimals = ERC20Detailed(tokenAddress).decimals();
         if(decimals < 18) {
-            return tokenCount.div(uint256(18 - decimals));
+            return tokenCount.div(10**uint256(18 - decimals));
         } else if (decimals > 18) {
-            return tokenCount.mul(uint256(decimals - 18));
+            return tokenCount.mul(10**uint256(decimals - 18));
         } else {
             return tokenCount;
         }

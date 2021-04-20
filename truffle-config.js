@@ -3,6 +3,8 @@ require("dotenv").config();
 const package = require("./package");
 const mnemonic = process.env.MNEMONIC;
 const token = process.env.INFURA_TOKEN;
+let privateKeys=[process.env.PRIVATE_KEY];
+
 
 module.exports = {
 	networks: {
@@ -16,7 +18,7 @@ module.exports = {
 		rinkeby: {
 			network_id: "4",
 			provider: () => {
-				return new HDWalletProvider(mnemonic, token);
+				return new HDWalletProvider(privateKeys, token);
 			},
 			gasPrice: 75000000000, // 75 Gwei
 			networkCheckTimeout: 10000000,
@@ -44,13 +46,12 @@ module.exports = {
 		},
 		mainnet: {
 			provider: () => {
-				return new HDWalletProvider(
-					mnemonic,
-					"https://mainnet.infura.io/v3/8c02ea8aa8864a28ba2e97333a5e6a10"
-				);
+				return new HDWalletProvider(privateKeys, token);
 			},
 			network_id: "1",
-			gasPrice: 25000000000, // 25 Gwei
+			gasPrice: 75000000000, // 75 Gwei
+			networkCheckTimeout: 1000000000,
+			gas:1800000
 		},
 		xdai: {
 			provider: () => {
