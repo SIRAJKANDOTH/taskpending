@@ -69,7 +69,7 @@ contract VaultStorage
         for (uint256 i = 0; i < assetList.length; i++) {
             if(tokenBalances.getTokenBalance(assetList[i]) > 0) {
                 uint256 tokenUSD = IAPContract(APContract).getUSDPrice(assetList[i]);
-                nav += tokenBalances.getTokenBalance(assetList[i]).mul(tokenUSD);       
+                nav += IHexUtils(IAPContract(APContract).stringUtils()).toDecimals(assetList[i], tokenBalances.getTokenBalance(assetList[i])).mul(tokenUSD);       
             }
         }
         if(strategies.length == 0) {
@@ -95,7 +95,7 @@ contract VaultStorage
         for (uint256 i = 0; i < assetList.length; i++) {
             if(tokenBalances.getTokenBalance(assetList[i]) > 0) {
                 uint256 tokenUSD = IAPContract(APContract).getUSDPrice(assetList[i]);
-                nav += (tokenBalances.getTokenBalance(assetList[i]).mul(tokenUSD));       
+                nav += (IHexUtils(IAPContract(APContract).stringUtils()).toDecimals(assetList[i], tokenBalances.getTokenBalance(assetList[i])).mul(tokenUSD));       
             }
         }
         return nav.div(1e18);
@@ -110,7 +110,7 @@ contract VaultStorage
         returns (uint256)
     {
         uint256 tokenUSD = IAPContract(APContract).getUSDPrice(_tokenAddress);
-        return (_amount.mul(tokenUSD)).div(1e18);
+        return (IHexUtils(IAPContract(APContract).stringUtils()).toDecimals(_tokenAddress, _amount).mul(tokenUSD)).div(1e18);
     }
 
     /// @dev Function to get the amount of Vault Tokens to be minted for the deposit NAV.
