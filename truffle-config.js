@@ -18,7 +18,7 @@ module.exports = {
 		rinkeby: {
 			network_id: "4",
 			provider: () => {
-				return new HDWalletProvider(privateKeys, token);
+				return new HDWalletProvider(mnemonic, token);
 			},
 			gasPrice: 75000000000, // 75 Gwei
 			networkCheckTimeout: 10000000,

@@ -1,6 +1,9 @@
 pragma solidity >=0.5.0 <0.7.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "../interfaces/IHexUtils.sol";
+
+
 
 interface IPriceModule
 {
@@ -11,11 +14,13 @@ contract OneInch
 {
     using SafeMath for uint256;
     IPriceModule private priceModule;
+    IHexUtils private hexUtils;
 
-    constructor(address _priceModule)
+    constructor(address _hexUtils, address _priceModule)
         public
     {
         priceModule = IPriceModule(_priceModule);
+        hexUtils = IHexUtils(_hexUtils);
     }
 
     function swap(
@@ -34,8 +39,8 @@ contract OneInch
         require(address(fromToken) != address(0));
         require(address(destToken) != address(0));
         require(amount > 0);
-        uint256 fromNav = (priceModule.getUSDPrice(address(fromToken)).mul(amount)).div(1e18);
-        uint256 destTokenCount = (fromNav.mul(1e18)).div(priceModule.getUSDPrice(address(destToken)));
+        uint256 fromNav = (priceModule.getUSDPrice(address(fromToken)).mul(hexUtils.toDecimals(address(fromToken), amount))).div(1e18);
+        uint256 destTokenCount = hexUtils.fromDecimals(address(destToken), (fromNav.mul(1e18)).div(priceModule.getUSDPrice(address(destToken))));
         uint256 haveTokens;
         if(destToken.balanceOf(address(this)) >= destTokenCount){
             haveTokens = destTokenCount;
@@ -66,8 +71,8 @@ contract OneInch
         require(address(fromToken) != address(0));
         require(address(destToken) != address(0));
         require(amount > 0);
-        uint256 fromNav = (priceModule.getUSDPrice(address(fromToken)).mul(amount)).div(1e18);
-        uint256 destTokenCount = (fromNav.mul(1e18)).div(priceModule.getUSDPrice(address(destToken)));
+        uint256 fromNav = (priceModule.getUSDPrice(address(fromToken)).mul(hexUtils.toDecimals(address(fromToken), amount))).div(1e18);
+        uint256 destTokenCount = hexUtils.fromDecimals(address(destToken), (fromNav.mul(1e18)).div(priceModule.getUSDPrice(address(destToken))));
         uint256[] memory distribution = new uint256[](2);
         if(destToken.balanceOf(address(this)) >= destTokenCount){
             return( destTokenCount, distribution);
