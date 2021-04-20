@@ -6,7 +6,7 @@ import "../whitelist/Whitelist.sol";
 import "../interfaces/IAPContract.sol";
 import "../interfaces/IExchange.sol";
 import "../interfaces/IStrategy.sol";
-import "../utils/HexUtils.sol";
+import "../interfaces/IHexUtils.sol";
 import "./TokenBalanceStorage.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
