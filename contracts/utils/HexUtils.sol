@@ -56,11 +56,14 @@ contract HexUtils
         returns (uint256)
     {
         uint8 decimals = ERC20Detailed(tokenAddress).decimals();
-        if(decimals < 18) {
+        if(decimals < 18)
+        {
             return tokenCount.div(10 ** uint256(18 - decimals));
-        } else if (decimals > 18) {
+        } else if (decimals > 18) 
+        {
             return tokenCount.mul(10 ** uint256(decimals - 18));
-        } else {
+        } else 
+        {
             return tokenCount;
         }
     }
