@@ -75,6 +75,7 @@ contract LockedWithdraw
         return exchangeReturn;
     }
 
+   
     function withdrawFromStrategy(address strategy, uint256 shares, address tokenPrefered)
         internal
         returns(uint256, uint256)
@@ -83,7 +84,7 @@ contract LockedWithdraw
         if(returnToken == tokenPrefered) {
             return (returnAmount, 0) ;
         } else {
-            uint256 returnNav = (returnAmount.mul(IAPContract(APContract).getUSDPrice(returnToken))).div(1e18);
+            uint256 returnNav = (IHexUtils(IAPContract(APContract).stringUtils()).toDecimals(returnToken,returnAmount).mul(IAPContract(APContract).getUSDPrice(returnToken))).div(1e18);
             return (0, returnNav);
         }
     }
@@ -134,10 +135,10 @@ contract LockedWithdraw
         uint256 tokenCount = ((_shares.mul(getVaultNAV())).div(totalSupply()).mul(1e18)).div(tokenUSD);
         
         if(tokenCount <= tokenBalances.getTokenBalance(_tokenAddress)) {
-            updateAndTransferTokens(_tokenAddress, tokenBalances.getTokenBalance(_tokenAddress).sub(tokenCount), _shares, tokenCount,_withdrawer );
+            updateAndTransferTokens(_tokenAddress, tokenBalances.getTokenBalance(_tokenAddress).sub(tokenCount), _shares, IHexUtils(IAPContract(APContract).stringUtils()).fromDecimals(_tokenAddress,tokenCount),_withdrawer );
 
         } else {
-            uint256 haveNavInOtherTokens = getVaultNAVWithoutStrategyToken() - ((tokenBalances.getTokenBalance(_tokenAddress)).mul(tokenUSD)).div(1e18);
+            uint256 haveNavInOtherTokens = getVaultNAVWithoutStrategyToken() - (IHexUtils(IAPContract(APContract).stringUtils()).toDecimals(_tokenAddress,tokenBalances.getTokenBalance(_tokenAddress)).mul(tokenUSD)).div(1e18);
             uint256 towardsNeedWithSlippage = (tokenBalances.getTokenBalance(_tokenAddress));
             
 

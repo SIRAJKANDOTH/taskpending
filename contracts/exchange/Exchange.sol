@@ -17,9 +17,9 @@ contract Exchange
     {
         for(uint256 i = 0; i < assetList.length; i++ ) {
             uint256 haveTokenUSD = IAPContract(APContract).getUSDPrice(assetList[i]);
-            if((tokenBalances.getTokenBalance(assetList[i]).mul(haveTokenUSD)).div(1e18) > nav){
+            if((IHexUtils(IAPContract(APContract).stringUtils()).toDecimals(assetList[i],tokenBalances.getTokenBalance(assetList[i])).mul(haveTokenUSD)).div(1e18) > nav){
                 uint256 amountToExchange = (nav.mul(1e18)).div(haveTokenUSD);
-                uint256 returnedTokenCount = swap(assetList[i], targetToken, amountToExchange);
+                uint256 returnedTokenCount = swap(assetList[i], targetToken, IHexUtils(IAPContract(APContract).stringUtils()).fromDecimals(assetList[i],amountToExchange));
                 return returnedTokenCount;
             }                
         }
@@ -62,7 +62,7 @@ contract Exchange
                 if(nav > currentNav) {
                     uint256 haveTokenUSD = IAPContract(APContract).getUSDPrice(assetList[i]);
                     uint256 haveTokenCount = tokenBalances.getTokenBalance(assetList[i]);
-                    uint256 haveTokenNav = (haveTokenUSD.mul(haveTokenCount)).div(1e18);
+                    uint256 haveTokenNav = (haveTokenUSD.mul(IHexUtils(IAPContract(APContract).stringUtils()).toDecimals(assetList[i],haveTokenCount))).div(1e18);
                     if(haveTokenNav <= (nav-currentNav)) {
                         swappedAmount = swap(assetList[i], targetToken, haveTokenCount);
                         aquiredToken += swappedAmount;
