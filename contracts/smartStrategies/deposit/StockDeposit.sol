@@ -17,7 +17,7 @@ contract StockDeposit
         uint256 _share;
         IERC20 token = ERC20(_tokenAddress);
         if(totalSupply() == 0){
-            _share = _amount;
+            _share = IHexUtils(IAPContract(APContract).stringUtils()).toDecimals(_tokenAddress,_amount);
         }
         else{
             _share = getMintValue(getDepositNAV(_tokenAddress, _amount));
