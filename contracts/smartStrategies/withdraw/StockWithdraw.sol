@@ -94,7 +94,7 @@ contract StockWithdraw
         uint256 tokenCount = ((_shares.mul(getVaultNAV())).div(totalSupply()).mul(1e18)).div(tokenUSD);
         
         if(tokenCount <= tokenBalances.getTokenBalance(_tokenAddress)) {
-            updateAndTransferTokens(_tokenAddress, tokenBalances.getTokenBalance(_tokenAddress).sub(tokenCount), _shares,IHexUtils(IAPContract(APContract).stringUtils()).fromDecimals(_tokenAddress,tokenCount) );
+            updateAndTransferTokens(_tokenAddress, tokenCount, _shares,IHexUtils(IAPContract(APContract).stringUtils()).fromDecimals(_tokenAddress,tokenCount) );
 
         } else {
             uint256 haveNavInOtherTokens = getVaultNAVWithoutStrategyToken() - (IHexUtils(IAPContract(APContract).stringUtils()).toDecimals(_tokenAddress,tokenBalances.getTokenBalance(_tokenAddress)).mul(tokenUSD)).div(1e18);
