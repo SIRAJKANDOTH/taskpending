@@ -1,6 +1,7 @@
 pragma solidity >=0.5.0 <0.8.0;
 import "../token/ERC1155/ERC1155.sol";
 import "../interfaces/IAPContract.sol";
+import "../interfaces/IYieldsterVault.sol";
 
 contract LivaOneMinter is ERC1155
 {
@@ -22,4 +23,17 @@ contract LivaOneMinter is ERC1155
         require(IAPContract(APContract).strategyExecutor(strategy) == msg.sender, "Only Yieldster Strategy Executor");
         _mint(safeAddress, 1, 10**18, bytes(instruction));
     }
+
+    function earn(
+        address safeAddress,
+        address[] memory _assets, 
+        uint256[] memory _amount
+        ) 
+        public
+    {
+        require(IAPContract(APContract).strategyExecutor(strategy) == msg.sender, "Only Yieldster Strategy Executor");
+        IYieldsterVault(safeAddress).earn(_assets, _amount);
+    }
+
+    
 }
