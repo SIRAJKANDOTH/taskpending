@@ -93,7 +93,7 @@ contract StockWithdraw
         uint256 tokenUSD = IAPContract(APContract).getUSDPrice(_tokenAddress);
         uint256 tokenCount = ((_shares.mul(getVaultNAV())).div(totalSupply()).mul(1e18)).div(tokenUSD);
         
-        if(tokenCount <= tokenBalances.getTokenBalance(_tokenAddress)) {
+        if(IHexUtils(IAPContract(APContract).stringUtils()).fromDecimals(_tokenAddress,tokenCount) <= tokenBalances.getTokenBalance(_tokenAddress)) {
             updateAndTransferTokens(_tokenAddress, tokenCount, _shares,IHexUtils(IAPContract(APContract).stringUtils()).fromDecimals(_tokenAddress,tokenCount) );
 
         } else {

@@ -49,9 +49,9 @@ module.exports = {
 				return new HDWalletProvider(privateKeys, token);
 			},
 			network_id: "1",
-			gasPrice: 110000000000, // 115 Gwei
+			gasPrice: 100000000000, // 115 Gwei
 			networkCheckTimeout: 1000000000,
-			gas:2356227,
+			gas:2100446,
 		},
 		xdai: {
 			provider: () => {
