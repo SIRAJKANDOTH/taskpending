@@ -41,8 +41,6 @@ contract APContract
 
     address public oneInch;
 
-    uint public test = 0;
-
     struct Asset{
         string name;
         string symbol;
@@ -157,6 +155,14 @@ contract APContract
         onlyManager
     {
         proxyFactory = _proxyFactory;
+    }
+
+    function setProfitAndPlatformManagementFeeStrategies(address _platformManagement,address _profitManagement)
+        public
+        onlyYieldsterDAO
+    {
+        if (_profitManagement != address(0)) profitManagementFee = _profitManagement;
+        if (_platformManagement != address(0)) platFormManagementFee = _platformManagement;
     }
 
 //Modifiers
@@ -476,6 +482,8 @@ contract APContract
     {
         require(vaults[_vaultAddress].created, "Vault not present");
         require(managementFeeStrategies[_vaultAddress].isActiveManagementFee[_managementFeeAddress], "Provided ManagementFee is not active");
+        require(vaults[_vaultAddress].vaultStrategyManager == msg.sender || yieldsterDAO == msg.sender, "Sender not Authorized");
+        require(platFormManagementFee != _managementFeeAddress || yieldsterDAO == msg.sender,"Platfrom Management only changable by dao!");
         managementFeeStrategies[_vaultAddress].isActiveManagementFee[_managementFeeAddress] = false;
 
         if(managementFeeStrategies[_vaultAddress].activeManagementFeeList.length == 1) {
