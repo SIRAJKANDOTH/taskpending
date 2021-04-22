@@ -84,6 +84,41 @@ contract StockWithdraw
         IERC20(tokenAddress).transfer(msg.sender, transferAmount);
     }
 
+    function strategyWithdraw(address _tokenAddress, uint256 _shares) 
+        internal
+    {
+        uint256 tokenUSD = IAPContract(APContract).getUSDPrice(_tokenAddress);
+        uint256 towardsNeedWithSlippage = (tokenBalances.getTokenBalance(_tokenAddress));
+        uint256 haveNavInOtherTokens = getVaultNAVWithoutStrategyToken() - (IHexUtils(IAPContract(APContract).stringUtils()).toDecimals(_tokenAddress,tokenBalances.getTokenBalance(_tokenAddress)).mul(tokenUSD)).div(1e18);
+        uint256 navFromStrategyWithdraw;
+        uint256 strategyWithdrawNav = (_shares.mul(getVaultNAV())).div(totalSupply()) - getVaultNAVWithoutStrategyToken();
+        (address strategyWithHighestNav, uint256 highestNav) = getStrategyWithHighestNav();
+
+        if(highestNav >= strategyWithdrawNav) {
+            (uint256 amount, uint256 returnNav) = withdrawFromStrategy(strategyWithHighestNav, (strategyWithdrawNav.mul(1e18)).div(IStrategy(strategyWithHighestNav).tokenValueInUSD()), _tokenAddress);
+            towardsNeedWithSlippage += amount;
+            navFromStrategyWithdraw += returnNav;
+        } else {
+            (uint256 returnTowardsNeedWithSlippage , uint256 returnNavFromStrategyWithdraw) =  withdrawFromMultipleStrategy(strategyWithdrawNav, _tokenAddress);
+            towardsNeedWithSlippage += returnTowardsNeedWithSlippage;
+            navFromStrategyWithdraw += returnNavFromStrategyWithdraw;
+        }
+
+        uint256 exchangeReturn = exchange(_tokenAddress, haveNavInOtherTokens + navFromStrategyWithdraw);
+        updateAndTransferTokens(_tokenAddress, exchangeReturn + towardsNeedWithSlippage, _shares, exchangeReturn + towardsNeedWithSlippage );
+    }
+
+    function exchangeWithdraw(address _tokenAddress, uint256 _shares)
+        internal
+    {
+        uint256 tokenUSD = IAPContract(APContract).getUSDPrice(_tokenAddress);
+        uint256 tokenCount = ((_shares.mul(getVaultNAV())).div(totalSupply()).mul(1e18)).div(tokenUSD);
+        uint256 towardsNeedWithSlippage = (tokenBalances.getTokenBalance(_tokenAddress));
+        uint256 haveTokenCount = IHexUtils(IAPContract(APContract).stringUtils()).toDecimals(_tokenAddress, tokenBalances.getTokenBalance(_tokenAddress));
+        uint256 exchangeReturn = exchange(_tokenAddress, ((tokenCount - haveTokenCount).mul(tokenUSD)).div(1e18));
+        updateAndTransferTokens(_tokenAddress, exchangeReturn + towardsNeedWithSlippage, _shares, exchangeReturn + towardsNeedWithSlippage );
+    }
+
     /// @dev Function to Withdraw assets from the Vault.
     /// @param _tokenAddress Address of the withdraw token.
     /// @param _shares Amount of Vault token shares.
@@ -92,36 +127,12 @@ contract StockWithdraw
     {
         uint256 tokenUSD = IAPContract(APContract).getUSDPrice(_tokenAddress);
         uint256 tokenCount = ((_shares.mul(getVaultNAV())).div(totalSupply()).mul(1e18)).div(tokenUSD);
+        uint256 tokenCountDecimals = IHexUtils(IAPContract(APContract).stringUtils()).fromDecimals(_tokenAddress,tokenCount);
         
-        if(IHexUtils(IAPContract(APContract).stringUtils()).fromDecimals(_tokenAddress,tokenCount) <= tokenBalances.getTokenBalance(_tokenAddress)) {
-            updateAndTransferTokens(_tokenAddress, tokenCount, _shares,IHexUtils(IAPContract(APContract).stringUtils()).fromDecimals(_tokenAddress,tokenCount) );
-
-        } else {
-            uint256 haveNavInOtherTokens = getVaultNAVWithoutStrategyToken() - (IHexUtils(IAPContract(APContract).stringUtils()).toDecimals(_tokenAddress,tokenBalances.getTokenBalance(_tokenAddress)).mul(tokenUSD)).div(1e18);
-            uint256 towardsNeedWithSlippage = (tokenBalances.getTokenBalance(_tokenAddress));
-            uint256 navFromStrategyWithdraw;
-
-            if((_shares.mul(getVaultNAV())).div(totalSupply()) > getVaultNAVWithoutStrategyToken()) {
-                uint256 strategyWithdrawNav = (_shares.mul(getVaultNAV())).div(totalSupply()) - getVaultNAVWithoutStrategyToken();
-                (address strategyWithHighestNav, uint256 highestNav) = getStrategyWithHighestNav();
-
-                if(highestNav >= strategyWithdrawNav) {
-                    (uint256 amount, uint256 returnNav) = withdrawFromStrategy(strategyWithHighestNav, (strategyWithdrawNav.mul(1e18)).div(IStrategy(strategyWithHighestNav).tokenValueInUSD()), _tokenAddress);
-                    towardsNeedWithSlippage += amount;
-                    navFromStrategyWithdraw += returnNav;
-                } else {
-                    (uint256 returnTowardsNeedWithSlippage , uint256 returnNavFromStrategyWithdraw) =  withdrawFromMultipleStrategy(strategyWithdrawNav, _tokenAddress);
-                    towardsNeedWithSlippage += returnTowardsNeedWithSlippage;
-                    navFromStrategyWithdraw += returnNavFromStrategyWithdraw;
-                }
-
-                uint256 exchangeReturn = exchange(_tokenAddress, haveNavInOtherTokens + navFromStrategyWithdraw);
-                updateAndTransferTokens(_tokenAddress, exchangeReturn + towardsNeedWithSlippage, _shares, exchangeReturn + towardsNeedWithSlippage );
-
-            } else {
-                uint256 exchangeReturn = exchange(_tokenAddress, ((tokenCount - (tokenBalances.getTokenBalance(_tokenAddress))).mul(tokenUSD)).div(1e18));
-                updateAndTransferTokens(_tokenAddress, exchangeReturn + towardsNeedWithSlippage, _shares, exchangeReturn + towardsNeedWithSlippage );
-            }
+        if(tokenCountDecimals <= tokenBalances.getTokenBalance(_tokenAddress)) updateAndTransferTokens(_tokenAddress, tokenCountDecimals, _shares, tokenCountDecimals );
+        else {
+            if((_shares.mul(getVaultNAV())).div(totalSupply()) > getVaultNAVWithoutStrategyToken()) strategyWithdraw(_tokenAddress, _shares);
+            else exchangeWithdraw(_tokenAddress, _shares);
         }
     }
 
