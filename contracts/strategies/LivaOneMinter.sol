@@ -6,12 +6,34 @@ import "../interfaces/IYieldsterVault.sol";
 contract LivaOneMinter is ERC1155
 {
     address public APContract;
-    address private strategy;
+    address public strategy;
+    address public owner;
 
     constructor(address _APContract, address _strategyAddress) public ERC1155("https://game.example/api/item/{id}.json") 
     {
         APContract = _APContract;
         strategy = _strategyAddress;
+        owner = msg.sender;
+    }
+
+    modifier onlyOwner {
+        require(msg.sender == owner,"Only permitted to owner");
+          _;
+    }
+
+    function setAPContract(address _APContract) 
+        public 
+        onlyOwner
+    {
+        APContract = _APContract;
+    }
+
+    function setStrategyAddress(address _strategyAddress) 
+        public 
+        onlyOwner
+    {
+        strategy = _strategyAddress;
+
     }
 
     function mintStrategy(

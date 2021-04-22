@@ -39,14 +39,17 @@ contract LivaOneZapper
         _;
     }
 
-    modifier onlyOwner{
-        require(msg.sender==owner,"Only permitted to owner");
+    modifier onlyOwner {
+        require(msg.sender == owner,"Only permitted to owner");
           _;
     }
 
 
-    function addProtocol(address _protocolAddress) public onlyOwner{
-        require(_protocolAddress != address(0),"Zero address");
+    function addProtocol(address _protocolAddress) 
+        public 
+        onlyOwner
+    {
+        require(_protocolAddress != address(0), "Zero address");
         protocolList.push(_protocolAddress);
     }
 
@@ -76,8 +79,15 @@ contract LivaOneZapper
         public 
         onlyOwner
     {
-        require(_slipage < 10000, "Give the percentage");
-        slipage=_slipage;
+        require(_slipage < 10000, "! percentage");
+        slipage = _slipage;
+    }
+
+    function setAPContract(address _APContract) 
+        public 
+        onlyOwner
+    {
+        APContract = _APContract;
     }
 
     function getActiveProtocol(address _safeAddress)
@@ -118,15 +128,10 @@ contract LivaOneZapper
         bytes memory swapData;
         IZapper(curveZapper).ZapInCurveVault(_depositAsset, _amount,_depositAsset,_yVault,minReturnTokens,address(0),swapData,address(0));
 
-        if(totalSupply() == 0) {
-            _shares=_amount;
-        } else {
-            _shares = getMintValue(getDepositNAV(_depositAsset, _amount));
-        }
-            
-        if(_shares > 0) {
-            _mint(msg.sender, _shares);
-        }
+        if(totalSupply() == 0) _shares = _amount;
+        else _shares = getMintValue(getDepositNAV(_depositAsset, _amount));
+
+        if(_shares > 0) _mint(msg.sender, _shares);
     }
 
     //Function to find the Token to be minted for a deposit
@@ -173,7 +178,6 @@ contract LivaOneZapper
     }
 
 
-
     function withdraw(uint256 _shares,address _withrawalAsset) 
         onlyRegisteredSafe
         public
@@ -181,8 +185,7 @@ contract LivaOneZapper
     {
         require(balanceOf(msg.sender) >= _shares,"Not enough shares");
         uint256 strategyTokenValueInUSD = (_shares.mul(getStrategyNAV())).div(totalSupply());
-        uint256 vaultTokenPriceInUSD=IAPContract(APContract).getUSDPrice(safeActiveProtocol[msg.sender]);
-        // Number of tokens tob removed from liquidity
+        uint256 vaultTokenPriceInUSD = IAPContract(APContract).getUSDPrice(safeActiveProtocol[msg.sender]);
         uint256 vaultTokensToRemoved = strategyTokenValueInUSD.mul(1e18).div(vaultTokenPriceInUSD);
         uint256 minTokensCount = vaultTokensToRemoved - vaultTokensToRemoved.mul(slipage).div(10000);
         _burn(msg.sender, _shares);
@@ -190,11 +193,9 @@ contract LivaOneZapper
             IERC20(safeActiveProtocol[msg.sender]).transfer(msg.sender,vaultTokensToRemoved);
             return (safeActiveProtocol[msg.sender],vaultTokensToRemoved);   
         } else {
-            uint256 returnedTokens=IZapper(zapOutZontract).ZapOut(msg.sender,_withrawalAsset,safeActiveProtocol[msg.sender],2,vaultTokensToRemoved,minTokensCount);
-            return (_withrawalAsset,returnedTokens);   
+            uint256 returnedTokens = IZapper(zapOutZontract).ZapOut(msg.sender,_withrawalAsset,safeActiveProtocol[msg.sender],2,vaultTokensToRemoved,minTokensCount);
+            return (_withrawalAsset, returnedTokens);   
         }
-        // 1 percentage of slipage
-
     }
 
 
@@ -206,7 +207,7 @@ contract LivaOneZapper
         uint256 mintokens = tokensToBeChanged-tokensToBeChanged.mul(slipage).div(10000);
         IERC20(safeActiveProtocol[msg.sender]).approve(curveZapper, tokensToBeChanged);
         bytes memory swapData;
-        IZapper(curveZapper).ZapInCurveVault(safeActiveProtocol[msg.sender], tokensToBeChanged, safeActiveProtocol[msg.sender], _protocol, mintokens, address(0),swapData,address(0));
+        IZapper(curveZapper).ZapInCurveVault(safeActiveProtocol[msg.sender], tokensToBeChanged, safeActiveProtocol[msg.sender], _protocol, mintokens, address(0), swapData, address(0));
         safeActiveProtocol[msg.sender] = _protocol;
     }
 
@@ -217,7 +218,7 @@ contract LivaOneZapper
         returns(address,uint256)
     {
         uint256 SafeProtocolBalance = _getProtocolBalanceForSafe();
-        return withdraw(SafeProtocolBalance,_withdrawalToken);
+        return withdraw(SafeProtocolBalance, _withdrawalToken);
     }
 
     function want() external view returns (address)

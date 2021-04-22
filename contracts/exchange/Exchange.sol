@@ -73,7 +73,7 @@ contract Exchange
                         aquiredToken += swappedAmount;
                         currentNav += haveTokenCount;
                     }
-                }
+                } 
                 if(currentNav >= nav) return aquiredToken;
             }
             return 0;
