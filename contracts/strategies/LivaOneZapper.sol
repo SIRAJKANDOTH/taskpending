@@ -357,7 +357,7 @@ contract LivaOneZapper
 
         uint256 currentProtocolBalance = vaults[msg.sender].protocolBalance[currentProtocol];
 
-        uint256 strategyTokenValueInUSD = (_shares.mul(getStrategyNAV())).div(balanceOf(msg.sender));
+        uint256 strategyTokenValueInUSD = getStrategyNAV();
 
         uint256 expectedTokens = strategyTokenValueInUSD.mul(1e18).div(IAPContract(APContract).getUSDPrice(currentProtocol));
 
