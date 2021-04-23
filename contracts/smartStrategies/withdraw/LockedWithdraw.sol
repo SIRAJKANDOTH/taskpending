@@ -15,7 +15,7 @@ contract LockedWithdraw
     function withdraw(address _tokenAddress, uint256 _shares)
         public
     {
-        LockStorage lockStorage = LockStorage(0xE72Eb4f839Ae901dA55fc5032e9eF2AFC398FCb2);
+        LockStorage lockStorage = LockStorage(0xF8F1531383c56e7A5184E368714d58604a713291);
         lockStorage.addRequest(msg.sender,_tokenAddress,_shares);
     }
 
@@ -24,7 +24,7 @@ contract LockedWithdraw
     function withdraw(uint256 _shares)
         public
     {
-        LockStorage lockStorage = LockStorage(0xE72Eb4f839Ae901dA55fc5032e9eF2AFC398FCb2);
+        LockStorage lockStorage = LockStorage(0xF8F1531383c56e7A5184E368714d58604a713291);
         lockStorage.addRequest(msg.sender, address(0), _shares);
     }
 
@@ -195,7 +195,7 @@ contract LockedWithdraw
     function withdrawalCleanUp() 
         public
     {
-        LockStorage lockStorage= LockStorage(0xE72Eb4f839Ae901dA55fc5032e9eF2AFC398FCb2);
+        LockStorage lockStorage= LockStorage(0xF8F1531383c56e7A5184E368714d58604a713291);
         (address[] memory withdrawers, address[] memory assets, uint256[] memory amounts) = lockStorage.getWithdrawalList();
         for(uint256 i=0; i < withdrawers.length; i++) {
             if(withdrawers[i] != address(0) && amounts[i] > 0) {
