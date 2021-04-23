@@ -24,7 +24,7 @@ contract LivaOneZapper
 // yearn vault - need to confirm address
 
     address curveZapper = 0x462991D18666c578F787e9eC0A74Cd18D2971E5F;
-    address zapOutZontract= 0xB0880df8420974ef1b040111e5e0e95f05F8fee1;
+    address zapOutZontract = 0xB0880df8420974ef1b040111e5e0e95f05F8fee1;
     address APContract;
     address owner;
     //  1% slippage
@@ -332,19 +332,19 @@ contract LivaOneZapper
         require(balanceOf(msg.sender) >= _shares, "Not enough shares");
         uint256 strategyTokenValueInUSD = (_shares.mul(getStrategyNAV())).div(balanceOf(msg.sender));
         address protocol = vaults[msg.sender].vaultActiveProtocol;
-        uint256 vaultTokenPriceInUSD = IAPContract(APContract).getUSDPrice(protocol);
-        uint256 vaultTokensToRemoved = strategyTokenValueInUSD.mul(1e18).div(vaultTokenPriceInUSD);
-        uint256 minTokensCount = vaultTokensToRemoved - vaultTokensToRemoved.mul(slippage).div(10000);
+        uint256 protocolTokenUSD = IAPContract(APContract).getUSDPrice(protocol);
+        uint256 protocolTokenCount = strategyTokenValueInUSD.mul(1e18).div(protocolTokenUSD);
+        uint256 protocolTokensToWithdraw = IHexUtils(IAPContract(APContract).stringUtils()).fromDecimals(protocol, protocolTokenCount);
+        uint256 minTokensCount = protocolTokensToWithdraw - protocolTokensToWithdraw.mul(slippage).div(10000);
         _burn(msg.sender, _shares);
 
         if(_withrawalAsset == address(0)) {
-            IERC20(protocol).transfer(msg.sender, vaultTokensToRemoved);
-            vaults[msg.sender].protocolBalance[protocol] -= vaultTokensToRemoved;
-            return (protocol, vaultTokensToRemoved);   
+            IERC20(protocol).transfer(msg.sender, protocolTokensToWithdraw);
+            vaults[msg.sender].protocolBalance[protocol] -= protocolTokensToWithdraw;
+            return (protocol, protocolTokensToWithdraw);   
         } else {
-            uint256 returnedTokens = IZapper(zapOutZontract).ZapOut(msg.sender, _withrawalAsset, protocol, 2, vaultTokensToRemoved, minTokensCount);
-            IERC20(_withrawalAsset).transfer(msg.sender, returnedTokens);
-            vaults[msg.sender].protocolBalance[protocol] -= vaultTokensToRemoved;
+            uint256 returnedTokens = IZapper(zapOutZontract).ZapOut(msg.sender, _withrawalAsset, protocol, 2, protocolTokensToWithdraw, minTokensCount);
+            vaults[msg.sender].protocolBalance[protocol] -= protocolTokensToWithdraw;
             return (_withrawalAsset, returnedTokens);   
         }
     }
@@ -369,7 +369,9 @@ contract LivaOneZapper
 
         uint256 strategyTokenValueInUSD = getStrategyNAV();
 
-        uint256 expectedTokens = strategyTokenValueInUSD.mul(1e18).div(IAPContract(APContract).getUSDPrice(currentProtocol));
+        uint256 newProtocolTokenCount = strategyTokenValueInUSD.mul(1e18).div(IAPContract(APContract).getUSDPrice(_protocol));
+
+        uint256 expectedTokens = IHexUtils(IAPContract(APContract).stringUtils()).fromDecimals(_protocol, newProtocolTokenCount);
 
         uint256 minTokens = expectedTokens - expectedTokens.mul(slippage).div(10000);
 
@@ -403,7 +405,11 @@ contract LivaOneZapper
     // {
     //    return IVault(safeActiveProtocol[msg.sender]).token();
     // }
-    function want() external view returns (address)
+    function want() 
+        onlyRegisteredVault
+        external 
+        view 
+        returns (address)
     {
        return IVault(vaults[msg.sender].vaultActiveProtocol).token();
     }
