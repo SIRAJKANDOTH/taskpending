@@ -56,7 +56,7 @@ contract LivaOneZapper
 
     constructor(address _APContract, address[] memory _protocols) 
     public 
-    ERC20Detailed("LVAONE", "LIVA ONE", 18)
+    ERC20Detailed("ylLIVA", "Liva One", 18)
     {
         APContract = _APContract;
         for (uint256 i = 0; i < _protocols.length; i++) {
