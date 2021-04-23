@@ -99,7 +99,7 @@ contract LivaOneZapper
         vaults[msg.sender].vaultActiveProtocol = _protocol;
     }
 
-    function setSlipage(uint256 _slippage) 
+    function setSlippage(uint256 _slippage) 
         public 
         onlyOwner
     {
@@ -123,11 +123,11 @@ contract LivaOneZapper
     //     return safeActiveProtocol[_safeAddress];
     // }
     function getActiveProtocol(address _vaultAddress)
-        onlyRegisteredVault
         public
         view 
         returns(address)
     {
+        require( vaults[_vaultAddress].isRegistered, "Not a registered Safe");
         return vaults[_vaultAddress].vaultActiveProtocol;
     }
 
@@ -191,7 +191,10 @@ contract LivaOneZapper
         IERC20(_depositAsset).transferFrom(msg.sender, address(this), _amount);
         uint256 yvtokenPriceInUSD = IAPContract(APContract).getUSDPrice(_yVault);
         uint256 strategyshareInUSD = amountDecimals.mul(IAPContract(APContract).getUSDPrice(_depositAsset)).div(1e18);
-        uint256 equivalentyvTokenCount = (strategyshareInUSD.mul(1e18)).div(yvtokenPriceInUSD);
+        uint256 equivalentyvTokenCount = IHexUtils(IAPContract(APContract)
+            .stringUtils())
+            .fromDecimals(_yVault,(strategyshareInUSD.mul(1e18))
+            .div(yvtokenPriceInUSD));
         uint256 minReturnTokens = equivalentyvTokenCount - equivalentyvTokenCount.mul(slippage).div(10000);
         IERC20(_depositAsset).approve(curveZapper,  _amount);
         bytes memory swapData;
@@ -247,7 +250,10 @@ contract LivaOneZapper
             uint256 protocolBalance = vaults[msg.sender].protocolBalance[protocol];
             if(protocolBalance > 0) {
                 uint256 tokenUSD = IAPContract(APContract).getUSDPrice(protocol);
-                strategyNAV = (protocolBalance.mul(uint256(tokenUSD))).div(1e18);       
+                strategyNAV = ( IHexUtils(IAPContract(APContract).stringUtils())
+                    .toDecimals(protocol,protocolBalance)
+                    .mul(tokenUSD))
+                    .div(1e18);       
             }
             return strategyNAV;
 
@@ -255,7 +261,11 @@ contract LivaOneZapper
             for (uint256 i = 0; i < protocolList.length; i++) {
                 if(IERC20(protocolList[i]).balanceOf(address(this)) > 0) {
                     uint256 tokenUSD = IAPContract(APContract).getUSDPrice(protocolList[i]);
-                    strategyNAV += (IERC20(protocolList[i]).balanceOf(address(this)).mul(uint256(tokenUSD)));       
+                    uint256 balance = IHexUtils(IAPContract(APContract)
+                        .stringUtils())
+                        .toDecimals(protocolList[i],IERC20(protocolList[i])
+                        .balanceOf(address(this)));
+                    strategyNAV += balance.mul(tokenUSD);       
                 }
             }
             return strategyNAV.div(1e18);
