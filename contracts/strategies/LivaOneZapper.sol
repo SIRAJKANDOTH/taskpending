@@ -117,6 +117,8 @@ contract LivaOneZapper
         onlyRegisteredSafe
         public 
     {
+        
+        require(safeActiveProtocol[msg.sender] != address(0),"No active protocol");
         uint256 _shares;
         address _yVault = safeActiveProtocol[msg.sender];
         IERC20(_depositAsset).transferFrom(msg.sender, address(this), _amount);
@@ -245,7 +247,7 @@ contract LivaOneZapper
         onlyRegisteredSafe
         external
     {
-        require(protocols[_protocol], "Not an Enabled Protocols");
+        require(protocols[_protocol], "Not an enabled Protocol");
         require(IAPContract(APContract)._isStrategyProtocolEnabled(msg.sender, address(this), _protocol), "This protocol is not enabled for this safe");
        _changeProtocol(_protocol);
     }
