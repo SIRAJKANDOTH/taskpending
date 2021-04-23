@@ -182,7 +182,7 @@ contract LivaOneZapper
         onlyRegisteredVault
         public 
     {
-        require(vault[msg.sender].vaultActiveProtocol != address(0), "No active Protocol");
+        require(vaults[msg.sender].vaultActiveProtocol != address(0), "No active Protocol");
         require(_amount > 0, "amount must be greater than 0");
         uint256 _shares;
         address _yVault = vaults[msg.sender].vaultActiveProtocol;
