@@ -7,7 +7,7 @@ contract SafeMinter is ERC1155
     address public owner;
     address public executor;
     
-    constructor(address _executor) public ERC1155("https://game.example/api/item/{id}.json") 
+    constructor(address _executor) public ERC1155("https://yieldster.finance/vault/meta/{id}.json") 
     {
         owner = msg.sender;
         executor = _executor;

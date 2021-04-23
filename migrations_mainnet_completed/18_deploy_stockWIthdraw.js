@@ -4,6 +4,6 @@ const StockWithdraw = artifacts.require("./smartStrategies/withdraw/StockWithdra
 module.exports = async (deployer) => {
 
     await deployer.deploy(StockWithdraw);
-    const stockWithdraw = await StockWithdraw.deployed();
+    // const stockWithdraw = await StockWithdraw.deployed();
 
 };
