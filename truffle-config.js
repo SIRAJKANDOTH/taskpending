@@ -13,7 +13,7 @@ module.exports = {
 			port: 8545,
 			network_id: "*", // Match any network id
 			websockets: true,
-			gasPrice: 75000000000,
+			gasPrice: 90000000000,
 		},
 		rinkeby: {
 			network_id: "4",
@@ -49,9 +49,9 @@ module.exports = {
 				return new HDWalletProvider(privateKeys, token);
 			},
 			network_id: "1",
-			gasPrice: 90000000000, // 115 Gwei
+			gasPrice: 50000000000, // 115 Gwei
 			networkCheckTimeout: 1000000000,
-			gas:1600000,
+			gas:1000000,
 		},
 		xdai: {
 			provider: () => {

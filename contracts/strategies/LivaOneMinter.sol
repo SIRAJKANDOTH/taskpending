@@ -9,7 +9,7 @@ contract LivaOneMinter is ERC1155
     address public strategy;
     address public owner;
 
-    constructor(address _APContract, address _strategyAddress) public ERC1155("https://game.example/api/item/{id}.json") 
+    constructor(address _APContract, address _strategyAddress) public ERC1155("https://yieldster.finance/strategy/meta/{id}.json") 
     {
         APContract = _APContract;
         strategy = _strategyAddress;

@@ -5,12 +5,12 @@ const APContract = artifacts.require("./aps/APContract.sol");
 
 
 module.exports = async (deployer) => {
-    const apContract = await APContract.deployed();
-    const livaOne = await LivaOne.deployed();
+    // const apContract = await APContract.deployed();
+    // const livaOne = await LivaOne.deployed();
 
 
-    await deployer.deploy(LivaOneMinter, apContract.address, livaOne.address);
-    const livaOneMinter = await LivaOneMinter.deployed();
+    await deployer.deploy(LivaOneMinter, "0xc078e9F3994bEf168e1aF3B2195A2C4149cc3f36", "0x6c6C7dDBB2131dB09b6bA86B561147b0556a350d");
+    // const livaOneMinter = await LivaOneMinter.deployed();
 
     // console.log("adding Liva one to APContract")
     // await apContract.addStrategy(

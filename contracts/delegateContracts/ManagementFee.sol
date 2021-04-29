@@ -10,7 +10,7 @@ contract ManagementFee
         internal
         returns(uint256) 
     {
-        ManagementFeeStorage mStorage = ManagementFeeStorage(0xF8F1531383c56e7A5184E368714d58604a713291);
+        ManagementFeeStorage mStorage = ManagementFeeStorage(0xeC699100e23959797267319f4361168939e4eD95);
         uint256 platformFee = mStorage.getPlatformFee();
         uint256 platformNavInterest = vaultNAV.mul(blockDifference.mul(1e18)).mul(platformFee).div(uint256(262800000).mul(1e36));
         uint256 platformShare = platformNavInterest.mul(1e18).div(tokenValueInUSD());
@@ -20,7 +20,7 @@ contract ManagementFee
     function processStrategyAnnualFee(uint256 blockDifference, uint256 vaultNAV)
         internal 
     {
-        ManagementFeeStorage mStorage = ManagementFeeStorage(0xF8F1531383c56e7A5184E368714d58604a713291);
+        ManagementFeeStorage mStorage = ManagementFeeStorage(0xeC699100e23959797267319f4361168939e4eD95);
         address[] memory strategies = IAPContract(APContract).getVaultActiveStrategy(address(this));
         for (uint256 i = 0; i < strategies.length; i++) {
             (address benefeciary,) = IAPContract(APContract).getStrategyManagementDetails(address(this), strategies[i]);
