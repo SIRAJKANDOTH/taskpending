@@ -51,4 +51,11 @@ contract SafeUtils
         }
     }
 
+    function tokenBalanceUpdation(address[] memory _assetList,uint256[] memory _amount) public
+    {
+        for (uint256 i = 0; i < _assetList.length; i++) {
+            tokenBalances.setTokenBalance(_assetList[i],_amount[i]);
+        }
+    }
+
 }

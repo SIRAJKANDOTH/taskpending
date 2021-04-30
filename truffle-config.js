@@ -50,7 +50,7 @@ module.exports = {
       network_id: "1",
       gasPrice: 50000000000, // 115 Gwei
       networkCheckTimeout: 1000000000,
-      gas: 2556227,
+      gas: 2656227,
     },
     xdai: {
       provider: () => {
