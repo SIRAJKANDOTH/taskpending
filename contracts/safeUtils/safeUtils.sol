@@ -32,7 +32,23 @@ contract SafeUtils
                    tokenBalances.setTokenBalance(_assetList[i],tokenBalances.getTokenBalance(_assetList[i]).add(_amount[i]));
                 }
              }
+             if(!isAssetDeposited[_assetList[i]])
+            {
+                isAssetDeposited[_assetList[i]] = true;
+                assetList.push(_assetList[i]);
+            }
         } 
+    }
+
+    function addToAssetList(address[] memory _assetList) public {
+        for (uint256 i = 0; i < _assetList.length; i++) {
+
+            if(!isAssetDeposited[_assetList[i]])
+            {
+                isAssetDeposited[_assetList[i]] = true;
+                assetList.push(_assetList[i]);
+            }
+        }
     }
 
 }
