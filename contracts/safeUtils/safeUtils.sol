@@ -26,10 +26,10 @@ contract SafeUtils
         for (uint256 i = 0; i < _assetList.length; i++) {
              if((IAPContract(APContract)._isVaultAsset(_assetList[i]))) {
                 uint256 unmintedShare=IERC20(_assetList[i]).balanceOf(address(this)).sub(tokenBalances.getTokenBalance(_assetList[i]));
-                if(unmintedShare<=_amount[i]) {
+                if(unmintedShare>=_amount[i]) {
                    uint256 tokensToBeMinted=getMintValue(getDepositNAV(_assetList[i],_amount[i]));
                    _mint(reciever[i], tokensToBeMinted);
-                   tokenBalances.setTokenBalance(_assetList[i],tokenBalances.getTokenBalance(_assetList[i]).add(unmintedShare));
+                   tokenBalances.setTokenBalance(_assetList[i],tokenBalances.getTokenBalance(_assetList[i]).add(_amount[i]));
                 }
              }
         } 
