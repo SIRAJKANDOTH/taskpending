@@ -223,6 +223,24 @@ contract APContract
         yieldsterGOD = _yieldsterGOD;
     }
 
+    /// @dev Function to set Yieldster DAO.
+    /// @param _yieldsterDAO Address of the Yieldster DAO.
+    function setYieldsterDAO(address _yieldsterDAO)
+        public
+    {
+        require(msg.sender == yieldsterDAO, "Only Yieldster DAO can perform this operation");
+        yieldsterDAO = _yieldsterDAO;
+    }
+
+    /// @dev Function to set Yieldster Treasury.
+    /// @param _yieldsterTreasury Address of the Yieldster Treasury.
+    function setYieldsterTreasury(address _yieldsterTreasury)
+        public
+    {
+        require(msg.sender == yieldsterDAO, "Only Yieldster DAO can perform this operation");
+        yieldsterTreasury = _yieldsterTreasury;
+    }
+
     /// @dev Function to disable Yieldster GOD.
     function disableYieldsterGOD()
         public
