@@ -16,33 +16,39 @@ contract SafeUtils
             if(! (IAPContract(APContract)._isVaultAsset(cleanUpList[i]))) {
                 uint256 _amount = IERC20(cleanUpList[i]).balanceOf(address(this));
                 if(_amount > 0) {
-                    IERC20(cleanUpList[i]).transfer(IAPContract(APContract).yieldsterTreasury(), _amount);
+                    IERC20(cleanUpList[i]).safeTransfer(IAPContract(APContract).yieldsterTreasury(), _amount);
                 }
             }
         }
     }
 
-    function approvedAssetCleanUp(address[] memory _assetList,uint256[] memory _amount,address[] memory reciever) public {
+    function approvedAssetCleanUp(
+        address[] memory _assetList,
+        uint256[] memory _amount,
+        address[] memory reciever
+        ) 
+        public 
+    {
         for (uint256 i = 0; i < _assetList.length; i++) {
              if((IAPContract(APContract)._isVaultAsset(_assetList[i]))) {
-                uint256 unmintedShare=IERC20(_assetList[i]).balanceOf(address(this)).sub(tokenBalances.getTokenBalance(_assetList[i]));
-                if(unmintedShare>=_amount[i]) {
-                   uint256 tokensToBeMinted=getMintValue(getDepositNAV(_assetList[i],_amount[i]));
+                uint256 unmintedShare = IERC20(_assetList[i]).balanceOf(address(this)).sub(tokenBalances.getTokenBalance(_assetList[i]));
+                if(unmintedShare >= _amount[i]) {
+                   uint256 tokensToBeMinted = getMintValue(getDepositNAV(_assetList[i], _amount[i]));
                    _mint(reciever[i], tokensToBeMinted);
-                   tokenBalances.setTokenBalance(_assetList[i],tokenBalances.getTokenBalance(_assetList[i]).add(_amount[i]));
+                   tokenBalances.setTokenBalance(_assetList[i], tokenBalances.getTokenBalance(_assetList[i]).add(_amount[i]));
                 }
              }
-             if(!isAssetDeposited[_assetList[i]])
-            {
+             if(!isAssetDeposited[_assetList[i]]) {
                 isAssetDeposited[_assetList[i]] = true;
                 assetList.push(_assetList[i]);
             }
         } 
     }
 
-    function addToAssetList(address[] memory _assetList) public {
+    function addToAssetList(address[] memory _assetList) 
+        public 
+    {
         for (uint256 i = 0; i < _assetList.length; i++) {
-
             if(!isAssetDeposited[_assetList[i]])
             {
                 isAssetDeposited[_assetList[i]] = true;
@@ -51,7 +57,11 @@ contract SafeUtils
         }
     }
 
-    function tokenBalanceUpdation(address[] memory _assetList,uint256[] memory _amount) public
+    function tokenBalanceUpdation(
+        address[] memory _assetList,
+        uint256[] memory _amount
+        ) 
+    public
     {
         for (uint256 i = 0; i < _assetList.length; i++) {
             tokenBalances.setTokenBalance(_assetList[i],_amount[i]);

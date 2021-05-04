@@ -81,7 +81,7 @@ contract StockWithdraw
     {
         tokenBalances.setTokenBalance(tokenAddress, tokenBalances.getTokenBalance(tokenAddress).sub(updatedBalance));
         _burn(msg.sender, shares);
-        IERC20(tokenAddress).transfer(msg.sender, transferAmount);
+        IERC20(tokenAddress).safeTransfer(msg.sender, transferAmount);
     }
 
     function strategyWithdraw(address _tokenAddress, uint256 _shares) 
@@ -151,7 +151,7 @@ contract StockWithdraw
             if(safeStrategyBalance > 0) {
                 uint256 strategyShares = (_shares.mul(safeStrategyBalance)).div(safeTotalSupply); 
                 (address returnToken, uint256 returnAmount) = IStrategy(strategies[i]).withdraw(strategyShares, address(0));
-                IERC20(returnToken).transfer(msg.sender, returnAmount);
+                IERC20(returnToken).safeTransfer(msg.sender, returnAmount);
             }
         }
 
@@ -160,7 +160,7 @@ contract StockWithdraw
             if(tokenBalances.getTokenBalance(assetList[i]) > 0){
                 uint256 tokensToGive = (_shares.mul(tokenBalances.getTokenBalance(assetList[i]))).div(safeTotalSupply);
                 tokenBalances.setTokenBalance(assetList[i],tokenBalances.getTokenBalance(assetList[i]).sub(tokensToGive));
-                token.transfer(msg.sender, tokensToGive);
+                token.safeTransfer(msg.sender, tokensToGive);
             }
         }
     }

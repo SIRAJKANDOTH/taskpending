@@ -51,7 +51,7 @@ contract YieldsterVault
             IERC20 token = IERC20(assetList[i]);
             uint256 tokenBalance = token.balanceOf(address(this));
             if(tokenBalance > 0){
-                token.transfer(IAPContract(APContract).emergencyVault(), tokenBalance);
+                token.safeTransfer(IAPContract(APContract).emergencyVault(), tokenBalance);
             }
         }
     }
