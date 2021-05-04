@@ -18,14 +18,13 @@ contract StockDeposit
         IERC20 token = ERC20(_tokenAddress);
         if(totalSupply() == 0){
             _share = IHexUtils(IAPContract(APContract).stringUtils()).toDecimals(_tokenAddress,_amount);
-        }
-        else{
+        } else {
             _share = getMintValue(getDepositNAV(_tokenAddress, _amount));
         }
-        token.transferFrom(msg.sender, address(this), _amount);
-        tokenBalances.setTokenBalance(_tokenAddress,tokenBalances.getTokenBalance(_tokenAddress).add(_amount));
+        token.safeTransferFrom(msg.sender, address(this), _amount);
+        tokenBalances.setTokenBalance(_tokenAddress, tokenBalances.getTokenBalance(_tokenAddress).add(_amount));
         _mint(msg.sender, _share);
-        if(!isAssetDeposited[_tokenAddress]){
+        if(!isAssetDeposited[_tokenAddress]) {
             isAssetDeposited[_tokenAddress] = true;
             assetList.push(_tokenAddress);
         }

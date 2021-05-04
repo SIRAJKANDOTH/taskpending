@@ -8,7 +8,6 @@ contract ManagementFee
 
     function processPlatformFee(uint256 blockDifference, uint256 vaultNAV)
         internal
-        returns(uint256) 
     {
         ManagementFeeStorage mStorage = ManagementFeeStorage(0xeC699100e23959797267319f4361168939e4eD95);
         uint256 platformFee = mStorage.getPlatformFee();
@@ -40,9 +39,9 @@ contract ManagementFee
         uint256 vaultNAV = getVaultNAV();
 
         if(vaultNAV > 0) {
-            uint256 platformShare = processPlatformFee(blockDifference, vaultNAV);
+            processPlatformFee(blockDifference, vaultNAV);
             processStrategyAnnualFee(blockDifference, vaultNAV);
-            tokenBalances.setTokenTobeMinted(tokenBalances.getTokenToBeMinted().add(platformShare));
+            tokenBalances.setLastTransactionBlockNumber();
         }
     }
 }

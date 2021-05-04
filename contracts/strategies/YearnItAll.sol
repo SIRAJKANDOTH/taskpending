@@ -95,7 +95,7 @@ contract YearnItAll
         {
             _shares = getMintValue(getDepositNAV(_tokenAddress, _amount));
         }
-        _token.transferFrom(msg.sender, address(this), _amount);
+        _token.safeTransferFrom(msg.sender, address(this), _amount);
         _token.approve(safeActiveProtocol[msg.sender], _amount);
         IVault(safeActiveProtocol[msg.sender]).deposit(_amount);
         _mint(msg.sender, _shares);
@@ -166,7 +166,7 @@ contract YearnItAll
         uint256 _protocolShares = (strategyTokenValueInUSD.mul(1e18)).div(uint256(protocolTokenUSD));
         IVault(safeActiveProtocol[msg.sender]).withdraw(_protocolShares);
         _burn(msg.sender, _shares);
-        _token.transfer(msg.sender, tokenCount);
+        _token.safeTransfer(msg.sender, tokenCount);
     }
 
 
@@ -196,7 +196,7 @@ contract YearnItAll
         uint256 tokenUSD = IAPContract(APContract).getUSDPrice(_tokenAddress);
         uint256 tokensToGive = (SafeProtocolBalance.mul(uint256(protocolTokenUSD))).div(uint256(tokenUSD));
         _burn(msg.sender, balanceOf(msg.sender));
-        _token.transfer(msg.sender, tokensToGive);
+        _token.safeTransfer(msg.sender, tokensToGive);
     }
 
     function want() external view returns (address)

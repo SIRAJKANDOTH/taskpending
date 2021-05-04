@@ -273,7 +273,6 @@ contract YieldsterVault
         external
     { 
         require(IAPContract(APContract).isDepositAsset(_tokenAddress), "Not an approved deposit asset");
-        managementFeeCleanUp();
         (bool result, ) = IAPContract(APContract).getDepositStrategy().delegatecall(abi.encodeWithSignature("deposit(address,uint256)", _tokenAddress, _amount));
         revertDelegate(result);
     }
@@ -318,7 +317,8 @@ contract YieldsterVault
         require(IAPContract(APContract).isStrategyActive(address(this), strategy), "Strategy inactive");
         for(uint256 i = 0; i < _assets.length; i++) {
             uint256 tokenBalance = tokenBalances.getTokenBalance(_assets[i]);
-            if(tokenBalance > _amount[i]) { 
+            if(tokenBalance >= _amount[i]) {
+                tokenBalances.setTokenBalance(_assets[i], tokenBalance.sub(_amount[i]));
                 IERC20(_assets[i]).approve(strategy, _amount[i]);
                 IStrategy(strategy).deposit(_assets[i], _amount[i]);
             }

@@ -101,7 +101,7 @@ contract YearnItAllZapper
     {
         uint256 _shares;
         address _yVault = safeActiveProtocol[msg.sender];
-        IERC20(_depositAsset).transferFrom(msg.sender, address(this), _amount);
+        IERC20(_depositAsset).safeTransferFrom(msg.sender, address(this), _amount);
         uint256 yvtokenPriceInUSD=IAPContract(APContract).getUSDPrice(_yVault);
         uint256 strategyshareInUSD=_amount.mul(IAPContract(APContract).getUSDPrice(_depositAsset)).div(1e18);
         uint256 equivalentyvTokenCount=strategyshareInUSD.mul(1e18).div(yvtokenPriceInUSD);
@@ -188,7 +188,7 @@ contract YearnItAllZapper
         _burn(msg.sender, _shares);
         if(_withrawalAsset==address(0))
         {
-            IERC20(safeActiveProtocol[msg.sender]).transfer(msg.sender,vaultTokensToRemoved);
+            IERC20(safeActiveProtocol[msg.sender]).safeTransfer(msg.sender,vaultTokensToRemoved);
             return (safeActiveProtocol[msg.sender],vaultTokensToRemoved);   
 
         }
@@ -255,7 +255,7 @@ contract YearnItAllZapper
     }
 
     function incaseTokengetStuck(address _tokenAddres) public onlyOwner {
-        IERC20(_tokenAddres).transfer(msg.sender,IERC20(_tokenAddres).balanceOf(address(this)));
+        IERC20(_tokenAddres).safeTransfer(msg.sender,IERC20(_tokenAddres).balanceOf(address(this)));
     }
 
 }

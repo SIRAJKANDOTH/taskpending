@@ -28,10 +28,6 @@ contract LockedWithdraw
         lockStorage.addRequest(msg.sender, address(0), _shares);
     }
 
-    
-
-
-
     function getStrategyWithHighestNav()
         view
         internal    
@@ -105,7 +101,7 @@ contract LockedWithdraw
     {
         tokenBalances.setTokenBalance(tokenAddress, tokenBalances.getTokenBalance(tokenAddress).sub(updatedBalance));
         _burn(_withdrawer, shares);
-        IERC20(tokenAddress).transfer(_withdrawer, transferAmount);
+        IERC20(tokenAddress).safeTransfer(_withdrawer, transferAmount);
     }
 
     function strategyWithdraw(address _tokenAddress, uint256 _shares,address _withdrawer) 
@@ -177,7 +173,7 @@ contract LockedWithdraw
             if(safeStrategyBalance > 0) {
                 uint256 strategyShares = (_shares.mul(safeStrategyBalance)).div(safeTotalSupply); 
                 (address returnToken, uint256 returnAmount) = IStrategy(strategies[i]).withdraw(strategyShares, address(0));
-                IERC20(returnToken).transfer(_withdrawer, returnAmount);
+                IERC20(returnToken).safeTransfer(_withdrawer, returnAmount);
             }
         }
 
@@ -185,8 +181,8 @@ contract LockedWithdraw
             IERC20 token = IERC20(assetList[i]);
             if(tokenBalances.getTokenBalance(assetList[i]) > 0){
                 uint256 tokensToGive = (_shares.mul(tokenBalances.getTokenBalance(assetList[i]))).div(safeTotalSupply);
-                tokenBalances.setTokenBalance(assetList[i],tokenBalances.getTokenBalance(assetList[i]).sub(tokensToGive));
-                token.transfer(_withdrawer, tokensToGive);
+                tokenBalances.setTokenBalance(assetList[i], tokenBalances.getTokenBalance(assetList[i]).sub(tokensToGive));
+                token.safeTransfer(_withdrawer, tokensToGive);
             }
         }
     }
@@ -195,15 +191,14 @@ contract LockedWithdraw
     function withdrawalCleanUp() 
         public
     {
-        LockStorage lockStorage= LockStorage(0xF8F1531383c56e7A5184E368714d58604a713291);
+        LockStorage lockStorage = LockStorage(0xF8F1531383c56e7A5184E368714d58604a713291);
         (address[] memory withdrawers, address[] memory assets, uint256[] memory amounts) = lockStorage.getWithdrawalList();
         for(uint256 i=0; i < withdrawers.length; i++) {
             if(withdrawers[i] != address(0) && amounts[i] > 0) {
-                // withdrawal logic
-                if(assets[i]==address(0)) {
+                if(assets[i] == address(0)) {
                     withdrawShares(amounts[i], withdrawers[i]);
                 } else {
-                    withdrawInToken(assets[i],amounts[i],withdrawers[i]);
+                    withdrawInToken(assets[i], amounts[i], withdrawers[i]);
                 }
             }
         }

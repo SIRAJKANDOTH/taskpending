@@ -164,7 +164,7 @@ contract LivaOneZapper
     // {
     //     uint256 _shares;
     //     address _yVault = safeActiveProtocol[msg.sender];
-    //     IERC20(_depositAsset).transferFrom(msg.sender, address(this), _amount);
+    //     IERC20(_depositAsset).safeTransferFrom(msg.sender, address(this), _amount);
     //     uint256 yvtokenPriceInUSD = IAPContract(APContract).getUSDPrice(_yVault);
     //     uint256 strategyshareInUSD = _amount.mul(IAPContract(APContract).getUSDPrice(_depositAsset)).div(1e18);
     //     uint256 equivalentyvTokenCount = strategyshareInUSD.mul(1e18).div(yvtokenPriceInUSD);
@@ -188,7 +188,7 @@ contract LivaOneZapper
         address _yVault = vaults[msg.sender].vaultActiveProtocol;
         uint256 amountDecimals = IHexUtils(IAPContract(APContract).stringUtils()).toDecimals(_depositAsset, _amount);
 
-        IERC20(_depositAsset).transferFrom(msg.sender, address(this), _amount);
+        IERC20(_depositAsset).safeTransferFrom(msg.sender, address(this), _amount);
         uint256 yvtokenPriceInUSD = IAPContract(APContract).getUSDPrice(_yVault);
         uint256 strategyshareInUSD = amountDecimals.mul(IAPContract(APContract).getUSDPrice(_depositAsset)).div(1e18);
         uint256 equivalentyvTokenCount = IHexUtils(IAPContract(APContract)
@@ -317,7 +317,7 @@ contract LivaOneZapper
     //     uint256 minTokensCount = vaultTokensToRemoved - vaultTokensToRemoved.mul(slippage).div(10000);
     //     _burn(msg.sender, _shares);
     //     if(_withrawalAsset == address(0)) {
-    //         IERC20(safeActiveProtocol[msg.sender]).transfer(msg.sender,vaultTokensToRemoved);
+    //         IERC20(safeActiveProtocol[msg.sender]).safeTransfer(msg.sender,vaultTokensToRemoved);
     //         return (safeActiveProtocol[msg.sender],vaultTokensToRemoved);   
     //     } else {
     //         uint256 returnedTokens = IZapper(zapOutZontract).ZapOut(msg.sender,_withrawalAsset,safeActiveProtocol[msg.sender],2,vaultTokensToRemoved,minTokensCount);
@@ -339,7 +339,7 @@ contract LivaOneZapper
         _burn(msg.sender, _shares);
 
         if(_withrawalAsset == address(0)) {
-            IERC20(protocol).transfer(msg.sender, protocolTokensToWithdraw);
+            IERC20(protocol).safeTransfer(msg.sender, protocolTokensToWithdraw);
             vaults[msg.sender].protocolBalance[protocol] -= protocolTokensToWithdraw;
             return (protocol, protocolTokensToWithdraw);   
         } else {

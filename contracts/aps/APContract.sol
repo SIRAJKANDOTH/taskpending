@@ -353,7 +353,6 @@ contract APContract
         view
         returns(uint256)
     {
-        require(_isAssetPresent(_tokenAddress),"Asset not present!");
         return IPriceModule(priceModule).getUSDPrice(_tokenAddress);
     }
 
