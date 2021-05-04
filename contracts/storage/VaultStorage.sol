@@ -40,16 +40,20 @@ contract VaultStorage
     // Token balance storage keeps track of tokens that are deposited to safe without worrying direct depoited assets affesting the NAV;
     TokenBalanceStorage tokenBalances;
     
-
-
     
     /// @dev Function to revert in case of delegatecall fail.
     function revertDelegate(bool delegateStatus)
         pure
         internal
     {
-        if(!delegateStatus) revert("Operation perfomed Failed");
-
+        if (delegateStatus == false) {
+            assembly {
+                let ptr := mload(0x40)
+                let size := returndatasize()
+                returndatacopy(ptr, 0, size)
+                revert(ptr, size)
+            }
+        }
     }
 
     function getTokenBalance(address _tokenAddress)
