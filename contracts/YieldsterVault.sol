@@ -16,6 +16,14 @@ contract YieldsterVault
         revertDelegate(result);
     }
 
+    /// @dev Function to set APS Address.
+    function setAPS(address _APContract)
+        external
+    {
+        require(msg.sender == IAPContract(APContract).yieldsterGOD(), "Sender not Authorized");
+        APContract = _APContract;
+    }
+
     /// @dev Function to Enable Emergency Break feature of the Vault.
     function enableEmergencyBreak()
         external
@@ -101,7 +109,7 @@ contract YieldsterVault
     /// @param _symbol Symbol for the Vault Token.
     /// @param _vaultAPSManager Address of the Vault APS Manager.
     /// @param _vaultStrategyManager Address of the Vault Strategy Manager.
-    /// @param _APContract Address of the APS Contract.
+    /// @param _owner Address of the Vault owner.
     /// @param _whiteListGroups List of whitelist groups that is authorized to perform interactions.
     function setup(
         string calldata _vaultName,
@@ -109,7 +117,7 @@ contract YieldsterVault
         string calldata _symbol,
         address _vaultAPSManager,
         address _vaultStrategyManager,
-        address _APContract, //Need to hardcode APContract address before deploying
+        address _owner,
         uint256[] calldata _whiteListGroups
     )
         external
@@ -119,8 +127,8 @@ contract YieldsterVault
         vaultName = _vaultName;
         vaultAPSManager = _vaultAPSManager;
         vaultStrategyManager = _vaultStrategyManager;
-        APContract = _APContract; //hardcode APContract address here before deploy to mainnet
-        owner = tx.origin;
+        APContract = address(0); //hardcode APContract address here before deploy to mainnet
+        owner = _owner;
         whiteListGroups = _whiteListGroups;
         setupToken(_tokenName, _symbol);
         tokenBalances = new TokenBalanceStorage();
@@ -134,13 +142,13 @@ contract YieldsterVault
         require(msg.sender == owner, "Only owner can perform this operation");
         require(!vaultRegistrationCompleted, "Vault is already registered");
         vaultRegistrationCompleted = true;
-        IAPContract(APContract).addVault(vaultAPSManager, vaultStrategyManager, whiteListGroups, owner);
+        IAPContract(APContract).addVault(vaultAPSManager, vaultStrategyManager, whiteListGroups);
     }
 
     /// @dev Function to manage the assets supported by the vaults.
     /// @param _enabledDepositAsset List of assets to be enabled in Deposit assets.
     /// @param _enabledWithdrawalAsset List of assets to be enabled in Withdrawal assets.
-    /// @param _disabledDepositAsset List of assets to be disabled in Deposit assets.
+    /// @param _disabledDepositAsset List of assets to be disabled in Deposit assets.   
     /// @param _disabledWithdrawalAsset List of assets to be disabled in Withdrawal assets.
     function setVaultAssets(
         address[] calldata _enabledDepositAsset,

@@ -19,11 +19,11 @@ interface IAPContract{
 
     function removeProtocol(address) external;
 
-    function addVault(address, address, uint256[] calldata, address) external;
+    function addVault(address, address, uint256[] calldata) external;
 
     function setVaultAssets(address[] calldata, address[] calldata,address[] calldata,address[] calldata) external;
 
-    function createVault(address, address) external;
+    function createVault(address) external;
 
     function yieldsterDAO() view external returns(address);
 

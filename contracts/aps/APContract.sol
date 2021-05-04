@@ -114,7 +114,7 @@ contract APContract
 
     mapping(address => SmartStrategy) smartStrategies;
 
-    mapping(address => address) safeOwner;
+    mapping(address => bool) vaultCreated;
     
     mapping(address => bool) APSManagers;
 
@@ -175,12 +175,6 @@ contract APContract
         require(APSManagers[msg.sender], "Only APS managers allowed to perform this operation!");
         _;
     }
-
-    modifier onlySafeOwner{
-        require(safeOwner[msg.sender] == tx.origin, "Only safe Owner can perform this operation");
-        _;
-    }
-
 
     function isVault( address _address) public view returns(bool){
        return vaults[_address].created;
@@ -359,13 +353,12 @@ contract APContract
 
 //Vaults
     /// @dev Function to create a vault.
-    /// @param _owner Address of the owner of the vault.
     /// @param _vaultAddress Address of the new vault.
-    function createVault(address _owner, address _vaultAddress)
+    function createVault(address _vaultAddress)
     public
     {
         require(msg.sender == proxyFactory, "Only Proxy Factory can perform this operation");
-        safeOwner[_vaultAddress] = _owner;
+        vaultCreated[_vaultAddress] = true;
     }
 
 
@@ -373,16 +366,14 @@ contract APContract
     /// @param _vaultAPSManager Address of the vaults APS Manager.
     /// @param _vaultStrategyManager Address of the vaults Strateg Manager.
     /// @param _whitelistGroup List of whitelist groups applied to the vault.
-    /// @param _owner Address of the vault owner.
     function addVault(
         address _vaultAPSManager,
         address _vaultStrategyManager,
-        uint256[] memory _whitelistGroup,
-        address _owner
+        uint256[] memory _whitelistGroup
     )
     public
     {   
-        require(safeOwner[msg.sender] == _owner, "Only owner can call this function");
+        require(vaultCreated[msg.sender], "Vault not created");
         Vault memory newVault = Vault(
             {
             vaultAPSManager : _vaultAPSManager, 
