@@ -235,7 +235,7 @@ contract(" APContract", function (accounts) {
       (currentNav * currentBlockDifference * 2) / 100 / 2628000;
 
     console.log("result: ", result.toString());
-    console.log("BlockDiffernce: ", currentBlockDifference.toString());
+    console.log("Block Differnce: ", currentBlockDifference.toString());
     console.log("curren Nav: ", currentNav.toString());
     console.log("calculated Fee ", calculatedFee.toString());
     assert.equal(
