@@ -1,0 +1,418 @@
+{
+  "contractName": "ICurveUSDCPoolExchange",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "int128",
+          "name": "_from",
+          "type": "int128"
+        },
+        {
+          "internalType": "int128",
+          "name": "_to",
+          "type": "int128"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_amount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_minReturn",
+          "type": "uint256"
+        }
+      ],
+      "name": "exchange",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "metadata": "{\"compiler\":{\"version\":\"0.8.5+commit.a4f2e591\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"int128\",\"name\":\"_from\",\"type\":\"int128\"},{\"internalType\":\"int128\",\"name\":\"_to\",\"type\":\"int128\"},{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_minReturn\",\"type\":\"uint256\"}],\"name\":\"exchange\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"/home/beno/Desktop/Projects/yieldster/yieldster-exchange/contracts/interfaces/ICurveUSDCPoolExchange.sol\":\"ICurveUSDCPoolExchange\"},\"evmVersion\":\"berlin\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"/home/beno/Desktop/Projects/yieldster/yieldster-exchange/contracts/interfaces/ICurveUSDCPoolExchange.sol\":{\"keccak256\":\"0x19c9f0906092750c3db0d40f9afbea5952427fd3422ccf37e8b11028fc1ca510\",\"urls\":[\"bzz-raw://feb7225c08272fb3e0bbc52913c5090240158a92d3fbf2624c264dbc8f5386a9\",\"dweb:/ipfs/QmbVL5SPa54ZrCSiNSzvskXM3nHSmUpztubncWRsGWzGVJ\"]}},\"version\":1}",
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "immutableReferences": {},
+  "generatedSources": [],
+  "deployedGeneratedSources": [],
+  "sourceMap": "",
+  "deployedSourceMap": "",
+  "source": "pragma solidity ^0.8.0;\n\ninterface ICurveUSDCPoolExchange {\n    function exchange(\n        int128 _from,\n        int128 _to,\n        uint256 _amount,\n        uint256 _minReturn\n    ) external;\n}\n",
+  "sourcePath": "/home/beno/Desktop/Projects/yieldster/yieldster-exchange/contracts/interfaces/ICurveUSDCPoolExchange.sol",
+  "ast": {
+    "absolutePath": "/home/beno/Desktop/Projects/yieldster/yieldster-exchange/contracts/interfaces/ICurveUSDCPoolExchange.sol",
+    "exportedSymbols": {
+      "ICurveUSDCPoolExchange": [
+        396
+      ]
+    },
+    "id": 397,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 384,
+        "literals": [
+          "solidity",
+          "^",
+          "0.8",
+          ".0"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "0:23:3"
+      },
+      {
+        "abstract": false,
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "interface",
+        "fullyImplemented": false,
+        "id": 396,
+        "linearizedBaseContracts": [
+          396
+        ],
+        "name": "ICurveUSDCPoolExchange",
+        "nameLocation": "35:22:3",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "functionSelector": "3df02124",
+            "id": 395,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "exchange",
+            "nameLocation": "73:8:3",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 393,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 386,
+                  "mutability": "mutable",
+                  "name": "_from",
+                  "nameLocation": "98:5:3",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 395,
+                  "src": "91:12:3",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_int128",
+                    "typeString": "int128"
+                  },
+                  "typeName": {
+                    "id": 385,
+                    "name": "int128",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "91:6:3",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_int128",
+                      "typeString": "int128"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 388,
+                  "mutability": "mutable",
+                  "name": "_to",
+                  "nameLocation": "120:3:3",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 395,
+                  "src": "113:10:3",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_int128",
+                    "typeString": "int128"
+                  },
+                  "typeName": {
+                    "id": 387,
+                    "name": "int128",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "113:6:3",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_int128",
+                      "typeString": "int128"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 390,
+                  "mutability": "mutable",
+                  "name": "_amount",
+                  "nameLocation": "141:7:3",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 395,
+                  "src": "133:15:3",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 389,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "133:7:3",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 392,
+                  "mutability": "mutable",
+                  "name": "_minReturn",
+                  "nameLocation": "166:10:3",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 395,
+                  "src": "158:18:3",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 391,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "158:7:3",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "81:101:3"
+            },
+            "returnParameters": {
+              "id": 394,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "191:0:3"
+            },
+            "scope": 396,
+            "src": "64:128:3",
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          }
+        ],
+        "scope": 397,
+        "src": "25:169:3",
+        "usedErrors": []
+      }
+    ],
+    "src": "0:195:3"
+  },
+  "legacyAST": {
+    "absolutePath": "/home/beno/Desktop/Projects/yieldster/yieldster-exchange/contracts/interfaces/ICurveUSDCPoolExchange.sol",
+    "exportedSymbols": {
+      "ICurveUSDCPoolExchange": [
+        396
+      ]
+    },
+    "id": 397,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 384,
+        "literals": [
+          "solidity",
+          "^",
+          "0.8",
+          ".0"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "0:23:3"
+      },
+      {
+        "abstract": false,
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "interface",
+        "fullyImplemented": false,
+        "id": 396,
+        "linearizedBaseContracts": [
+          396
+        ],
+        "name": "ICurveUSDCPoolExchange",
+        "nameLocation": "35:22:3",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "functionSelector": "3df02124",
+            "id": 395,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "exchange",
+            "nameLocation": "73:8:3",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 393,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 386,
+                  "mutability": "mutable",
+                  "name": "_from",
+                  "nameLocation": "98:5:3",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 395,
+                  "src": "91:12:3",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_int128",
+                    "typeString": "int128"
+                  },
+                  "typeName": {
+                    "id": 385,
+                    "name": "int128",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "91:6:3",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_int128",
+                      "typeString": "int128"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 388,
+                  "mutability": "mutable",
+                  "name": "_to",
+                  "nameLocation": "120:3:3",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 395,
+                  "src": "113:10:3",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_int128",
+                    "typeString": "int128"
+                  },
+                  "typeName": {
+                    "id": 387,
+                    "name": "int128",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "113:6:3",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_int128",
+                      "typeString": "int128"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 390,
+                  "mutability": "mutable",
+                  "name": "_amount",
+                  "nameLocation": "141:7:3",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 395,
+                  "src": "133:15:3",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 389,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "133:7:3",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 392,
+                  "mutability": "mutable",
+                  "name": "_minReturn",
+                  "nameLocation": "166:10:3",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 395,
+                  "src": "158:18:3",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 391,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "158:7:3",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "81:101:3"
+            },
+            "returnParameters": {
+              "id": 394,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "191:0:3"
+            },
+            "scope": 396,
+            "src": "64:128:3",
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          }
+        ],
+        "scope": 397,
+        "src": "25:169:3",
+        "usedErrors": []
+      }
+    ],
+    "src": "0:195:3"
+  },
+  "compiler": {
+    "name": "solc",
+    "version": "0.8.5+commit.a4f2e591.Emscripten.clang"
+  },
+  "networks": {},
+  "schemaVersion": "3.4.1",
+  "updatedAt": "2021-06-22T13:30:33.590Z",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {},
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {},
+    "version": 1
+  }
+}
