@@ -1,13 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.5.0 <0.7.0;
 
-contract Whitelist
-{
-
+contract Whitelist {
     uint256 groupId;
     address public whiteListManager;
-    struct WhitelistGroup
-    {
+    struct WhitelistGroup {
         mapping(address => bool) members;
         address whitelistGroupAdmin;
         bool created;
@@ -15,55 +12,49 @@ contract Whitelist
     mapping(uint256 => WhitelistGroup) private whitelistGroups;
     event GroupCreated(address, uint256);
 
-    constructor() public
-    {
+    constructor() public {
         whiteListManager = msg.sender;
     }
 
-    modifier onlyWhitelistManager{
-        require(msg.sender == whiteListManager, "Only Whitelist manager can call this function.");
+    modifier onlyWhitelistManager {
+        require(
+            msg.sender == whiteListManager,
+            "Only Whitelist manager can call this function."
+        );
         _;
     }
 
     /// @dev Function to change the whitelist manager of Yieldster.
     /// @param _manager Address of the new manager.
-    function changeManager(address _manager) 
-        public 
-        onlyWhitelistManager
-    {
+    function changeManager(address _manager) public onlyWhitelistManager {
         whiteListManager = _manager;
     }
 
     /// @dev Function that returns if a whitelist group is exist.
     /// @param _groupId Group Id of the whitelist group.
-    function _isGroup(uint256 _groupId) 
-        private 
-        view 
-        returns(bool)
-    {
+    function _isGroup(uint256 _groupId) private view returns (bool) {
         return whitelistGroups[_groupId].created;
     }
 
     /// @dev Function that returns if the msg.sender is the whitelist group admin.
     /// @param _groupId Group Id of the whitelist group.
-    function _isGroupAdmin(uint256 _groupId) 
-        private 
-        view 
-        returns(bool)
-    {
+    function _isGroupAdmin(uint256 _groupId) private view returns (bool) {
         return whitelistGroups[_groupId].whitelistGroupAdmin == msg.sender;
     }
 
     /// @dev Function to create a new whitelist group.
     /// @param _whitelistGroupAdmin Address of the whitelist group admin.
-    function createGroup(address _whitelistGroupAdmin) 
+    function createGroup(address _whitelistGroupAdmin)
         public
-        returns(uint256) 
+        returns (uint256)
     {
         groupId += 1;
         require(!whitelistGroups[groupId].created, "Group already exists");
-        WhitelistGroup memory newGroup = 
-        WhitelistGroup({ whitelistGroupAdmin : _whitelistGroupAdmin, created : true });
+        WhitelistGroup memory newGroup =
+            WhitelistGroup({
+                whitelistGroupAdmin: _whitelistGroupAdmin,
+                created: true
+            });
         whitelistGroups[groupId] = newGroup;
         whitelistGroups[groupId].members[_whitelistGroupAdmin] = true;
         whitelistGroups[groupId].members[msg.sender] = true;
@@ -73,25 +64,29 @@ contract Whitelist
 
     /// @dev Function to delete a whitelist group.
     /// @param _groupId Group Id of the whitelist group.
-    function deleteGroup(uint256 _groupId) 
-        public 
-    {
+    function deleteGroup(uint256 _groupId) public {
         require(_isGroup(_groupId), "Group doesn't exist!");
-        require(_isGroupAdmin(_groupId), "Only Whitelist Group admin is permitted for this operation");
+        require(
+            _isGroupAdmin(_groupId),
+            "Only Whitelist Group admin is permitted for this operation"
+        );
         delete whitelistGroups[_groupId];
     }
 
     /// @dev Function to add members to a whitelist group.
     /// @param _groupId Group Id of the whitelist group.
     /// @param _memberAddress List of address to be added to the whitelist group.
-    function addMembersToGroup(uint256 _groupId, address[] memory _memberAddress) 
-        public
-    {
+    function addMembersToGroup(
+        uint256 _groupId,
+        address[] memory _memberAddress
+    ) public {
         require(_isGroup(_groupId), "Group doesn't exist!");
-        require(_isGroupAdmin(_groupId), "Only goup admin is permitted for this operation");
+        require(
+            _isGroupAdmin(_groupId),
+            "Only goup admin is permitted for this operation"
+        );
 
-        for (uint256 i = 0; i < _memberAddress.length; i++) 
-        {
+        for (uint256 i = 0; i < _memberAddress.length; i++) {
             whitelistGroups[_groupId].members[_memberAddress[i]] = true;
         }
     }
@@ -99,14 +94,17 @@ contract Whitelist
     /// @dev Function to remove members from a whitelist group.
     /// @param _groupId Group Id of the whitelist group.
     /// @param _memberAddress List of address to be removed from the whitelist group.
-    function removeMembersFromGroup(uint256 _groupId, address[] memory _memberAddress) 
-        public
-    {
+    function removeMembersFromGroup(
+        uint256 _groupId,
+        address[] memory _memberAddress
+    ) public {
         require(_isGroup(_groupId), "Group doesn't exist!");
-        require(_isGroupAdmin(_groupId), "Only Whitelist Group admin is permitted for this operation");
+        require(
+            _isGroupAdmin(_groupId),
+            "Only Whitelist Group admin is permitted for this operation"
+        );
 
-        for (uint256 i = 0; i < _memberAddress.length; i++) 
-        {
+        for (uint256 i = 0; i < _memberAddress.length; i++) {
             whitelistGroups[_groupId].members[_memberAddress[i]] = false;
         }
     }
@@ -114,10 +112,10 @@ contract Whitelist
     /// @dev Function to check if an address is a whitelisted address.
     /// @param _groupId Group Id of the whitelist group.
     /// @param _memberAddress Address to check.
-    function isMember(uint256 _groupId, address _memberAddress) 
-        public 
-        view 
-        returns(bool)
+    function isMember(uint256 _groupId, address _memberAddress)
+        public
+        view
+        returns (bool)
     {
         require(_isGroup(_groupId), "Group doesn't exist!");
         return whitelistGroups[_groupId].members[_memberAddress];
@@ -125,11 +123,7 @@ contract Whitelist
 
     /// @dev Function that returns the address of the whitelist group admin.
     /// @param _groupId Group Id of the whitelist group.
-    function getWhitelistAdmin(uint256 _groupId)
-        public
-        view
-        returns(address)
-    {
+    function getWhitelistAdmin(uint256 _groupId) public view returns (address) {
         require(_isGroup(_groupId), "Group doesn't exist!");
         return whitelistGroups[_groupId].whitelistGroupAdmin;
     }
@@ -137,12 +131,15 @@ contract Whitelist
     /// @dev Function to change the whitelist admin of a group.
     /// @param _groupId Group Id of the whitelist group.
     /// @param _whitelistGroupAdmin Address of the new whitelist admin.
-    function changeWhitelistAdmin(uint256 _groupId, address _whitelistGroupAdmin)
-        public
-    {
+    function changeWhitelistAdmin(
+        uint256 _groupId,
+        address _whitelistGroupAdmin
+    ) public {
         require(_isGroup(_groupId), "Group doesn't exist!");
-        require(whitelistGroups[_groupId].whitelistGroupAdmin == msg.sender, "Only existing whitelist admin can perform this operation");
+        require(
+            whitelistGroups[_groupId].whitelistGroupAdmin == msg.sender,
+            "Only existing whitelist admin can perform this operation"
+        );
         whitelistGroups[_groupId].whitelistGroupAdmin = _whitelistGroupAdmin;
     }
-
 }

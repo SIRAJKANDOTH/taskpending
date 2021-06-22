@@ -4,30 +4,24 @@ import "./IProxyCreationCallback.sol";
 import "../interfaces/IAPContract.sol";
 
 contract YieldsterVaultProxyFactory {
-
     address private mastercopy;
     address private APContract;
     address private owner;
-    
+
     event ProxyCreation(YieldsterVaultProxy proxy);
-    constructor(address _mastercopy, address _APContract)
-    public
-    {
+
+    constructor(address _mastercopy, address _APContract) public {
         mastercopy = _mastercopy;
         APContract = _APContract;
         owner = msg.sender;
     }
 
-    function setMasterCopy(address _mastercopy)
-        public
-    {
+    function setMasterCopy(address _mastercopy) public {
         require(msg.sender == owner, "Not Authorized");
         mastercopy = _mastercopy;
     }
 
-    function setAPContract(address _APContract)
-        public
-    {
+    function setAPContract(address _APContract) public {
         require(msg.sender == owner, "Not Authorized");
         APContract = _APContract;
     }
@@ -42,7 +36,12 @@ contract YieldsterVaultProxyFactory {
         if (data.length > 0)
             // solium-disable-next-line security/no-inline-assembly
             assembly {
-                if eq(call(gas, proxy, 0, add(data, 0x20), mload(data), 0, 0), 0) { revert(0, 0) }
+                if eq(
+                    call(gas, proxy, 0, add(data, 0x20), mload(data), 0, 0),
+                    0
+                ) {
+                    revert(0, 0)
+                }
             }
         IAPContract(APContract).createVault(address(proxy));
         emit ProxyCreation(proxy);
@@ -57,6 +56,4 @@ contract YieldsterVaultProxyFactory {
     function proxyCreationCode() public pure returns (bytes memory) {
         return type(YieldsterVaultProxy).creationCode;
     }
-
-
 }

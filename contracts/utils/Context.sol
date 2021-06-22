@@ -10,7 +10,7 @@ pragma solidity >=0.5.0 <0.7.0;
  *
  * This contract is only required for intermediate, library-like contracts.
  */
- contract Context {
+contract Context {
     function _msgSender() internal view returns (address payable) {
         return msg.sender;
     }
