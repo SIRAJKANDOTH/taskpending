@@ -60,15 +60,15 @@ contract("Safe Deployment", function (accounts) {
         await usdt.transfer(accounts[1], to6("100"))
 
         priceModule = await PriceModule.new("0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5");
-        await priceModule.addToken("0x6B175474E89094C44Da98b954EedeAC495271d0F", "0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9", 1) //DAI
-        await priceModule.addToken("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", "0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6", 1) //USDC
-        await priceModule.addToken("0xdac17f958d2ee523a2206206994597c13d831ec7", "0x3E7d1eAB13ad0104d2750B8863b489D65364e32D", 1) //USDT
-        await priceModule.addToken("0x845838DF265Dcd2c412A1Dc9e959c7d08537f8a2", "0x0000000000000000000000000000000000000000", 2) //Curve.fi cDAI/cUSDC 
-        await priceModule.addToken("0xD2967f45c4f384DEEa880F807Be904762a3DeA07", "0x0000000000000000000000000000000000000000", 2) //Curve.fi GUSD/3Crv
-        await priceModule.addToken("0x3B3Ac5386837Dc563660FB6a0937DFAa5924333B", "0x0000000000000000000000000000000000000000", 2) //Curve.fi yDAI/yUSDC/yUSDT/yBUSD
-        await priceModule.addToken("0x629c759D1E83eFbF63d84eb3868B564d9521C129", "0x0000000000000000000000000000000000000000", 3) //yearn Curve.fi cDAI/cUSDC
-        await priceModule.addToken("0xcC7E70A958917cCe67B4B87a8C30E6297451aE98", "0x0000000000000000000000000000000000000000", 3) //yearn Curve.fi GUSD/3Crv
-        await priceModule.addToken("0x2994529C0652D127b7842094103715ec5299bBed", "0x0000000000000000000000000000000000000000", 3) //yearn Curve.fi yDAI/yUSDC/yUSDT/yBUSD
+        await priceModule.addToken(dai.address, "0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9", 1) //DAI
+        await priceModule.addToken(usdc.address, "0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6", 1) //USDC
+        await priceModule.addToken(usdt.address, "0x3E7d1eAB13ad0104d2750B8863b489D65364e32D", 1) //USDT
+        await priceModule.addToken(uCrvCompToken.address, "0x0000000000000000000000000000000000000000", 2) //Curve.fi cDAI/cUSDC 
+        await priceModule.addToken(uCrvGUSDToken.address, "0x0000000000000000000000000000000000000000", 2) //Curve.fi GUSD/3Crv
+        await priceModule.addToken(uCrvBUSDToken.address, "0x0000000000000000000000000000000000000000", 2) //Curve.fi yDAI/yUSDC/yUSDT/yBUSD
+        await priceModule.addToken(crvComp.address, "0x0000000000000000000000000000000000000000", 3) //yearn Curve.fi cDAI/cUSDC
+        await priceModule.addToken(crvGUSD.address, "0x0000000000000000000000000000000000000000", 3) //yearn Curve.fi GUSD/3Crv
+        await priceModule.addToken(crvBUSD.address, "0x0000000000000000000000000000000000000000", 3) //yearn Curve.fi yDAI/yUSDC/yUSDT/yBUSD
 
 
         platformManagemetFee = await PlatformManagementFee.new();
@@ -110,9 +110,9 @@ contract("Safe Deployment", function (accounts) {
 
         //Adding Assets
         console.log("adding assets")
-        await apContract.addAsset("DAI", "DAI Coin", "0x6B175474E89094C44Da98b954EedeAC495271d0F")
-        await apContract.addAsset("USDC", "USD Coin", "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")
-        await apContract.addAsset("USDT", "USDT Coin", "0xdac17f958d2ee523a2206206994597c13d831ec7")
+        await apContract.addAsset("DAI", "DAI Coin", dai.address)
+        await apContract.addAsset("USDC", "USD Coin", usdc.address)
+        await apContract.addAsset("USDT", "USDT Coin", usdt.address)
 
 
         //adding Protocols
@@ -120,25 +120,25 @@ contract("Safe Deployment", function (accounts) {
         await apContract.addProtocol(
             "yearn Curve.fi crvCOMP",
             "crvCOMP",
-            "0x629c759D1E83eFbF63d84eb3868B564d9521C129"
+            crvComp.address
         );
         await apContract.addProtocol(
             "yearn Curve.fi GUSD/3Crv",
             "crvGUSD",
-            "0xcC7E70A958917cCe67B4B87a8C30E6297451aE98"
+            crvGUSD.address
         );
         await apContract.addProtocol(
             "yearn Curve.fi yDAI/yUSDC/yUSDT/yBUSD",
             "crvBUSD",
-            "0x2994529C0652D127b7842094103715ec5299bBed"
+            crvBUSD.address
         );
 
         livaOne = await LivaOne.new(
             apContract.address,
             [
-                "0x629c759D1E83eFbF63d84eb3868B564d9521C129",
-                "0xcC7E70A958917cCe67B4B87a8C30E6297451aE98",
-                "0x2994529C0652D127b7842094103715ec5299bBed",
+                crvComp.address,
+                crvGUSD.address,
+                crvBUSD.address,
             ],
             "0x462991D18666c578F787e9eC0A74Cd18D2971E5F",
             "0xB0880df8420974ef1b040111e5e0e95f05F8fee1"
@@ -152,9 +152,9 @@ contract("Safe Deployment", function (accounts) {
             "Liva One",
             livaOne.address,
             [
-                "0x629c759D1E83eFbF63d84eb3868B564d9521C129",
-                "0xcC7E70A958917cCe67B4B87a8C30E6297451aE98",
-                "0x2994529C0652D127b7842094103715ec5299bBed",
+                crvComp.address,
+                crvGUSD.address,
+                crvBUSD.address,
             ],
             livaOneMinter.address,
             accounts[0],
@@ -201,8 +201,8 @@ contract("Safe Deployment", function (accounts) {
 
         console.log("Set Vault Assets")
         await testVault.setVaultAssets(
-            ["0x6B175474E89094C44Da98b954EedeAC495271d0F", "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", "0xdac17f958d2ee523a2206206994597c13d831ec7"],
-            ["0x6B175474E89094C44Da98b954EedeAC495271d0F", "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", "0xdac17f958d2ee523a2206206994597c13d831ec7"],
+            [dai.address, usdc.address, usdt.address],
+            [dai.address, usdc.address, usdt.address],
             [],
             [],
         );
@@ -211,9 +211,9 @@ contract("Safe Deployment", function (accounts) {
         await testVault.setVaultStrategyAndProtocol(
             livaOne.address,
             [
-                "0x629c759D1E83eFbF63d84eb3868B564d9521C129",
-                "0xcC7E70A958917cCe67B4B87a8C30E6297451aE98",
-                "0x2994529C0652D127b7842094103715ec5299bBed"],
+                crvComp.address,
+                crvGUSD.address,
+                crvBUSD.address],
             [], []
         )
         assert.equal(await testVault.vaultName(), "Test Vault", "Names match");
