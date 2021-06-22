@@ -43,15 +43,6 @@ contract SafeUtils is VaultStorage {
                     );
                 }
             }
-            if (!isAssetPresent[_assetList[i]]) {
-                isAssetPresent[_assetList[i]] = true;
-                assetList.push(_assetList[i]);
-            }
-        }
-    }
-
-    function addToAssetList(address[] memory _assetList) public {
-        for (uint256 i = 0; i < _assetList.length; i++) {
             addToAssetList(_assetList[i]);
         }
     }
