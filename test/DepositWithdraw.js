@@ -1,517 +1,291 @@
 const utils = require("./utils/general");
-const YieldsterVault = artifacts.require("./YieldsterVault.sol");
-const APContract = artifacts.require("./aps/APContract.sol");
+
+const DAI = artifacts.require("DAI")
+const USDC = artifacts.require("USDC")
+const USDT = artifacts.require("USDT")
+
+const CrvComp = artifacts.require("CrvComp");
+const uCrvComp = artifacts.require("uCrvComp")
+
+const CrvGUSD = artifacts.require("CrvGUSD");
+const uCrvGUSD = artifacts.require("uCrvGUSD");
+
+const CrvBUSD = artifacts.require("CrvBUSD");
+const uCrvBUSD = artifacts.require("uCrvBUSD");
+
+const Zapper = artifacts.require("Zapper")
+
+const PlatformManagementFee = artifacts.require("./delegateContracts/ManagementFee.sol");
+const ProfitManagementFee = artifacts.require("./delegateContracts/ProfitManagementFee.sol");
+const Exchange = artifacts.require("./exchange/Exchange.sol");
+const SafeUtils = artifacts.require("./safeUtils/SafeUtils.sol");
 const Whitelist = artifacts.require("./whitelist/Whitelist.sol");
 const PriceModule = artifacts.require("./price/PriceModule.sol");
-const ProxyFactory = artifacts.require("./YieldsterVaultProxyFactory.sol");
-const YRToken = artifacts.require("./yrToken.sol");
-const AishToken = artifacts.require("./aishToken.sol");
-const ManagementFee = artifacts.require(
-	"./delegateContracts/ManagementFee.sol"
-);
-const YearnItAll = artifacts.require("./strategies/YearnItAll.sol");
-const LivaOne = artifacts.require("./strategies/LivaOne.sol");
-const YearnItAllMinter = artifacts.require("./strategies/YearnItAllMinter.sol");
-const LivaOneMinter = artifacts.require("./strategies/LivaOneMinter.sol");
+const OneInch = artifacts.require("./oneInchMock/OneInch.sol");
 const HexUtils = artifacts.require("./utils/HexUtils.sol");
+const APContract = artifacts.require("./aps/APContract.sol");
 
-const StockDeposit = artifacts.require(
-	"./smartStrategies/deposit/StockDeposit.sol"
-);
-const StockWithdraw = artifacts.require(
-	"./smartStrategies/deposit/StockWithdraw.sol"
-);
-const Exchange = artifacts.require("./exchange/Exchange.sol");
+const ProxyFactory = artifacts.require("./proxies/YieldsterVaultProxyFactory.sol");
+const YieldsterVault = artifacts.require("./YieldsterVault.sol");
+const StockDeposit = artifacts.require("./smartStrategies/deposit/StockDeposit.sol");
+const StockWithdraw = artifacts.require("./smartStrategies/deposit/StockWithdraw.sol");
 
-function token(n) {
-	return web3.utils.toWei(n, "ether");
-}
+const LivaOne = artifacts.require("./strategies/LivaOneZapper.sol");
+const LivaOneMinter = artifacts.require("./strategies/LivaOneMinter.sol");
 
-contract(" Deposit", function (accounts) {
-	let newYieldsterVault;
-	let newYieldsterVaultData;
-	let yieldsterVaultMasterCopy;
-	let apContract;
-	let whitelist;
-	let priceModule;
-	let proxyFactory;
-	let yrtToken;
-	let aishToken;
-	let groupId;
-	let strategyMinter;
-	let managementFee;
-	let stockDeposit;
-	let stockWithdraw;
-	let exchange;
-	let hexUtils;
+const SafeMinter = artifacts.require("./safeUtils/SafeMinter.sol")
 
-	beforeEach(async function () {
-		whitelist = await Whitelist.new();
-		hexUtils = await HexUtils.new();
-		managementFee = await ManagementFee.new();
-		stockDeposit = await StockDeposit.new();
-		stockWithdraw = await StockWithdraw.new();
-		exchange = await Exchange.new();
+var abi = require('ethereumjs-abi');
 
-		yieldsterVaultMasterCopy = await utils.deployContract(
-			"deploying Yieldster Vault Mastercopy",
-			YieldsterVault
-		);
-		apContract = await APContract.new(
-			yieldsterVaultMasterCopy.address,
-			whitelist.address,
-			managementFee.address,
-			hexUtils.address
-		);
+contract("Safe Deployment", function (accounts) {
+    let dai, usdc, usdt;
+    let uCrvCompToken, uCrvGUSDToken, uCrvBUSDToken;
+    let crvComp, crvGUSD, crvBUSD;
+    let platformManagemetFee, profitManagementFee, exchange;
+    let safeUtils, priceModule, whitelist, oneInch, hexUtils;
+    let zapper, proxyFactory, apContract;
+    let yieldsterVaultMasterCopy, stockDeposit, stockWithdraw;
+    let livaOne, livaOneMinter, safeMinter;
 
-		let groupHash = await whitelist.createGroup(accounts[1]);
-		groupId = (await groupHash.logs[0].args["1"]).toString();
+    beforeEach(async function () {
+        dai = await DAI.new();
+        usdc = await USDC.new();
+        usdt = await USDT.new();
 
-		console.log(
-			"Is whitelisted == ",
-			await whitelist.isMember(groupId, accounts[1])
-		);
+        uCrvCompToken = await uCrvComp.new();
+        uCrvGUSDToken = await uCrvGUSD.new();
+        uCrvBUSDToken = await uCrvBUSD.new();
 
-		priceModule = await PriceModule.new(apContract.address);
 
-		await apContract.setPriceModule(priceModule.address);
+        crvComp = await CrvComp.new(uCrvCompToken.address);
+        crvGUSD = await CrvGUSD.new(uCrvGUSDToken.address);
+        crvBUSD = await CrvBUSD.new(uCrvBUSDToken.address);
 
-		await apContract.setYieldsterExchange(exchange.address);
+        platformManagemetFee = await PlatformManagementFee.new();
+        profitManagementFee = await ProfitManagementFee.new();
+        exchange = await Exchange.new();
+        safeUtils = await SafeUtils.new();
+        hexUtils = await HexUtils.new();
+        priceModule = await PriceModule.new();
+        whitelist = await Whitelist.new();
+        oneInch = await OneInch.new(hexUtils.address, priceModule.address);
 
-		await apContract.setStockDepositWithdraw(
-			stockDeposit.address,
-			stockWithdraw.address
-		);
+        zapper = await Zapper.new(oneInch.address);
 
-		proxyFactory = await ProxyFactory.new(
-			yieldsterVaultMasterCopy.address,
-			apContract.address
-		);
-		yrtToken = await YRToken.new(token("100000000"));
-		aishToken = await AishToken.new(token("100000000"));
+        await dai.transfer(accounts[1], "1000000000000000")
+        await usdc.transfer(accounts[1], "1000000000000000")
+        await usdt.transfer(accounts[1], "1000000000000000")
+        await dai.transfer(oneInch.address, "1000000000000000")
+        await usdc.transfer(oneInch.address, "1000000000000000")
+        await usdt.transfer(oneInch.address, "1000000000000000")
+        await uCrvCompToken.transfer(oneInch.address, "1000000000000000")
+        await uCrvGUSDToken.transfer(oneInch.address, "1000000000000000")
+        await uCrvBUSDToken.transfer(oneInch.address, "1000000000000000")
 
-		await yrtToken.transfer(accounts[1], token("500"), { from: accounts[0] });
-		await yrtToken.transfer(accounts[2], token("500"), { from: accounts[0] });
-		await yrtToken.transfer(accounts[3], token("500"), { from: accounts[0] });
-		await aishToken.transfer(accounts[1], token("500"), { from: accounts[0] });
-		await aishToken.transfer(accounts[2], token("500"), { from: accounts[0] });
-		await aishToken.transfer(accounts[3], token("500"), { from: accounts[0] });
+        apContract = await APContract.new(
+            whitelist.address,
+            platformManagemetFee.address,
+            profitManagementFee.address,
+            hexUtils.address,
+            exchange.address,
+            oneInch.address,
+            priceModule.address,
+            safeUtils.address
+        );
 
-		await apContract.addProxyFactory(proxyFactory.address);
+        yieldsterVaultMasterCopy = await YieldsterVault.new();
 
-		await apContract.addProxyFactory(proxyFactory.address);
+        proxyFactory = await ProxyFactory.new(
+            yieldsterVaultMasterCopy.address,
+            apContract.address
+        );
 
-		await apContract.addAsset(
-			"YRT",
-			"YRT Token",
-			"0xd8bD0a1cB028a31AA859A21A3758685a95dE4623",
-			yrtToken.address
-		);
-		await apContract.addAsset(
-			"AISH",
-			"AISH Token",
-			"0x6f7454cba97fffe10e053187f23925a86f5c20c4",
-			aishToken.address
-		);
-		await apContract.addAsset(
-			"TUSD",
-			"Tether USD",
-			"0x6f7454cba97fffe10e053187f23925a86f5c20c4",
-			"0xd9ba894e0097f8cc2bbc9d24d308b98e36dc6d02"
-		);
-		await apContract.addAsset(
-			"DAI",
-			"DAI Coin",
-			"0x2bA49Aaa16E6afD2a993473cfB70Fa8559B523cF",
-			"0x5592ec0cfb4dbc12d3ab100b257153436a1f0fea"
-		);
-		await apContract.addAsset(
-			"USDC",
-			"USD Coin",
-			"0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB",
-			"0x4dbcdf9b62e891a7cec5a2568c3f4faf9e8abe2b"
-		);
-		await apContract.addAsset(
-			"LINK",
-			"LINK Coin",
-			"0xd8bD0a1cB028a31AA859A21A3758685a95dE4623",
-			"0x01be23585060835e02b77ef475b0cc51aa1e0709"
-		);
-		await apContract.addAsset(
-			"BAT",
-			"Basic Attention Token",
-			"0x031dB56e01f82f20803059331DC6bEe9b17F7fC9",
-			"0xbf7a7169562078c96f0ec1a8afd6ae50f12e5a99"
-		);
-		await apContract.addAsset(
-			"BNB",
-			"Binance Coin",
-			"0xcf0f51ca2cDAecb464eeE4227f5295F2384F84ED",
-			"0x030b0a08ecadde5ac33859a48d87416946c966a1"
-		);
-		await apContract.addAsset(
-			"fnx",
-			"FinanceX token",
-			"0xcf74110A02b1D391B27cE37364ABc3b279B1d9D1",
-			"0xd729a77e319e059b4467c402e173c552e63a6c55"
-		);
+        //Adding proxy factory to the APContract
+        await apContract.addProxyFactory(proxyFactory.address);
 
-		await apContract.addProtocol(
-			"yearn Curve.fi crvCOMP",
-			"crvCOMP",
-			"0xd27Dc2D8ceF541f94FbA737079F2DFeA39B2EEf8"
-		);
-		await apContract.addProtocol(
-			"yearn Curve.fi GUSD/3Crv",
-			"crvGUSD",
-			"0xD8052918CAd9a8B3a564d7Aa4e680a0dc156380e"
-		);
-		await apContract.addProtocol(
-			"yearn Curve.fi MUSD/3Crv",
-			"crvMUSD",
-			"0x3662ABD754eE1d8CB6f5F1D4E315932b36e9955B"
-		);
+        stockDeposit = await StockDeposit.new();
+        stockWithdraw = await StockWithdraw.new()
 
-		//Deploying Yearn It All strategy
-		const yearnItAll = await YearnItAll.new(apContract.address, [
-			"0xd27Dc2D8ceF541f94FbA737079F2DFeA39B2EEf8",
-			"0xD8052918CAd9a8B3a564d7Aa4e680a0dc156380e",
-			"0x3662ABD754eE1d8CB6f5F1D4E315932b36e9955B",
-		]);
-		const yearnItAllMinter = await YearnItAllMinter.new(
-			apContract.address,
-			yearnItAll.address
-		);
+        //Adding Stock withdraw and deposit to APContract
+        await apContract.setStockDepositWithdraw(
+            stockDeposit.address,
+            stockWithdraw.address
+        );
 
-		//Deploying Liva One strategy
-		const livaOne = await LivaOne.new(apContract.address, [
-			"0xd27Dc2D8ceF541f94FbA737079F2DFeA39B2EEf8",
-			"0xD8052918CAd9a8B3a564d7Aa4e680a0dc156380e",
-			"0x3662ABD754eE1d8CB6f5F1D4E315932b36e9955B",
-		]);
-		const livaOneMinter = await LivaOneMinter.new(
-			apContract.address,
-			livaOne.address
-		);
-		await apContract.addStrategy(
-			"Yearn it All",
-			yearnItAll.address,
-			[
-				"0xd27Dc2D8ceF541f94FbA737079F2DFeA39B2EEf8",
-				"0xD8052918CAd9a8B3a564d7Aa4e680a0dc156380e",
-				"0x3662ABD754eE1d8CB6f5F1D4E315932b36e9955B",
-			],
-			yearnItAllMinter.address,
-			"0x92506Ee00ad88354fa25E6CbFa7d42116d6823C0"
-		);
-		await apContract.addStrategy(
-			"Liva One",
-			livaOne.address,
-			[
-				"0xd27Dc2D8ceF541f94FbA737079F2DFeA39B2EEf8",
-				"0xD8052918CAd9a8B3a564d7Aa4e680a0dc156380e",
-				"0x3662ABD754eE1d8CB6f5F1D4E315932b36e9955B",
-			],
-			livaOneMinter.address,
-			"0x92506Ee00ad88354fa25E6CbFa7d42116d6823C0"
-		);
-	});
+        //Adding Assets
+        await apContract.addAsset("DAI", "DAI Coin", dai.address)
+        await apContract.addAsset("USDC", "USD Coin", usdc.address)
+        await apContract.addAsset("USDT", "USDT Coin", usdt.address)
 
-	it("should add Vault to APS", async () => {
-		newYieldsterVaultData = await yieldsterVaultMasterCopy.contract.methods
-			.setup(
-				"Liva One",
-				"Liva",
-				"LV",
-				accounts[0],
-				accounts[1],
-				apContract.address,
-				[groupId]
-			)
-			.encodeABI();
+        //adding Protocols
+        await apContract.addProtocol(
+            "yearn Curve.fi crvCOMP",
+            "crvCOMP",
+            crvComp.address
+        );
+        await apContract.addProtocol(
+            "yearn Curve.fi GUSD/3Crv",
+            "crvGUSD",
+            crvGUSD.address
+        );
+        await apContract.addProtocol(
+            "yearn Curve.fi yDAI/yUSDC/yUSDT/yBUSD",
+            "crvBUSD",
+            crvBUSD.address
+        );
 
-		newYieldsterVault = await utils.getParamFromTxEvent(
-			await proxyFactory.createProxy(newYieldsterVaultData),
-			"ProxyCreation",
-			"proxy",
-			proxyFactory.address,
-			YieldsterVault,
-			"create Yieldster Vault"
-		);
+        livaOne = await LivaOne.new(
+            apContract.address,
+            [
+                crvComp.address,
+                crvGUSD.address,
+                crvBUSD.address,
+            ],
+            zapper.address
+        );
 
-		console.log(
-			"Vault owner",
-			await newYieldsterVault.owner(),
-			"other address",
-			accounts[0]
-		);
+        livaOneMinter = await LivaOneMinter.new(apContract.address, livaOne.address)
 
-		await newYieldsterVault.registerVaultWithAPS();
-		await newYieldsterVault.setVaultAssets(
-			[
-				"0x4dbcdf9b62e891a7cec5a2568c3f4faf9e8abe2b",
-				"0x01be23585060835e02b77ef475b0cc51aa1e0709",
-				yrtToken.address,
-				aishToken.address,
-			],
-			[
-				"0x4dbcdf9b62e891a7cec5a2568c3f4faf9e8abe2b",
-				"0x01be23585060835e02b77ef475b0cc51aa1e0709",
-				yrtToken.address,
-				aishToken.address,
-			],
-			[],
-			[]
-		);
-		console.log("YRT TOken", yrtToken.address);
+        //adding Liva one to APContract
+        await apContract.addStrategy(
+            "Liva One",
+            livaOne.address,
+            [
+                crvComp.address,
+                crvGUSD.address,
+                crvBUSD.address,
+            ],
+            livaOneMinter.address,
+            accounts[0],
+            accounts[0],
+            "2000000000000000"
+        );
 
-		console.log("Vault Name", await newYieldsterVault.vaultName());
-		assert.equal(
-			await newYieldsterVault.vaultName(),
-			"Liva One",
-			"Names match"
-		);
+        safeMinter = await SafeMinter.new(accounts[0])
+        //Adding safe minter to the APContract
+        await apContract.setSafeMinter(safeMinter.address);
+    });
 
-		assert.ok(newYieldsterVault.address);
-		let VaultNAVInitial = await newYieldsterVault.getVaultNAV();
-		console.log("Vault NAV Initial", VaultNAVInitial.toString());
+    it("should create a new vault", async () => {
+        testVaultData = await yieldsterVaultMasterCopy.contract.methods
+            .setup(
+                "Test Vault",
+                "Test",
+                "T",
+                accounts[0],
+                apContract.address,
+                accounts[0],
+                []
+            )
+            .encodeABI();
 
-		let vaultTokenValueInitial = await newYieldsterVault.tokenValueInUSD();
-		console.log("token value usd Initial", vaultTokenValueInitial.toString());
+        testVault = await utils.getParamFromTxEvent(
+            await proxyFactory.createProxy(testVaultData),
+            "ProxyCreation",
+            "proxy",
+            proxyFactory.address,
+            YieldsterVault,
+            "create Yieldster Vault"
+        );
 
-		console.log("-----------deposit----------------");
+        console.log(
+            "vault owner",
+            await testVault.owner(),
+            "other address",
+            accounts[0]
+        );
 
-		await yrtToken.approve(newYieldsterVault.address, token("100"), {
-			from: accounts[1],
-		});
+        await testVault.registerVaultWithAPS();
 
-		await newYieldsterVault.deposit(yrtToken.address, token("1"), {
-			from: accounts[1],
-		});
-		await aishToken.approve(newYieldsterVault.address, token("100"), {
-			from: accounts[1],
-		});
+        await testVault.setVaultAssets(
+            [dai.address, usdc.address, usdt.address],
+            [dai.address, usdc.address, usdt.address],
+            [],
+            [],
+        );
 
-		// await aishToken.approve(newYieldsterVault.address, token("100"), {
-		// 	from: accounts[2],
-		// });
+        await testVault.setVaultStrategyAndProtocol(
+            livaOne.address,
+            [
+                crvComp.address,
+                crvGUSD.address,
+                crvBUSD.address,],
+            [], []
+        )
+        assert.equal(await testVault.vaultName(), "Test Vault", "Names match");
 
-		// await newYieldsterVault.deposit(aishToken.address, token("2"), {
-		// 	from: accounts[2],
-		// });
-		// await yrtToken.approve(newYieldsterVault.address, token("100"), {
-		// 	from: accounts[2],
-		// });
-		// await newYieldsterVault.deposit(yrtToken.address, token("8"), {
-		// 	from: accounts[2],
-		// });
-		// await yrtToken.approve(newYieldsterVault.address, token("100"), {
-		// 	from: accounts[3],
-		// });
-		// await newYieldsterVault.deposit(yrtToken.address, token("18"), {
-		// 	from: accounts[3],
-		// });
 
-		let yrtBalance = await yrtToken.balanceOf(newYieldsterVault.address);
-		console.log(
-			"Vault YRT Balance",
-			web3.utils.fromWei(yrtBalance.toString(), "ether")
-		);
+        //approve Tokens to vault
+        await dai.approve(testVault.address, 10000, { from: accounts[1] })
+        await usdt.approve(testVault.address, 10000, { from: accounts[1] })
+        await usdc.approve(testVault.address, 10000, { from: accounts[1] })
 
-		let aishBalance = await aishToken.balanceOf(newYieldsterVault.address);
-		console.log(
-			"Vault AISH Balance",
-			web3.utils.fromWei(aishBalance.toString(), "ether")
-		);
+        console.log("Activating vault strategy ", livaOne.address)
+        await testVault.setVaultActiveStrategy(livaOne.address)
+        console.log("Vault active strategies", (await testVault.getVaultActiveStrategy()))
 
-		let investor1VaultBalance = await newYieldsterVault.balanceOf(accounts[1]);
-		let investor2VaultBalance = await newYieldsterVault.balanceOf(accounts[2]);
-		// let investor3VaultBalance = await newYieldsterVault.balanceOf(accounts[3]);
-		console.log(
-			"Vault Token investor1 balance",
-			web3.utils.fromWei(investor1VaultBalance.toString(), "ether")
-		);
-		console.log(
-			"Vault Token investor2 balance",
-			web3.utils.fromWei(investor2VaultBalance.toString(), "ether")
-		);
-		// console.log(
-		// 	"Vault Token investor3 balance",
-		// 	web3.utils.fromWei(investor3VaultBalance.toString(), "ether")
-		// );
-		let vaultNAV = await newYieldsterVault.getVaultNAV();
-		console.log("Vault NAV", vaultNAV.toString());
-		// let deleigateresult= await newYieldsterVault.managementFeeCleanUp(managementFee.address);
-		// console.log("Vault NAV wth delegate", deleigateresult);
-		// console.log("Vault NAV wth delegate", (await newYieldsterVault.test()).toString());
-		console.log(
-			"Vault NAV from WEI",
-			web3.utils.fromWei(vaultNAV.toString(), "ether")
-		);
-		let vaultTokenValue = await newYieldsterVault.tokenValueInUSD();
-		console.log(
-			"token value usd ",
-			web3.utils.fromWei(vaultTokenValue.toString(), "ether")
-		);
 
-		let totalSupply = await newYieldsterVault.totalSupply();
-		console.log(
-			"Vault total supply ",
-			web3.utils.fromWei(totalSupply.toString(), "ether")
-		);
+        // Deposit to vault
+        console.log("dai in User before deposit", (await dai.balanceOf(accounts[1])).toString())
+        console.log("dai in Vault before deposit", (await dai.balanceOf(testVault.address)).toString())
+        console.log("usdc in User before deposit", (await usdc.balanceOf(accounts[1])).toString())
+        console.log("usdc in Vault before deposit", (await usdc.balanceOf(testVault.address)).toString())
+        await testVault.deposit(dai.address, 100, { from: accounts[1] });
+        console.log("dai in User after deposit", (await dai.balanceOf(accounts[1])).toString())
+        console.log("dai in Vault after deposit", (await dai.balanceOf(testVault.address)).toString())
+        console.log("usdc in User after deposit", (await usdc.balanceOf(accounts[1])).toString())
+        console.log("usdc in Vault after deposit", (await usdc.balanceOf(testVault.address)).toString())
 
-		// let yrt = await apContract.getUSDPrice(yrtToken.address);
-		// console.log(
-		// 	"yrt values",
-		// 	yrt[0].toString(),
-		// 	"-",
-		// 	yrt[1].toString(),
-		// 	"-",
-		// 	yrt[2].toString()
-		// );
 
-		// investor1VaultBalance = await newYieldsterVault.balanceOf(accounts[1]);
-		// console.log(
-		// 	"Vault Token investor1 balance",
-		// 	web3.utils.fromWei(investor1VaultBalance.toString(), "ether")
-		// );
-		let investor1YrtBalance = await yrtToken.balanceOf(accounts[1]);
-		console.log(
-			"Investor 1 YRT before withdrawal",
-			web3.utils.fromWei(investor1YrtBalance.toString(), "ether")
-		);
+        //Withdraw from vault 
+        // await testVault.withdraw(usdc.address, 10, { from: accounts[1] });
+        // console.log("dai in User after withdraw", (await dai.balanceOf(accounts[1])).toString())
+        // console.log("dai in Vault after withdraw", (await dai.balanceOf(testVault.address)).toString())
+        // console.log("usdc in User after withdraw", (await usdc.balanceOf(accounts[1])).toString())
+        // console.log("usdc in Vault after withdraw", (await usdc.balanceOf(testVault.address)).toString())
 
-		let investor1aishBalance = await aishToken.balanceOf(accounts[1]);
-		console.log(
-			"Investor 1 AISH before withdrawal",
-			web3.utils.fromWei(investor1aishBalance.toString(), "ether")
-		);
+        //Vault protocol
+        console.log("Vault active protocol", (await livaOne.getActiveProtocol(testVault.address)).toString())
+        console.log("activating protocol ", crvComp.address)
 
-		console.log("------------withdraw-----------");
+        let setProtocolInstruction = abi.simpleEncode("setActiveProtocol(address)", crvComp.address).toString('hex');
+        console.log("Instruction \n", setProtocolInstruction)
+        await livaOneMinter.mintStrategy(testVault.address, setProtocolInstruction)
+        console.log("Vault active protocol after", (await livaOne.getActiveProtocol(testVault.address)).toString())
 
-		await newYieldsterVault.withdraw(token("1"), {
-			from: accounts[1],
-		});
-		// await newYieldsterVault.withdraw(token("8"), {
-		// 	from: accounts[2],
-		// });
-		// await newYieldsterVault.withdraw(token("18"), {
-		// 	from: accounts[3],
-		// });
-		investor1VaultBalance = await newYieldsterVault.balanceOf(accounts[1]);
-		console.log(
-			"Vault Token investor1 balance",
-			web3.utils.fromWei(investor1VaultBalance.toString(), "ether")
-		);
 
-		investor1YrtBalance = await yrtToken.balanceOf(accounts[1]);
-		console.log(
-			"Investor 1 YRT after withdrawal",
-			web3.utils.fromWei(investor1YrtBalance.toString(), "ether")
-		);
+        //Deposit into strategy
+        console.log("livaOne NAV", (await livaOne.getStrategyNAV()).toString())
+        console.log("livaOne token value", web3.utils.fromWei((await livaOne.tokenValueInUSD()).toString(), "ether"))
+        console.log("livaOne token vault balance", (await livaOne.balanceOf(testVault.address)).toString())
+        await livaOneMinter.earn(testVault.address, [dai.address], [50])
+        console.log("livaOne NAV after earn", (await livaOne.getStrategyNAV()).toString())
+        console.log("livaOne token value after earn", web3.utils.fromWei((await livaOne.tokenValueInUSD()).toString(), "ether"))
+        console.log("livaOne token vault balance after earn", (await livaOne.balanceOf(testVault.address)).toString())
+        console.log("livaOne crvComp tokens ", (await crvComp.balanceOf(livaOne.address)).toString())
 
-		investor1aishBalance = await aishToken.balanceOf(accounts[1]);
-		console.log(
-			"Investor 1 AISH after withdrawal",
-			web3.utils.fromWei(investor1aishBalance.toString(), "ether")
-		);
+        //Change Protocol
+        console.log("Vault active protocol", (await livaOne.getActiveProtocol(testVault.address)).toString())
+        let changeProtocolInstruction = abi.simpleEncode("changeProtocol(address)", crvGUSD.address).toString('hex');
+        console.log("Instruction \n", changeProtocolInstruction)
+        await livaOneMinter.mintStrategy(testVault.address, changeProtocolInstruction)
+        console.log("Vault active protocol after protocol change", (await livaOne.getActiveProtocol(testVault.address)).toString())
+        console.log("livaOne NAV after protocol change", (await livaOne.getStrategyNAV()).toString())
+        console.log("livaOne token value after protocol change", web3.utils.fromWei((await livaOne.tokenValueInUSD()).toString(), "ether"))
+        console.log("livaOne token vault balance after protocol change", (await livaOne.balanceOf(testVault.address)).toString())
+        console.log("livaOne crvComp tokens after protocol change", (await crvComp.balanceOf(livaOne.address)).toString())
+        console.log("livaOne crvGUSD tokens after protocol change", (await crvGUSD.balanceOf(livaOne.address)).toString())
 
-		yrtBalance = await yrtToken.balanceOf(newYieldsterVault.address);
-		console.log(
-			"Vault YRT Balance",
-			web3.utils.fromWei(yrtBalance.toString(), "ether")
-		);
-
-		aishBalance = await aishToken.balanceOf(newYieldsterVault.address);
-		console.log(
-			"Vault AISH Balance",
-			web3.utils.fromWei(aishBalance.toString(), "ether")
-		);
-
-		vaultNAV = await newYieldsterVault.getVaultNAV();
-		console.log("Vault NAV", vaultNAV.toString());
-		console.log(
-			"Vault NAV from WEI",
-			web3.utils.fromWei(vaultNAV.toString(), "ether")
-		);
-		vaultTokenValue = await newYieldsterVault.tokenValueInUSD();
-		console.log(
-			"token value usd ",
-			web3.utils.fromWei(vaultTokenValue.toString(), "ether")
-		);
-
-		totalSupply = await newYieldsterVault.totalSupply();
-		console.log(
-			"Vault total supply ",
-			web3.utils.fromWei(totalSupply.toString(), "ether")
-		);
-
-		// await newYieldsterVault.deposit(yrtToken.address, token("10"), {
-		// 	from: accounts[1],
-		// });
-
-		// await newYieldsterVault.enableEmergencyBreak();
-		// await newYieldsterVault.disableEmergencyBreak();
-		// await newYieldsterVault.deposit(yrtToken.address, token("1"), {
-		// 	from: accounts[1],
-		// });
-
-		// console.log(
-		// 	"emergency vault YRT",
-		// 	web3.utils.fromWei(await yrtToken.balanceOf(accounts[0]), "ether")
-		// );
-
-		// await newYieldsterVault.enableEmergencyExit();
-
-		// console.log(
-		// 	"emergency vault YRT",
-		// 	web3.utils.fromWei(await yrtToken.balanceOf(accounts[0]), "ether")
-		// );
-		// await newYieldsterVault.deposit(yrtToken.address, token("10"), {
-		// 	from: accounts[1],
-		// });
-
-		// await newYieldsterVault.withdraw(yrtToken.address, token("2"),{from:accounts[2]});
-		// investor2YrtBalance = await yrtToken.balanceOf(accounts[2]);
-		// console.log(
-		// 	"Investor 2 after withdrawal",
-		// 	web3.utils.fromWei(investor2YrtBalance.toString(), "ether")
-		// );
-
-		console.log("After direct deposit");
-
-		await yrtToken.transfer(newYieldsterVault.address, token("100"), {
-			from: accounts[1],
-		});
-
-		yrtBalance = await yrtToken.balanceOf(newYieldsterVault.address);
-		console.log(
-			"Vault YRT Balance",
-			web3.utils.fromWei(yrtBalance.toString(), "ether")
-		);
-
-		aishBalance = await aishToken.balanceOf(newYieldsterVault.address);
-		console.log(
-			"Vault AISH Balance",
-			web3.utils.fromWei(aishBalance.toString(), "ether")
-		);
-
-		vaultNAV = await newYieldsterVault.getVaultNAV();
-		console.log("Vault NAV", vaultNAV.toString());
-		console.log(
-			"Vault NAV from WEI",
-			web3.utils.fromWei(vaultNAV.toString(), "ether")
-		);
-		vaultTokenValue = await newYieldsterVault.tokenValueInUSD();
-		console.log(
-			"token value usd ",
-			web3.utils.fromWei(vaultTokenValue.toString(), "ether")
-		);
-
-		totalSupply = await newYieldsterVault.totalSupply();
-		console.log(
-			"Vault total supply ",
-			web3.utils.fromWei(totalSupply.toString(), "ether")
-		);
-	});
+        //Withdraw from Strategy
+        console.log("usdt in Vault", (await usdt.balanceOf(testVault.address)).toString())
+        let withdrawInstruction = abi.simpleEncode("withdraw(uint256,address)", 50, usdt.address).toString('hex');
+        console.log("Instruction \n", withdrawInstruction)
+        await livaOneMinter.mintStrategy(testVault.address, withdrawInstruction)
+        console.log("livaOne NAV after strategy withdraw", (await livaOne.getStrategyNAV()).toString())
+        console.log("livaOne token value after strategy withdraw", web3.utils.fromWei((await livaOne.tokenValueInUSD()).toString(), "ether"))
+        console.log("livaOne token vault balance after strategy withdraw", (await livaOne.balanceOf(testVault.address)).toString())
+        console.log("livaOne crvComp tokens after strategy withdraw", (await crvComp.balanceOf(livaOne.address)).toString())
+        console.log("livaOne crvGUSD tokens after strategy withdraw", (await crvGUSD.balanceOf(livaOne.address)).toString())
+        console.log("usdt in Vault after strategy withdraw", (await usdt.balanceOf(testVault.address)).toString())
+    });
 });
