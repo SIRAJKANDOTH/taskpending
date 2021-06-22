@@ -14,29 +14,42 @@ const exchangeContract = new web3.eth.Contract(
     "0xA5407eAE9Ba41422680e2e00537571bcC53efBfD"
 );
 
+function to18(n) {
+    return web3.utils.toWei(n, "ether");
+}
+function from18(n) {
+    return web3.utils.fromWei(n, "ether");
+}
+function to6(n) {
+    return web3.utils.toWei(n, "Mwei");
+}
+function from6(n) {
+    return web3.utils.fromWei(n, "Mwei");
+}
+
 const transferBalance = async () => {
-    console.log("Unlocked dai balance : ", await dai.methods.balanceOf(unlockedAddress).call())
-    console.log("recipient dai balance : ", (await dai.methods.balanceOf(recipientAddress).call()))
-    console.log("recipient usdc balance : ", (await usdc.methods.balanceOf(recipientAddress).call()))
-    console.log("recipient usdt balance : ", (await usdt.methods.balanceOf(recipientAddress).call()))
+    console.log("Unlocked dai balance : ", from18(await dai.methods.balanceOf(unlockedAddress).call()))
+    console.log("recipient dai balance : ", from18(await dai.methods.balanceOf(recipientAddress).call()))
+    console.log("recipient usdc balance : ", from6(await usdc.methods.balanceOf(recipientAddress).call()))
+    console.log("recipient usdt balance : ", from6(await usdt.methods.balanceOf(recipientAddress).call()))
     console.log("transfer")
-    await dai.methods.transfer(recipientAddress, "100000000000000000000000").send({ from: unlockedAddress })
-    console.log("recipient dai balance : ", (await dai.methods.balanceOf(recipientAddress).call()))
+    await dai.methods.transfer(recipientAddress, to18("100000")).send({ from: unlockedAddress })
+    console.log("recipient dai balance : ", from18(await dai.methods.balanceOf(recipientAddress).call()))
 
     console.log("Exchanging DAI for USDT")
     console.log(
         await dai.methods
             .approve(
                 "0xA5407eAE9Ba41422680e2e00537571bcC53efBfD",
-                "1000000000000000000000"
+                to18("10000")
             )
             .send({ from: recipientAddress, gasPrice: "20000000000" })
     );
     console.log(
         "allowance = ",
-        await dai.methods
+        from18(await dai.methods
             .allowance(recipientAddress, "0xA5407eAE9Ba41422680e2e00537571bcC53efBfD")
-            .call()
+            .call())
     );
 
     console.log(
@@ -44,8 +57,8 @@ const transferBalance = async () => {
             .exchange(
                 "0",
                 "1",
-                "1000000000000000000000",
-                "100"
+                to18("1000"),
+                to6("100")
             )
             .send({
                 from: recipientAddress,
@@ -58,15 +71,15 @@ const transferBalance = async () => {
         await dai.methods
             .approve(
                 "0xA5407eAE9Ba41422680e2e00537571bcC53efBfD",
-                "1000000000000000000000"
+                to18("10000")
             )
             .send({ from: recipientAddress, gasPrice: "20000000000" })
     );
     console.log(
         "allowance = ",
-        await dai.methods
+        from18(await dai.methods
             .allowance(recipientAddress, "0xA5407eAE9Ba41422680e2e00537571bcC53efBfD")
-            .call()
+            .call())
     );
 
     console.log(
@@ -74,8 +87,8 @@ const transferBalance = async () => {
             .exchange(
                 "0",
                 "2",
-                "1000000000000000000000",
-                "100"
+                to18("1000"),
+                to6("100")
             )
             .send({
                 from: recipientAddress,
@@ -85,9 +98,9 @@ const transferBalance = async () => {
     );
 
 
-    console.log("recipient dai balance : ", (await dai.methods.balanceOf(recipientAddress).call()))
-    console.log("recipient usdc balance : ", (await usdc.methods.balanceOf(recipientAddress).call()))
-    console.log("recipient usdt balance : ", (await usdt.methods.balanceOf(recipientAddress).call()))
+    console.log("recipient dai balance : ", from18(await dai.methods.balanceOf(recipientAddress).call()))
+    console.log("recipient usdc balance : ", from6(await usdc.methods.balanceOf(recipientAddress).call()))
+    console.log("recipient usdt balance : ", from6(await usdt.methods.balanceOf(recipientAddress).call()))
 }
 
 transferBalance()

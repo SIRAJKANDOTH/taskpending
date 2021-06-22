@@ -22,6 +22,18 @@ const SafeMinter = artifacts.require("./safeUtils/SafeMinter.sol")
 
 var abi = require('ethereumjs-abi');
 
+function to18(n) {
+    return web3.utils.toWei(n, "ether");
+}
+function from18(n) {
+    return web3.utils.fromWei(n, "ether");
+}
+function to6(n) {
+    return web3.utils.toWei(n, "Mwei");
+}
+function from6(n) {
+    return web3.utils.fromWei(n, "Mwei");
+}
 contract("Safe Deployment", function (accounts) {
     let dai, usdc, usdt;
     let uCrvCompToken, uCrvGUSDToken, uCrvBUSDToken;
@@ -43,7 +55,9 @@ contract("Safe Deployment", function (accounts) {
         crvGUSD = await ERC20.at("0xcC7E70A958917cCe67B4B87a8C30E6297451aE98")
         crvBUSD = await ERC20.at("0x2994529C0652D127b7842094103715ec5299bBed")
 
-        await dai.transfer(accounts[1], "100000000000")
+        await dai.transfer(accounts[1], to18("100"))
+        await usdc.transfer(accounts[1], to6("100"))
+        await usdt.transfer(accounts[1], to6("100"))
 
         priceModule = await PriceModule.new("0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5");
         await priceModule.addToken("0x6B175474E89094C44Da98b954EedeAC495271d0F", "0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9", 1) //DAI
@@ -206,9 +220,9 @@ contract("Safe Deployment", function (accounts) {
 
 
         //approve Tokens to vault
-        await dai.approve(testVault.address, 10000, { from: accounts[1] })
-        // await usdt.approve(testVault.address, 10000, { from: accounts[1] })
-        // await usdc.approve(testVault.address, 10000, { from: accounts[1] })
+        await dai.approve(testVault.address, to18("100"), { from: accounts[1] })
+        await usdt.approve(testVault.address, to6("100"), { from: accounts[1] })
+        await usdc.approve(testVault.address, to6("100"), { from: accounts[1] })
 
         console.log("Activating vault strategy ", livaOne.address)
         await testVault.setVaultActiveStrategy(livaOne.address)
@@ -216,23 +230,41 @@ contract("Safe Deployment", function (accounts) {
 
 
         // Deposit to vault
-        console.log("dai in User before deposit", (await dai.balanceOf(accounts[1])).toString())
-        console.log("dai in Vault before deposit", (await dai.balanceOf(testVault.address)).toString())
-        console.log("usdc in User before deposit", (await usdc.balanceOf(accounts[1])).toString())
-        console.log("usdc in Vault before deposit", (await usdc.balanceOf(testVault.address)).toString())
-        await testVault.deposit(dai.address, 100, { from: accounts[1] });
-        console.log("dai in User after deposit", (await dai.balanceOf(accounts[1])).toString())
-        console.log("dai in Vault after deposit", (await dai.balanceOf(testVault.address)).toString())
-        console.log("usdc in User after deposit", (await usdc.balanceOf(accounts[1])).toString())
-        console.log("usdc in Vault after deposit", (await usdc.balanceOf(testVault.address)).toString())
+        console.log("Vault NAV", from18(await testVault.getVaultNAV()).toString())
+        console.log("Vault Token Value", from18(await testVault.tokenValueInUSD()).toString())
+        console.log("dai in User before deposit", from18(await dai.balanceOf(accounts[1])).toString())
+        console.log("dai in Vault before deposit", from18((await dai.balanceOf(testVault.address)).toString()))
+        console.log("usdc in User before deposit", from6((await usdc.balanceOf(accounts[1])).toString()))
+        console.log("usdc in Vault before deposit", from6((await usdc.balanceOf(testVault.address)).toString()))
+        console.log("usdt in User before deposit", from6((await usdt.balanceOf(accounts[1])).toString()))
+        console.log("usdt in Vault before deposit", from6((await usdt.balanceOf(testVault.address)).toString()))
+        await testVault.deposit(dai.address, to18("20"), { from: accounts[1] });
+        console.log("Vault NAV", from18(await testVault.getVaultNAV()).toString())
+        console.log("Vault Token Value", from18(await testVault.tokenValueInUSD()).toString())
+        console.log("dai in User after deposit", from18(await dai.balanceOf(accounts[1])).toString())
+        console.log("dai in Vault after deposit", from18((await dai.balanceOf(testVault.address)).toString()))
+        console.log("usdc in User after deposit", from6((await usdc.balanceOf(accounts[1])).toString()))
+        console.log("usdc in Vault after deposit", from6((await usdc.balanceOf(testVault.address)).toString()))
+        console.log("usdt in User after deposit", from6((await usdt.balanceOf(accounts[1])).toString()))
+        console.log("usdt in Vault after deposit", from6((await usdt.balanceOf(testVault.address)).toString()))
+        await testVault.deposit(usdc.address, to6("30"), { from: accounts[1] });
+        await testVault.deposit(usdt.address, to6("50"), { from: accounts[1] });
+        console.log("Vault NAV", from18(await testVault.getVaultNAV()).toString())
+        console.log("Vault Token Value", from18(await testVault.tokenValueInUSD()).toString())
+        console.log("dai in User after deposit", from18(await dai.balanceOf(accounts[1])).toString())
+        console.log("dai in Vault after deposit", from18((await dai.balanceOf(testVault.address)).toString()))
+        console.log("usdc in User after deposit", from6((await usdc.balanceOf(accounts[1])).toString()))
+        console.log("usdc in Vault after deposit", from6((await usdc.balanceOf(testVault.address)).toString()))
+        console.log("usdt in User after deposit", from6((await usdt.balanceOf(accounts[1])).toString()))
+        console.log("usdt in Vault after deposit", from6((await usdt.balanceOf(testVault.address)).toString()))
 
 
         //Withdraw from vault 
         // await testVault.withdraw(usdc.address, 10, { from: accounts[1] });
-        // console.log("dai in User after withdraw", (await dai.balanceOf(accounts[1])).toString())
-        // console.log("dai in Vault after withdraw", (await dai.balanceOf(testVault.address)).toString())
-        // console.log("usdc in User after withdraw", (await usdc.balanceOf(accounts[1])).toString())
-        // console.log("usdc in Vault after withdraw", (await usdc.balanceOf(testVault.address)).toString())
+        // console.log("dai in User after withdraw",from18 (await dai.balanceOf(accounts[1])).toString())
+        // console.log("dai in Vault after withdraw", from18((await dai.balanceOf(testVault.address)).toString()))
+        // console.log("usdc in User after withdraw", from6((await usdc.balanceOf(accounts[1])).toString()))
+        // console.log("usdc in Vault after withdraw", from6((await usdc.balanceOf(testVault.address)).toString()))
 
         // //Vault protocol
         // console.log("Vault active protocol", (await livaOne.getActiveProtocol(testVault.address)).toString())
