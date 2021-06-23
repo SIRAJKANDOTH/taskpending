@@ -10,13 +10,9 @@ contract YieldsterVault is VaultStorage {
             msg.sender == IAPContract(APContract).yieldsterGOD(),
             "Sender not Authorized"
         );
-        (bool result, ) =
-            address(this).call(
-                abi.encodeWithSignature(
-                    "changeMasterCopy(address)",
-                    _mastercopy
-                )
-            );
+        (bool result, ) = address(this).call(
+            abi.encodeWithSignature("changeMasterCopy(address)", _mastercopy)
+        );
         revertDelegate(result);
     }
 
@@ -345,14 +341,15 @@ contract YieldsterVault is VaultStorage {
             IAPContract(APContract).isDepositAsset(_tokenAddress),
             "Not an approved deposit asset"
         );
-        (bool result, ) =
-            IAPContract(APContract).getDepositStrategy().delegatecall(
-                abi.encodeWithSignature(
-                    "deposit(address,uint256)",
-                    _tokenAddress,
-                    _amount
-                )
-            );
+        (bool result, ) = IAPContract(APContract)
+        .getDepositStrategy()
+        .delegatecall(
+            abi.encodeWithSignature(
+                "deposit(address,uint256)",
+                _tokenAddress,
+                _amount
+            )
+        );
         revertDelegate(result);
     }
 
@@ -373,41 +370,44 @@ contract YieldsterVault is VaultStorage {
             "You don't have enough shares"
         );
         managementFeeCleanUp();
-        (bool result, ) =
-            IAPContract(APContract).getWithdrawStrategy().delegatecall(
-                abi.encodeWithSignature(
-                    "withdraw(address,uint256)",
-                    _tokenAddress,
-                    _shares
-                )
-            );
+        (bool result, ) = IAPContract(APContract)
+        .getWithdrawStrategy()
+        .delegatecall(
+            abi.encodeWithSignature(
+                "withdraw(address,uint256)",
+                _tokenAddress,
+                _shares
+            )
+        );
         revertDelegate(result);
     }
 
-    /// @dev Function to Withdraw shares from the Vault.
-    /// @param _shares Amount of Vault token shares.
-    function withdraw(uint256 _shares) external onlyNormalMode onlyWhitelisted {
-        require(
-            balanceOf(msg.sender) >= _shares,
-            "You don't have enough shares"
-        );
-        managementFeeCleanUp();
-        (bool result, ) =
-            IAPContract(APContract).getWithdrawStrategy().delegatecall(
-                abi.encodeWithSignature("withdraw(uint256)", _shares)
-            );
-        revertDelegate(result);
-    }
+    // /// @dev Function to Withdraw shares from the Vault.
+    // /// @param _shares Amount of Vault token shares.
+    // function withdraw(uint256 _shares) external onlyNormalMode onlyWhitelisted {
+    //     require(
+    //         balanceOf(msg.sender) >= _shares,
+    //         "You don't have enough shares"
+    //     );
+    //     managementFeeCleanUp();
+    //     (bool result, ) =
+    //         IAPContract(APContract).getWithdrawStrategy().delegatecall(
+    //             abi.encodeWithSignature("withdraw(uint256)", _shares)
+    //         );
+    //     revertDelegate(result);
+    // }
 
     /// @dev Function to deposit vault assets to strategy
     /// @param _assets list of asset address to deposit
     /// @param _amount list of asset amounts to deposit
-    function earn(address[] memory _assets, uint256[] memory _amount)
-        public
-        onlyNormalMode
-    {
-        address strategy =
-            IAPContract(APContract).getStrategyFromMinter(msg.sender);
+    function earn(
+        address[] memory _assets,
+        uint256[] memory _amount,
+        bytes memory data
+    ) public onlyNormalMode {
+        address strategy = IAPContract(APContract).getStrategyFromMinter(
+            msg.sender
+        );
         require(
             IAPContract(APContract).isStrategyActive(address(this), strategy),
             "Strategy inactive"
@@ -420,8 +420,8 @@ contract YieldsterVault is VaultStorage {
                     tokenBalance.sub(_amount[i])
                 );
                 IERC20(_assets[i]).approve(strategy, _amount[i]);
-                IStrategy(strategy).deposit(_assets[i], _amount[i]);
             }
+            IStrategy(strategy).deposit(_assets, _amount, data);
         }
     }
 
@@ -439,10 +439,9 @@ contract YieldsterVault is VaultStorage {
                 IAPContract(APContract).safeMinter() == msg.sender,
                 "Only Safe Minter"
             );
-            (bool success, ) =
-                IAPContract(APContract).safeUtils().delegatecall(
-                    hexUtils.fromHex(data)
-                );
+            (bool success, ) = IAPContract(APContract).safeUtils().delegatecall(
+                hexUtils.fromHex(data)
+            );
             revertDelegate(success);
         } else if (id == 1) {
             require(
@@ -452,10 +451,9 @@ contract YieldsterVault is VaultStorage {
                 ),
                 "Strategy inactive"
             );
-            (bool success, ) =
-                IAPContract(APContract).getStrategyFromMinter(msg.sender).call(
-                    hexUtils.fromHex(data)
-                );
+            (bool success, ) = IAPContract(APContract)
+            .getStrategyFromMinter(msg.sender)
+            .call(hexUtils.fromHex(data));
             revertDelegate(success);
         } else if (id == 2) {
             require(
@@ -463,10 +461,9 @@ contract YieldsterVault is VaultStorage {
                     IAPContract(APContract).getDepositStrategy(),
                 "Not Deposit strategy"
             );
-            (bool success, ) =
-                IAPContract(APContract)
-                    .getStrategyFromMinter(msg.sender)
-                    .delegatecall(hexUtils.fromHex(data));
+            (bool success, ) = IAPContract(APContract)
+            .getStrategyFromMinter(msg.sender)
+            .delegatecall(hexUtils.fromHex(data));
             revertDelegate(success);
         } else if (id == 3) {
             require(
@@ -474,12 +471,12 @@ contract YieldsterVault is VaultStorage {
                     IAPContract(APContract).getWithdrawStrategy(),
                 "Not Withdraw strategy"
             );
-            (bool success, ) =
-                IAPContract(APContract)
-                    .getStrategyFromMinter(msg.sender)
-                    .delegatecall(hexUtils.fromHex(data));
+            (bool success, ) = IAPContract(APContract)
+            .getStrategyFromMinter(msg.sender)
+            .delegatecall(hexUtils.fromHex(data));
             revertDelegate(success);
         }
+        return "";
     }
 
     function onERC1155BatchReceived(
@@ -494,8 +491,8 @@ contract YieldsterVault is VaultStorage {
 
     /// @dev Function to perform Management fee Calculations in the Vault.
     function managementFeeCleanUp() private {
-        address[] memory managementFeeStrategies =
-            IAPContract(APContract).getVaultManagementFee();
+        address[] memory managementFeeStrategies = IAPContract(APContract)
+        .getVaultManagementFee();
         for (uint256 i = 0; i < managementFeeStrategies.length; i++) {
             managementFeeStrategies[i].delegatecall(
                 abi.encodeWithSignature("executeSafeCleanUp()")
