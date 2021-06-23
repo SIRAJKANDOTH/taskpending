@@ -3,7 +3,7 @@ pragma solidity >=0.5.0 <0.7.0;
 import "./IERC1155.sol";
 import "./IERC1155MetadataURI.sol";
 import "./IERC1155Receiver.sol";
-import "../../utils/Context.sol";
+import "@openzeppelin/contracts/GSN/Context.sol";
 import "@openzeppelin/contracts/introspection/ERC165.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";

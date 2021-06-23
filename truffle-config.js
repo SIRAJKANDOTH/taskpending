@@ -80,13 +80,13 @@ module.exports = {
   plugins: ["truffle-contract-size"],
   compilers: {
     solc: {
-      version: "0.8.1",
+      version: package.dependencies.solc,
       settings: {
         optimizer: {
           enabled: true,
           runs: 200,
         },
-        evmVersion: "byzantium",
+        evmVersion: "petersburg",
       },
     },
   },

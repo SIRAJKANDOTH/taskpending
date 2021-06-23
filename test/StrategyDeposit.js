@@ -27,12 +27,11 @@ contract("Strategy Deposit", function (accounts) {
     let proxyFactory, apContract;
     let yieldsterVaultMasterCopy;
     let livaOne, livaOneMinter;
-    let apContractAddress = "0xD13004479D203F59feC05b2E32C0053A2bD536CE";
-    let livaOneAddress = "0x721A84CC7E298283AD17bc977eD9e9b20a661F98";
-    let livaOneMinterAddress = "0x30a3E50dF4992A9ed9D60F89a461fb3819A3d97F";
-    let yieldsterVaultMasterCopyAddress = "0x2232a52993CBa25B0919FBB14dC485694a523CC1";
-    let proxyFactoryAddress = "0xBA64eD2bcf7E8B053155A967FB270d3BdC2E6326";
-
+    let apContractAddress = "0x1Ed37aC882843873Ccf512b0749a1395803344ea";
+    let livaOneAddress = "0xDF37dcFb298DD75040F680aE49d3A14b67E50e27";
+    let yieldsterVaultMasterCopyAddress = "0x4c69F3e824EBCb14480De66050a0F24dBBDBDB87";
+    let proxyFactoryAddress = "0xbb4f366AEEeb9ec7b9e64bc4960C03AfB868d883";
+    let livaOneMinterAddress = "0x0e79bD139ADDF8F0344ec5c27923999ac97A8c55"
     beforeEach(async function () {
         dai = await ERC20.at("0x6B175474E89094C44Da98b954EedeAC495271d0F")
         usdc = await ERC20.at("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")
@@ -52,12 +51,12 @@ contract("Strategy Deposit", function (accounts) {
         await usdc.transfer(accounts[1], to6("100"))
         await usdt.transfer(accounts[1], to6("100"))
 
-
         apContract = await APContract.at(apContractAddress);
         livaOne = await LivaOne.at(livaOneAddress)
-        livaOneMinter = await LivaOneMinter.at(livaOneMinterAddress)
         yieldsterVaultMasterCopy = await YieldsterVault.at(yieldsterVaultMasterCopyAddress)
         proxyFactory = await ProxyFactory.at(proxyFactoryAddress)
+        livaOneMinter = await LivaOneMinter.at(livaOneMinterAddress)
+
     });
 
     it("should create a new vault", async () => {

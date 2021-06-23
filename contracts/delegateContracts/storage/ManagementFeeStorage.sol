@@ -11,7 +11,7 @@ contract ManagementFeeStorage
         public
     {
         manager = msg.sender;
-        _platformFee = _platformFee;
+        platformFee = _platformFee;
     }
 
     modifier onlyManager {
