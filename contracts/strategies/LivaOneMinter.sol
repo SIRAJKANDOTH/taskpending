@@ -43,12 +43,13 @@ contract LivaOneMinter is ERC1155 {
     function earn(
         address safeAddress,
         address[] memory _assets,
-        uint256[] memory _amount
+        uint256[] memory _amount,
+        bytes memory data
     ) public {
         require(
             IAPContract(APContract).strategyExecutor(strategy) == msg.sender,
             "Only Yieldster Strategy Executor"
         );
-        IYieldsterVault(safeAddress).earn(_assets, _amount);
+        IYieldsterVault(safeAddress).earn(_assets, _amount, data);
     }
 }

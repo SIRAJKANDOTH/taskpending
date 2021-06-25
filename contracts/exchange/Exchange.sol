@@ -12,28 +12,28 @@ contract Exchange is VaultStorage {
     {
         for (uint256 i = 0; i < assetList.length; i++) {
             if (assetList[i] != targetToken) {
-                uint256 haveTokenUSD =
-                    IAPContract(APContract).getUSDPrice(assetList[i]);
+                uint256 haveTokenUSD = IAPContract(APContract).getUSDPrice(
+                    assetList[i]
+                );
                 if (
                     (
                         IHexUtils(IAPContract(APContract).stringUtils())
-                            .toDecimals(
+                        .toDecimals(
                             assetList[i],
                             tokenBalances.getTokenBalance(assetList[i])
-                        )
-                            .mul(haveTokenUSD)
+                        ).mul(haveTokenUSD)
                     )
-                        .div(1e18) >= nav
+                    .div(1e18) >= nav
                 ) {
-                    uint256 amountToExchange =
-                        (nav.mul(1e18)).div(haveTokenUSD);
-                    uint256 returnedTokenCount =
-                        swap(
-                            assetList[i],
-                            targetToken,
-                            IHexUtils(IAPContract(APContract).stringUtils())
-                                .fromDecimals(assetList[i], amountToExchange)
-                        );
+                    uint256 amountToExchange = (nav.mul(1e18)).div(
+                        haveTokenUSD
+                    );
+                    uint256 returnedTokenCount = swap(
+                        assetList[i],
+                        targetToken,
+                        IHexUtils(IAPContract(APContract).stringUtils())
+                        .fromDecimals(assetList[i], amountToExchange)
+                    );
                     return returnedTokenCount;
                 }
             }
@@ -50,24 +50,13 @@ contract Exchange is VaultStorage {
         address toToken,
         uint256 amount
     ) internal returns (uint256) {
-        (uint256 returnAmount, uint256[] memory distribution) =
-            IExchange(IAPContract(APContract).oneInch()).getExpectedReturn(
-                fromToken,
-                toToken,
-                amount,
-                0,
-                0
-            );
+        (uint256 returnAmount, uint256[] memory distribution) = IExchange(
+            IAPContract(APContract).oneInch()
+        ).getExpectedReturn(fromToken, toToken, amount, 0, 0);
         IERC20(fromToken).approve(IAPContract(APContract).oneInch(), amount);
-        uint256 returnedTokenCount =
-            IExchange(IAPContract(APContract).oneInch()).swap(
-                fromToken,
-                toToken,
-                amount,
-                returnAmount,
-                distribution,
-                0
-            );
+        uint256 returnedTokenCount = IExchange(
+            IAPContract(APContract).oneInch()
+        ).swap(fromToken, toToken, amount, returnAmount, distribution, 0);
         tokenBalances.setTokenBalance(
             fromToken,
             tokenBalances.getTokenBalance(fromToken).sub(amount)
@@ -97,23 +86,18 @@ contract Exchange is VaultStorage {
             for (uint256 i = 0; i < assetList.length; i++) {
                 if (assetList[i] != targetToken) {
                     if (nav > currentNav) {
-                        uint256 haveTokenUSD =
-                            IAPContract(APContract).getUSDPrice(assetList[i]);
-                        uint256 haveTokenCount =
-                            tokenBalances.getTokenBalance(assetList[i]);
-                        uint256 haveTokenNav =
-                            (
-                                haveTokenUSD.mul(
-                                    IHexUtils(
-                                        IAPContract(APContract).stringUtils()
-                                    )
-                                        .toDecimals(
-                                        assetList[i],
-                                        haveTokenCount
-                                    )
-                                )
+                        uint256 haveTokenUSD = IAPContract(APContract)
+                        .getUSDPrice(assetList[i]);
+                        uint256 haveTokenCount = tokenBalances.getTokenBalance(
+                            assetList[i]
+                        );
+                        uint256 haveTokenNav = (
+                            haveTokenUSD.mul(
+                                IHexUtils(IAPContract(APContract).stringUtils())
+                                .toDecimals(assetList[i], haveTokenCount)
                             )
-                                .div(1e18);
+                        )
+                        .div(1e18);
                         if (haveTokenNav <= (nav - currentNav)) {
                             swappedAmount = swap(
                                 assetList[i],
@@ -124,12 +108,12 @@ contract Exchange is VaultStorage {
                             currentNav += haveTokenNav;
                         } else {
                             uint256 navToExchange = nav - currentNav;
-                            uint256 tokensToExchange =
-                                IHexUtils(IAPContract(APContract).stringUtils())
-                                    .fromDecimals(
-                                    assetList[i],
-                                    (navToExchange.mul(1e18)).div(haveTokenUSD)
-                                );
+                            uint256 tokensToExchange = IHexUtils(
+                                IAPContract(APContract).stringUtils()
+                            ).fromDecimals(
+                                assetList[i],
+                                (navToExchange.mul(1e18)).div(haveTokenUSD)
+                            );
 
                             swappedAmount = swap(
                                 assetList[i],

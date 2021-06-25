@@ -23,7 +23,7 @@ interface IVault {
 
     function depositAll() external;
 
-    function withdraw(uint256) external;
+    function withdraw(uint256) external returns (uint256);
 
     function withdrawAll() external;
 }

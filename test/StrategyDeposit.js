@@ -47,7 +47,7 @@ contract("Strategy Deposit", function (accounts) {
         crvLUSD = await ERC20.at("0x5fA5B62c8AF877CB37031e0a3B2f34A78e3C56A6")
         crvBUSD = await ERC20.at("0x6Ede7F19df5df6EF23bD5B9CeDb651580Bdf56Ca")
 
-        await dai.transfer(accounts[1], to18("100"))
+        await dai.transfer(accounts[1], to18("500"))
         await usdc.transfer(accounts[1], to6("100"))
         await usdt.transfer(accounts[1], to6("100"))
 
@@ -133,7 +133,7 @@ contract("Strategy Deposit", function (accounts) {
         console.log("usdc in Vault before deposit", from6((await usdc.balanceOf(testVault.address)).toString()))
         console.log("usdt in User before deposit", from6((await usdt.balanceOf(accounts[1])).toString()))
         console.log("usdt in Vault before deposit", from6((await usdt.balanceOf(testVault.address)).toString()))
-        await testVault.deposit(dai.address, to18("20"), { from: accounts[1] });
+        await testVault.deposit(dai.address, to18("500"), { from: accounts[1] });
         console.log("Vault NAV", from18(await testVault.getVaultNAV()).toString())
         console.log("Vault Token Value", from18(await testVault.tokenValueInUSD()).toString())
         console.log("dai in User after deposit", from18(await dai.balanceOf(accounts[1])).toString())
@@ -155,12 +155,13 @@ contract("Strategy Deposit", function (accounts) {
 
 
         //Withdraw from vault 
-        await testVault.withdraw(usdc.address, to6("10"), { from: accounts[1] });
+        await testVault.withdraw(dai.address, to6("100"), { from: accounts[1] });
         console.log("dai in User after withdraw", from18(await dai.balanceOf(accounts[1])).toString())
         console.log("dai in Vault after withdraw", from18((await dai.balanceOf(testVault.address)).toString()))
         console.log("usdc in User after withdraw", from6((await usdc.balanceOf(accounts[1])).toString()))
         console.log("usdc in Vault after withdraw", from6((await usdc.balanceOf(testVault.address)).toString()))
-
+        console.log("usdt in User after deposit", from6((await usdt.balanceOf(accounts[1])).toString()))
+        console.log("usdt in Vault after deposit", from6((await usdt.balanceOf(testVault.address)).toString()))
         //Vault protocol
         console.log("Vault active protocol", (await livaOne.getActiveProtocol(testVault.address)).toString())
         console.log("activating protocol ", crvUSDP.address)

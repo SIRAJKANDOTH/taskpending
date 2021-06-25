@@ -50,11 +50,10 @@ contract Whitelist {
     {
         groupId += 1;
         require(!whitelistGroups[groupId].created, "Group already exists");
-        WhitelistGroup memory newGroup =
-            WhitelistGroup({
-                whitelistGroupAdmin: _whitelistGroupAdmin,
-                created: true
-            });
+        WhitelistGroup memory newGroup = WhitelistGroup({
+            whitelistGroupAdmin: _whitelistGroupAdmin,
+            created: true
+        });
         whitelistGroups[groupId] = newGroup;
         whitelistGroups[groupId].members[_whitelistGroupAdmin] = true;
         whitelistGroups[groupId].members[msg.sender] = true;

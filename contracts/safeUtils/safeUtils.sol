@@ -8,8 +8,9 @@ contract SafeUtils is VaultStorage {
     function safeCleanUp(address[] memory cleanUpList) public {
         for (uint256 i = 0; i < cleanUpList.length; i++) {
             if (!(IAPContract(APContract)._isVaultAsset(cleanUpList[i]))) {
-                uint256 _amount =
-                    IERC20(cleanUpList[i]).balanceOf(address(this));
+                uint256 _amount = IERC20(cleanUpList[i]).balanceOf(
+                    address(this)
+                );
                 if (_amount > 0) {
                     IERC20(cleanUpList[i]).safeTransfer(
                         IAPContract(APContract).yieldsterTreasury(),
@@ -27,13 +28,13 @@ contract SafeUtils is VaultStorage {
     ) public {
         for (uint256 i = 0; i < _assetList.length; i++) {
             if ((IAPContract(APContract)._isVaultAsset(_assetList[i]))) {
-                uint256 unmintedShare =
-                    IERC20(_assetList[i]).balanceOf(address(this)).sub(
-                        tokenBalances.getTokenBalance(_assetList[i])
-                    );
+                uint256 unmintedShare = IERC20(_assetList[i])
+                .balanceOf(address(this))
+                .sub(tokenBalances.getTokenBalance(_assetList[i]));
                 if (unmintedShare >= _amount[i]) {
-                    uint256 tokensToBeMinted =
-                        getMintValue(getDepositNAV(_assetList[i], _amount[i]));
+                    uint256 tokensToBeMinted = getMintValue(
+                        getDepositNAV(_assetList[i], _amount[i])
+                    );
                     _mint(reciever[i], tokensToBeMinted);
                     tokenBalances.setTokenBalance(
                         _assetList[i],
