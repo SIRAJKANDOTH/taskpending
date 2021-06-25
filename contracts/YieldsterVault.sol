@@ -54,7 +54,18 @@ contract YieldsterVault is VaultStorage {
 
         for (uint256 i = 0; i < vaultActiveStrategy.length; i++) {
             if (vaultActiveStrategy[i] != address(0)) {
-                IStrategy(vaultActiveStrategy[i]).withdrawAllToSafe();
+                if (
+                    IStrategy(vaultActiveStrategy[i]).balanceOf(address(this)) >
+                    0
+                ) {
+                    (address withdrawToken, uint256 withdrawAmount) = IStrategy(
+                        vaultActiveStrategy[i]
+                    ).withdrawAllToSafe(address(0));
+                    IERC20(withdrawToken).safeTransfer(
+                        IAPContract(APContract).emergencyVault(),
+                        withdrawAmount
+                    );
+                }
                 IStrategy(vaultActiveStrategy[i]).deRegisterSafe();
             }
         }
@@ -94,7 +105,7 @@ contract YieldsterVault is VaultStorage {
         } else {
             for (uint256 i = 0; i < whiteListGroups.length; i++) {
                 if (
-                    Whitelist(IAPContract(APContract).whitelistModule())
+                    IWhitelist(IAPContract(APContract).whitelistModule())
                         .isMember(whiteListGroups[i], msg.sender)
                 ) {
                     return;
@@ -223,7 +234,7 @@ contract YieldsterVault is VaultStorage {
             )
         ) {
             if (IERC20(_strategyAddress).balanceOf(address(this)) > 0) {
-                IStrategy(_strategyAddress).withdrawAllToSafe();
+                IStrategy(_strategyAddress).withdrawAllToSafe(address(0));
             }
             IStrategy(_strategyAddress).deRegisterSafe();
             IAPContract(APContract).deactivateVaultStrategy(_strategyAddress);
@@ -280,7 +291,7 @@ contract YieldsterVault is VaultStorage {
             "This strategy is not active right now"
         );
         if (IERC20(_strategyAddress).balanceOf(address(this)) > 0) {
-            IStrategy(_strategyAddress).withdrawAllToSafe();
+            IStrategy(_strategyAddress).withdrawAllToSafe(address(0));
         }
         IStrategy(_strategyAddress).deRegisterSafe();
         IAPContract(APContract).deactivateVaultStrategy(_strategyAddress);
@@ -398,10 +409,9 @@ contract YieldsterVault is VaultStorage {
             "You don't have enough shares"
         );
         managementFeeCleanUp();
-        (bool result, ) =
-            IAPContract(APContract).getWithdrawStrategy().delegatecall(
-                abi.encodeWithSignature("withdraw(uint256)", _shares)
-            );
+        (bool result, ) = IAPContract(APContract)
+        .getWithdrawStrategy()
+        .delegatecall(abi.encodeWithSignature("withdraw(uint256)", _shares));
         revertDelegate(result);
     }
 
@@ -485,16 +495,6 @@ contract YieldsterVault is VaultStorage {
             revertDelegate(success);
         }
         return "";
-    }
-
-    function onERC1155BatchReceived(
-        address,
-        address,
-        uint256[] calldata,
-        uint256[] calldata,
-        bytes calldata
-    ) external returns (bytes4) {
-        return 0;
     }
 
     /// @dev Function to perform Management fee Calculations in the Vault.

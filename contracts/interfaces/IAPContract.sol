@@ -13,15 +13,6 @@ interface IAPContract {
 
     function removeAsset(address) external;
 
-    function getAssetDetails(address)
-        external
-        view
-        returns (
-            string memory,
-            address,
-            string memory
-        );
-
     function getUSDPrice(address) external view returns (uint256);
 
     function addProtocol(
@@ -67,10 +58,6 @@ interface IAPContract {
 
     function getVaultSlippage() external view returns (uint256);
 
-    function stockDeposit() external view returns (address);
-
-    function stockWithdraw() external view returns (address);
-
     function setYieldsterGOD(address) external;
 
     function getDepositStrategy() external returns (address);
@@ -108,8 +95,6 @@ interface IAPContract {
 
     function isWithdrawalAsset(address) external view returns (bool);
 
-    function getConverter(address, address) external view returns (address);
-
     function getVaultActiveStrategy(address)
         external
         view
@@ -123,12 +108,6 @@ interface IAPContract {
         external
         view
         returns (address, uint256);
-
-    function _isStrategyProtocolEnabled(
-        address,
-        address,
-        address
-    ) external view returns (bool);
 
     function _isStrategyEnabled(address, address) external view returns (bool);
 

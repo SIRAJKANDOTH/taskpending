@@ -133,7 +133,7 @@ contract("Strategy Deposit", function (accounts) {
         console.log("usdc in Vault before deposit", from6((await usdc.balanceOf(testVault.address)).toString()))
         console.log("usdt in User before deposit", from6((await usdt.balanceOf(accounts[1])).toString()))
         console.log("usdt in Vault before deposit", from6((await usdt.balanceOf(testVault.address)).toString()))
-        await testVault.deposit(dai.address, to18("500"), { from: accounts[1] });
+        await testVault.deposit(dai.address, to18("600"), { from: accounts[1] });
         console.log("Vault NAV", from18(await testVault.getVaultNAV()).toString())
         console.log("Vault Token Value", from18(await testVault.tokenValueInUSD()).toString())
         console.log("dai in User after deposit", from18(await dai.balanceOf(accounts[1])).toString())
@@ -142,17 +142,6 @@ contract("Strategy Deposit", function (accounts) {
         console.log("usdc in Vault after deposit", from6((await usdc.balanceOf(testVault.address)).toString()))
         console.log("usdt in User after deposit", from6((await usdt.balanceOf(accounts[1])).toString()))
         console.log("usdt in Vault after deposit", from6((await usdt.balanceOf(testVault.address)).toString()))
-        await testVault.deposit(usdc.address, to6("30"), { from: accounts[1] });
-        await testVault.deposit(usdt.address, to6("50"), { from: accounts[1] });
-        console.log("Vault NAV", from18(await testVault.getVaultNAV()).toString())
-        console.log("Vault Token Value", from18(await testVault.tokenValueInUSD()).toString())
-        console.log("dai in User after deposit", from18(await dai.balanceOf(accounts[1])).toString())
-        console.log("dai in Vault after deposit", from18((await dai.balanceOf(testVault.address)).toString()))
-        console.log("usdc in User after deposit", from6((await usdc.balanceOf(accounts[1])).toString()))
-        console.log("usdc in Vault after deposit", from6((await usdc.balanceOf(testVault.address)).toString()))
-        console.log("usdt in User after deposit", from6((await usdt.balanceOf(accounts[1])).toString()))
-        console.log("usdt in Vault after deposit", from6((await usdt.balanceOf(testVault.address)).toString()))
-
 
         //Withdraw from vault 
         await testVault.withdraw(dai.address, to6("100"), { from: accounts[1] });
@@ -162,6 +151,7 @@ contract("Strategy Deposit", function (accounts) {
         console.log("usdc in Vault after withdraw", from6((await usdc.balanceOf(testVault.address)).toString()))
         console.log("usdt in User after deposit", from6((await usdt.balanceOf(accounts[1])).toString()))
         console.log("usdt in Vault after deposit", from6((await usdt.balanceOf(testVault.address)).toString()))
+
         //Vault protocol
         console.log("Vault active protocol", (await livaOne.getActiveProtocol(testVault.address)).toString())
         console.log("activating protocol ", crvUSDP.address)
@@ -172,15 +162,20 @@ contract("Strategy Deposit", function (accounts) {
         console.log("Vault active protocol after", (await livaOne.getActiveProtocol(testVault.address)).toString())
 
 
-        // //Deposit into strategy
-        // console.log("livaOne NAV", (await livaOne.getStrategyNAV()).toString())
-        // console.log("livaOne token value", web3.utils.fromWei((await livaOne.tokenValueInUSD()).toString(), "ether"))
-        // console.log("livaOne token vault balance", (await livaOne.balanceOf(testVault.address)).toString())
-        // await livaOneMinter.earn(testVault.address, [dai.address], [50])
-        // console.log("livaOne NAV after earn", (await livaOne.getStrategyNAV()).toString())
-        // console.log("livaOne token value after earn", web3.utils.fromWei((await livaOne.tokenValueInUSD()).toString(), "ether"))
-        // console.log("livaOne token vault balance after earn", (await livaOne.balanceOf(testVault.address)).toString())
-        // console.log("livaOne crvUSDP tokens ", (await crvUSDP.balanceOf(livaOneAddress)).toString())
+        //Deposit into strategy
+        console.log("livaOne NAV", from18((await livaOne.getStrategyNAV()).toString()))
+        console.log("livaOne token value", from18((await livaOne.tokenValueInUSD()).toString()))
+        console.log("livaOne token vault balance", from18((await livaOne.balanceOf(testVault.address)).toString()))
+        let earnInstruction =
+            web3.eth.abi.encodeParameters(['address[3]', 'uint256[3]', 'uint256', 'address[]', 'address[]'], [["0x6B175474E89094C44Da98b954EedeAC495271d0F", "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", "0xdac17f958d2ee523a2206206994597c13d831ec7"], [`${to18("500")}`, "0", "0"], "0", [], []]);
+
+        await livaOneMinter.earn(testVault.address, [dai.address], [to18("500")], earnInstruction)
+        console.log("livaOne NAV", from18((await livaOne.getStrategyNAV()).toString()))
+        console.log("livaOne token value", from18((await livaOne.tokenValueInUSD()).toString()))
+        console.log("livaOne token vault balance", from18((await livaOne.balanceOf(testVault.address)).toString()))
+        console.log("livaOne crvUSDP tokens ", (await crvUSDP.balanceOf(livaOneAddress)).toString())
+        console.log("Vault NAV", from18(await testVault.getVaultNAV()).toString())
+        console.log("Vault Token Value", from18(await testVault.tokenValueInUSD()).toString())
 
         // //Change Protocol
         // console.log("Vault active protocol", (await livaOne.getActiveProtocol(testVault.address)).toString())

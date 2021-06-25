@@ -19,7 +19,7 @@ interface IStrategy {
 
     function changeProtocol(address) external;
 
-    function withdrawAllToSafe() external;
+    function withdrawAllToSafe(address) external returns (address, uint256);
 
     function tokenValueInUSD() external view returns (uint256);
 
