@@ -419,10 +419,10 @@ contract YieldsterVault is VaultStorage {
     /// @param _assets list of asset address to deposit
     /// @param _amount list of asset amounts to deposit
     function earn(
-        address[] memory _assets,
-        uint256[] memory _amount,
-        bytes memory data
-    ) public onlyNormalMode {
+        address[] calldata _assets,
+        uint256[] calldata _amount,
+        bytes calldata data
+    ) external onlyNormalMode {
         address strategy = IAPContract(APContract).getStrategyFromMinter(
             msg.sender
         );
