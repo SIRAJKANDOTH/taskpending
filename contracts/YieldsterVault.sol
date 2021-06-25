@@ -151,6 +151,14 @@ contract YieldsterVault is VaultStorage {
         );
     }
 
+    function setVaultSlippage(uint256 _slippage) external onlyNormalMode {
+        require(
+            msg.sender == vaultStrategyManager || msg.sender == owner,
+            "Sender not Authorized"
+        );
+        IAPContract(APContract).setVaultSlippage(_slippage);
+    }
+
     /// @dev Function to manage the assets supported by the vaults.
     /// @param _enabledDepositAsset List of assets to be enabled in Deposit assets.
     /// @param _enabledWithdrawalAsset List of assets to be enabled in Withdrawal assets.
@@ -382,20 +390,20 @@ contract YieldsterVault is VaultStorage {
         revertDelegate(result);
     }
 
-    // /// @dev Function to Withdraw shares from the Vault.
-    // /// @param _shares Amount of Vault token shares.
-    // function withdraw(uint256 _shares) external onlyNormalMode onlyWhitelisted {
-    //     require(
-    //         balanceOf(msg.sender) >= _shares,
-    //         "You don't have enough shares"
-    //     );
-    //     managementFeeCleanUp();
-    //     (bool result, ) =
-    //         IAPContract(APContract).getWithdrawStrategy().delegatecall(
-    //             abi.encodeWithSignature("withdraw(uint256)", _shares)
-    //         );
-    //     revertDelegate(result);
-    // }
+    /// @dev Function to Withdraw shares from the Vault.
+    /// @param _shares Amount of Vault token shares.
+    function withdraw(uint256 _shares) external onlyNormalMode onlyWhitelisted {
+        require(
+            balanceOf(msg.sender) >= _shares,
+            "You don't have enough shares"
+        );
+        managementFeeCleanUp();
+        (bool result, ) =
+            IAPContract(APContract).getWithdrawStrategy().delegatecall(
+                abi.encodeWithSignature("withdraw(uint256)", _shares)
+            );
+        revertDelegate(result);
+    }
 
     /// @dev Function to deposit vault assets to strategy
     /// @param _assets list of asset address to deposit

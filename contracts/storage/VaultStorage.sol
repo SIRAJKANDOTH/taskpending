@@ -4,6 +4,7 @@ import "../token/ERC1155/ERC1155Receiver.sol";
 import "../token/ERC20Detailed.sol";
 import "../whitelist/Whitelist.sol";
 import "../interfaces/IAPContract.sol";
+import "../interfaces/IExchangeRegistry.sol";
 import "../interfaces/IExchange.sol";
 import "../interfaces/IStrategy.sol";
 import "../interfaces/IHexUtils.sol";

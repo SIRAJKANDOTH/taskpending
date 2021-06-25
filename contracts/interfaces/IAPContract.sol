@@ -63,6 +63,10 @@ interface IAPContract {
 
     function strategyMinter(address) external view returns (address);
 
+    function setVaultSlippage(uint256) external;
+
+    function getVaultSlippage() external view returns (uint256);
+
     function stockDeposit() external view returns (address);
 
     function stockWithdraw() external view returns (address);
@@ -75,7 +79,7 @@ interface IAPContract {
 
     function safeUtils() external returns (address);
 
-    function oneInch() external returns (address);
+    function exchangeRegistry() external returns (address);
 
     function getWithdrawStrategy() external returns (address);
 

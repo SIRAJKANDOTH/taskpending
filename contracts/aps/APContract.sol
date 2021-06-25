@@ -35,7 +35,7 @@ contract APContract {
 
     address public safeUtils;
 
-    address public oneInch;
+    address public exchangeRegistry;
 
     struct Asset {
         string name;
@@ -60,6 +60,7 @@ contract APContract {
         address vaultStrategyManager;
         uint256[] whitelistGroup;
         bool created;
+        uint256 slippage;
     }
 
     struct VaultActiveStrategy {
@@ -121,7 +122,7 @@ contract APContract {
         address _profitManagementFee,
         address _stringUtils,
         address _yieldsterExchange,
-        address _oneInch,
+        address _exchangeRegistry,
         address _priceModule,
         address _safeUtils
     ) public {
@@ -134,7 +135,7 @@ contract APContract {
         platFormManagementFee = _platformManagementFee;
         stringUtils = _stringUtils;
         yieldsterExchange = _yieldsterExchange;
-        oneInch = _oneInch;
+        exchangeRegistry = _exchangeRegistry;
         priceModule = _priceModule;
         safeUtils = _safeUtils;
         profitManagementFee = _profitManagementFee;
@@ -258,10 +259,13 @@ contract APContract {
         safeUtils = _safeUtils;
     }
 
-    /// @dev Function to set oneInch address.
-    /// @param _oneInch Address of the oneInch.
-    function setOneInch(address _oneInch) public onlyYieldsterDAO {
-        oneInch = _oneInch;
+    /// @dev Function to set exchangeRegistry address.
+    /// @param _exchangeRegistry Address of the exchangeRegistry.
+    function setExchangeRegistry(address _exchangeRegistry)
+        public
+        onlyYieldsterDAO
+    {
+        exchangeRegistry = _exchangeRegistry;
     }
 
     /// @dev Function to get strategy address from minter.
@@ -310,6 +314,19 @@ contract APContract {
         vaults[msg.sender].vaultStrategyManager = _vaultStrategyManager;
     }
 
+    /// @dev Function to change the Slippage Settings for a vault.
+    /// @param _slippage value of slippage.
+    function setVaultSlippage(uint256 _slippage) external {
+        require(vaults[msg.sender].created, "Vault is not present");
+        vaults[msg.sender].slippage = _slippage;
+    }
+
+    /// @dev Function to get the Slippage Settings for a vault.
+    function getVaultSlippage() external view returns (uint256) {
+        require(vaults[msg.sender].created, "Vault is not present");
+        return vaults[msg.sender].slippage;
+    }
+
     //Price Module
     /// @dev Function to set Yieldster price module.
     /// @param _priceModule Address of the price module.
@@ -344,15 +361,15 @@ contract APContract {
         uint256[] memory _whitelistGroup
     ) public {
         require(vaultCreated[msg.sender], "Vault not created");
-        Vault memory newVault =
-            Vault({
-                vaultAPSManager: _vaultAPSManager,
-                vaultStrategyManager: _vaultStrategyManager,
-                whitelistGroup: _whitelistGroup,
-                depositStrategy: stockDeposit,
-                withdrawStrategy: stockWithdraw,
-                created: true
-            });
+        Vault memory newVault = Vault({
+            vaultAPSManager: _vaultAPSManager,
+            vaultStrategyManager: _vaultStrategyManager,
+            whitelistGroup: _whitelistGroup,
+            depositStrategy: stockDeposit,
+            withdrawStrategy: stockWithdraw,
+            created: true,
+            slippage: 50
+        });
         vaults[msg.sender] = newVault;
 
         //applying Platform management fee
@@ -456,8 +473,8 @@ contract APContract {
         managementFeeStrategies[_vaultAddress].activeManagementFeeIndex[
             _managementFeeAddress
         ] = managementFeeStrategies[_vaultAddress]
-            .activeManagementFeeList
-            .length;
+        .activeManagementFeeList
+        .length;
         managementFeeStrategies[_vaultAddress].activeManagementFeeList.push(
             _managementFeeAddress
         );
@@ -492,21 +509,18 @@ contract APContract {
 
         if (
             managementFeeStrategies[_vaultAddress]
-                .activeManagementFeeList
-                .length == 1
+            .activeManagementFeeList
+            .length == 1
         ) {
             managementFeeStrategies[_vaultAddress]
                 .activeManagementFeeList
                 .pop();
         } else {
-            uint256 index =
-                managementFeeStrategies[_vaultAddress].activeManagementFeeIndex[
-                    _managementFeeAddress
-                ];
-            uint256 lastIndex =
-                managementFeeStrategies[_vaultAddress]
-                    .activeManagementFeeList
-                    .length - 1;
+            uint256 index = managementFeeStrategies[_vaultAddress]
+            .activeManagementFeeIndex[_managementFeeAddress];
+            uint256 lastIndex = managementFeeStrategies[_vaultAddress]
+            .activeManagementFeeList
+            .length - 1;
             delete managementFeeStrategies[_vaultAddress]
                 .activeManagementFeeList[index];
             managementFeeStrategies[_vaultAddress].activeManagementFeeIndex[
@@ -558,12 +572,11 @@ contract APContract {
         if (vaultActiveStrategies[msg.sender].activeStrategyList.length == 1) {
             vaultActiveStrategies[msg.sender].activeStrategyList.pop();
         } else {
-            uint256 index =
-                vaultActiveStrategies[msg.sender].activeStrategyIndex[
-                    _strategyAddress
-                ];
-            uint256 lastIndex =
-                vaultActiveStrategies[msg.sender].activeStrategyList.length - 1;
+            uint256 index = vaultActiveStrategies[msg.sender]
+            .activeStrategyIndex[_strategyAddress];
+            uint256 lastIndex = vaultActiveStrategies[msg.sender]
+            .activeStrategyList
+            .length - 1;
             delete vaultActiveStrategies[msg.sender].activeStrategyList[index];
             vaultActiveStrategies[msg.sender].activeStrategyIndex[
                 vaultActiveStrategies[msg.sender].activeStrategyList[lastIndex]
@@ -771,8 +784,11 @@ contract APContract {
         address _tokenAddress
     ) public onlyManager {
         require(!_isAssetPresent(_tokenAddress), "Asset already present!");
-        Asset memory newAsset =
-            Asset({name: _name, symbol: _symbol, created: true});
+        Asset memory newAsset = Asset({
+            name: _name,
+            symbol: _symbol,
+            created: true
+        });
         assets[_tokenAddress] = newAsset;
     }
 
@@ -827,15 +843,14 @@ contract APContract {
             !_isStrategyPresent(_strategyAddress),
             "Strategy already present!"
         );
-        Strategy memory newStrategy =
-            Strategy({
-                strategyName: _strategyName,
-                created: true,
-                minter: _minter,
-                executor: _executor,
-                benefeciary: _benefeciary,
-                managementFeePercentage: _managementFeePercentage
-            });
+        Strategy memory newStrategy = Strategy({
+            strategyName: _strategyName,
+            created: true,
+            minter: _minter,
+            executor: _executor,
+            benefeciary: _benefeciary,
+            managementFeePercentage: _managementFeePercentage
+        });
         strategies[_strategyAddress] = newStrategy;
         minterStrategyMap[_minter] = _strategyAddress;
 
@@ -901,13 +916,12 @@ contract APContract {
             !_isSmartStrategyPresent(_smartStrategyAddress),
             "Smart Strategy already present!"
         );
-        SmartStrategy memory newSmartStrategy =
-            SmartStrategy({
-                smartStrategyName: _smartStrategyName,
-                minter: _minter,
-                executor: _executor,
-                created: true
-            });
+        SmartStrategy memory newSmartStrategy = SmartStrategy({
+            smartStrategyName: _smartStrategyName,
+            minter: _minter,
+            executor: _executor,
+            created: true
+        });
         smartStrategies[_smartStrategyAddress] = newSmartStrategy;
         minterStrategyMap[_minter] = _smartStrategyAddress;
     }
@@ -969,8 +983,11 @@ contract APContract {
             !_isProtocolPresent(_protocolAddress),
             "Protocol already present!"
         );
-        Protocol memory newProtocol =
-            Protocol({name: _name, created: true, symbol: _symbol});
+        Protocol memory newProtocol = Protocol({
+            name: _name,
+            created: true,
+            symbol: _symbol
+        });
         protocols[_protocolAddress] = newProtocol;
     }
 
