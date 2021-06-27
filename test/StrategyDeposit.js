@@ -3,7 +3,7 @@ const ERC20 = artifacts.require("IERC20")
 const APContract = artifacts.require("./aps/APContract.sol");
 const ProxyFactory = artifacts.require("./proxies/YieldsterVaultProxyFactory.sol");
 const YieldsterVault = artifacts.require("./YieldsterVault.sol");
-const LivaOne = artifacts.require("./strategies/LivaOneZapper.sol");
+const LivaOne = artifacts.require("./interfaces/IStrategy.sol");
 const LivaOneMinter = artifacts.require("./strategies/LivaOneMinter.sol");
 
 var abi = require('ethereumjs-abi');
@@ -27,10 +27,10 @@ contract("Strategy Deposit", function (accounts) {
     let proxyFactory, apContract;
     let yieldsterVaultMasterCopy;
     let livaOne, livaOneMinter;
-    let apContractAddress = "0x1Ed37aC882843873Ccf512b0749a1395803344ea";
-    let livaOneAddress = "0xDF37dcFb298DD75040F680aE49d3A14b67E50e27";
-    let yieldsterVaultMasterCopyAddress = "0x4c69F3e824EBCb14480De66050a0F24dBBDBDB87";
-    let proxyFactoryAddress = "0xbb4f366AEEeb9ec7b9e64bc4960C03AfB868d883";
+    let apContractAddress = "0x4B743caD239fa550EF47bB2601905BBE99d59E4e";
+    let livaOneAddress = "0x198c037De6d178FD0094cd3C88F2B235e6bC031E";
+    let yieldsterVaultMasterCopyAddress = "0xbb4f366AEEeb9ec7b9e64bc4960C03AfB868d883";
+    let proxyFactoryAddress = "0xf09B1E61F8226b3f5E6874ac3Afb34160a9a831A";
     let livaOneMinterAddress = "0x0e79bD139ADDF8F0344ec5c27923999ac97A8c55"
     beforeEach(async function () {
         dai = await ERC20.at("0x6B175474E89094C44Da98b954EedeAC495271d0F")
@@ -47,7 +47,7 @@ contract("Strategy Deposit", function (accounts) {
         crvLUSD = await ERC20.at("0x5fA5B62c8AF877CB37031e0a3B2f34A78e3C56A6")
         crvBUSD = await ERC20.at("0x6Ede7F19df5df6EF23bD5B9CeDb651580Bdf56Ca")
 
-        await dai.transfer(accounts[1], to18("500"))
+        await dai.transfer(accounts[1], to18("200"))
         await usdc.transfer(accounts[1], to6("100"))
         await usdt.transfer(accounts[1], to6("100"))
 
@@ -115,7 +115,7 @@ contract("Strategy Deposit", function (accounts) {
 
 
         //approve Tokens to vault
-        await dai.approve(testVault.address, to18("100"), { from: accounts[1] })
+        await dai.approve(testVault.address, to18("200"), { from: accounts[1] })
         await usdt.approve(testVault.address, to6("100"), { from: accounts[1] })
         await usdc.approve(testVault.address, to6("100"), { from: accounts[1] })
 
@@ -133,7 +133,10 @@ contract("Strategy Deposit", function (accounts) {
         console.log("usdc in Vault before deposit", from6((await usdc.balanceOf(testVault.address)).toString()))
         console.log("usdt in User before deposit", from6((await usdt.balanceOf(accounts[1])).toString()))
         console.log("usdt in Vault before deposit", from6((await usdt.balanceOf(testVault.address)).toString()))
-        await testVault.deposit(dai.address, to18("600"), { from: accounts[1] });
+        console.log("===========================DEPOSIT=============================")
+        await testVault.deposit(dai.address, to18("200"), { from: accounts[1] });
+        await testVault.deposit(usdc.address, to6("100"), { from: accounts[1] });
+        await testVault.deposit(usdt.address, to6("100"), { from: accounts[1] });
         console.log("Vault NAV", from18(await testVault.getVaultNAV()).toString())
         console.log("Vault Token Value", from18(await testVault.tokenValueInUSD()).toString())
         console.log("dai in User after deposit", from18(await dai.balanceOf(accounts[1])).toString())
@@ -144,7 +147,8 @@ contract("Strategy Deposit", function (accounts) {
         console.log("usdt in Vault after deposit", from6((await usdt.balanceOf(testVault.address)).toString()))
 
         //Withdraw from vault 
-        await testVault.withdraw(dai.address, to6("100"), { from: accounts[1] });
+        console.log("===========================WITHDRAW=============================")
+        await testVault.withdraw(dai.address, to18("100"), { from: accounts[1] });
         console.log("dai in User after withdraw", from18(await dai.balanceOf(accounts[1])).toString())
         console.log("dai in Vault after withdraw", from18((await dai.balanceOf(testVault.address)).toString()))
         console.log("usdc in User after withdraw", from6((await usdc.balanceOf(accounts[1])).toString()))
@@ -154,26 +158,27 @@ contract("Strategy Deposit", function (accounts) {
 
         //Vault protocol
         console.log("Vault active protocol", (await livaOne.getActiveProtocol(testVault.address)).toString())
-        console.log("activating protocol ", crvUSDP.address)
+        console.log("activating protocol ", crvUSDN.address)
 
-        let setProtocolInstruction = abi.simpleEncode("setActiveProtocol(address)", crvUSDP.address).toString('hex');
+        let setProtocolInstruction = abi.simpleEncode("setActiveProtocol(address)", crvUSDN.address).toString('hex');
         console.log("Instruction \n", setProtocolInstruction)
         await livaOneMinter.mintStrategy(testVault.address, setProtocolInstruction)
         console.log("Vault active protocol after", (await livaOne.getActiveProtocol(testVault.address)).toString())
 
 
         //Deposit into strategy
-        console.log("livaOne NAV", from18((await livaOne.getStrategyNAV()).toString()))
-        console.log("livaOne token value", from18((await livaOne.tokenValueInUSD()).toString()))
+        console.log("livaOne NAV", from18((await livaOne.getStrategyNAV({ from: testVault.address })).toString()))
+        console.log("livaOne token value", from18((await livaOne.tokenValueInUSD({ from: testVault.address })).toString()))
         console.log("livaOne token vault balance", from18((await livaOne.balanceOf(testVault.address)).toString()))
+        console.log("===================STRATEGY DEPOSIT=====================")
         let earnInstruction =
-            web3.eth.abi.encodeParameters(['address[3]', 'uint256[3]', 'uint256', 'address[]', 'address[]'], [["0x6B175474E89094C44Da98b954EedeAC495271d0F", "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", "0xdac17f958d2ee523a2206206994597c13d831ec7"], [`${to18("500")}`, "0", "0"], "0", [], []]);
+            web3.eth.abi.encodeParameters(['address[3]', 'uint256[3]', 'uint256', 'address[]', 'address[]'], [["0x6B175474E89094C44Da98b954EedeAC495271d0F", "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", "0xdac17f958d2ee523a2206206994597c13d831ec7"], [`${to18("100")}`, `${to6("100")}`, `${to6("100")}`], "0", [], []]);
 
-        await livaOneMinter.earn(testVault.address, [dai.address], [to18("500")], earnInstruction)
-        console.log("livaOne NAV", from18((await livaOne.getStrategyNAV()).toString()))
-        console.log("livaOne token value", from18((await livaOne.tokenValueInUSD()).toString()))
+        await livaOneMinter.earn(testVault.address, [dai.address, usdc.address, usdt.address], [to18("100"), to6("100"), to6("100")], earnInstruction)
+        console.log("livaOne NAV", from18((await livaOne.getStrategyNAV({ from: testVault.address })).toString()))
+        console.log("livaOne token value", from18((await livaOne.tokenValueInUSD({ from: testVault.address })).toString()))
         console.log("livaOne token vault balance", from18((await livaOne.balanceOf(testVault.address)).toString()))
-        console.log("livaOne crvUSDP tokens ", (await crvUSDP.balanceOf(livaOneAddress)).toString())
+        console.log("livaOne crvUSDN tokens ", from18((await crvUSDN.balanceOf(livaOneAddress)).toString()))
         console.log("Vault NAV", from18(await testVault.getVaultNAV()).toString())
         console.log("Vault Token Value", from18(await testVault.tokenValueInUSD()).toString())
 

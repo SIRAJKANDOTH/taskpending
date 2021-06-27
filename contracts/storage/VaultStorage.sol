@@ -48,7 +48,7 @@ contract VaultStorage is MasterCopy, ERC20, ERC20Detailed, ERC1155Receiver {
     }
 
     function getTokenBalance(address _tokenAddress)
-        public
+        external
         view
         returns (uint256)
     {

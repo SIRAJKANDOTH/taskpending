@@ -75,7 +75,7 @@ contract PriceModule is ChainlinkService {
             address token = IVault(_tokenAddress).token();
             uint256 tokenPrice = getUSDPrice(token);
             return
-                (tokenPrice.mul(IVault(_tokenAddress).getPricePerShare()))
+                (tokenPrice.mul(IVault(_tokenAddress).pricePerShare()))
                     .div(1e18);
         } else if (tokens[_tokenAddress].tokenType == 4) {
             return IYieldsterStrategy(_tokenAddress).tokenValueInUSD();
