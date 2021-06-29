@@ -433,7 +433,7 @@ contract YieldsterVault is VaultStorage {
                     _assets[i],
                     tokenBalance.sub(_amount[i])
                 );
-                IERC20(_assets[i]).safeApprove(strategy, _amount[i]);
+                _approveToken(_assets[i], strategy, _amount[i]);
             }
         }
         IStrategy(strategy).deposit(_assets, _amount, data);

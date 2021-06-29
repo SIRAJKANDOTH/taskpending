@@ -368,7 +368,7 @@ contract APContract {
             depositStrategy: stockDeposit,
             withdrawStrategy: stockWithdraw,
             created: true,
-            slippage: 50
+            slippage: 500  //5 percent slippage
         });
         vaults[msg.sender] = newVault;
 

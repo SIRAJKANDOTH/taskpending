@@ -64,19 +64,19 @@ contract VaultStorage is MasterCopy, ERC20, ERC20Detailed, ERC1155Receiver {
 
     /// @dev Function to return the NAV of the Vault.
     function getVaultNAV() public view returns (uint256) {
-        address[] memory strategies =
-            IAPContract(APContract).getVaultActiveStrategy(address(this));
+        address[] memory strategies = IAPContract(APContract)
+        .getVaultActiveStrategy(address(this));
         uint256 nav = 0;
         for (uint256 i = 0; i < assetList.length; i++) {
             if (tokenBalances.getTokenBalance(assetList[i]) > 0) {
-                uint256 tokenUSD =
-                    IAPContract(APContract).getUSDPrice(assetList[i]);
+                uint256 tokenUSD = IAPContract(APContract).getUSDPrice(
+                    assetList[i]
+                );
                 nav += IHexUtils(IAPContract(APContract).stringUtils())
-                    .toDecimals(
+                .toDecimals(
                     assetList[i],
                     tokenBalances.getTokenBalance(assetList[i])
-                )
-                    .mul(tokenUSD);
+                ).mul(tokenUSD);
             }
         }
         if (strategies.length == 0) {
@@ -84,8 +84,8 @@ contract VaultStorage is MasterCopy, ERC20, ERC20Detailed, ERC1155Receiver {
         } else {
             for (uint256 i = 0; i < strategies.length; i++) {
                 if (IERC20(strategies[i]).balanceOf(address(this)) > 0) {
-                    uint256 strategyTokenUSD =
-                        IStrategy(strategies[i]).tokenValueInUSD();
+                    uint256 strategyTokenUSD = IStrategy(strategies[i])
+                    .tokenValueInUSD();
                     nav += IERC20(strategies[i]).balanceOf(address(this)).mul(
                         strategyTokenUSD
                     );
@@ -100,15 +100,15 @@ contract VaultStorage is MasterCopy, ERC20, ERC20Detailed, ERC1155Receiver {
         uint256 nav = 0;
         for (uint256 i = 0; i < assetList.length; i++) {
             if (tokenBalances.getTokenBalance(assetList[i]) > 0) {
-                uint256 tokenUSD =
-                    IAPContract(APContract).getUSDPrice(assetList[i]);
+                uint256 tokenUSD = IAPContract(APContract).getUSDPrice(
+                    assetList[i]
+                );
                 nav += (
                     IHexUtils(IAPContract(APContract).stringUtils())
-                        .toDecimals(
+                    .toDecimals(
                         assetList[i],
                         tokenBalances.getTokenBalance(assetList[i])
-                    )
-                        .mul(tokenUSD)
+                    ).mul(tokenUSD)
                 );
             }
         }
@@ -146,5 +146,16 @@ contract VaultStorage is MasterCopy, ERC20, ERC20Detailed, ERC1155Receiver {
         } else {
             return (getVaultNAV().mul(1e18)).div(totalSupply());
         }
+    }
+
+    function _approveToken(
+        address _token,
+        address _spender,
+        uint256 _amount
+    ) internal {
+        if (IERC20(_token).allowance(address(this), _spender) > 0) {
+            IERC20(_token).safeApprove(_spender, 0);
+            IERC20(_token).safeApprove(_spender, _amount);
+        } else IERC20(_token).safeApprove(_spender, _amount);
     }
 }

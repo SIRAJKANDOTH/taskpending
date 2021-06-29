@@ -21,6 +21,7 @@ module.exports = async (deployer, network, accounts) => {
     await priceModule.addToken("0x6B175474E89094C44Da98b954EedeAC495271d0F", "0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9", 1) //DAI
     await priceModule.addToken("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", "0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6", 1) //USDC
     await priceModule.addToken("0xdac17f958d2ee523a2206206994597c13d831ec7", "0x3E7d1eAB13ad0104d2750B8863b489D65364e32D", 1) //USDT
+    await priceModule.addToken("0x4fabb145d64652a948d72533023f6e7a623c7c53", "0x833D8Eb16D306ed1FbB5D7A2E019e106B960965A", 1) //BUSD
     await priceModule.addToken("0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490", "0x0000000000000000000000000000000000000000", 2) //3Crv
     await priceModule.addToken("0x7Eb40E450b9655f4B3cC4259BCC731c63ff55ae6", "0x0000000000000000000000000000000000000000", 2) //crvUSDP Underlying
     await priceModule.addToken("0x4f3E8F405CF5aFC05D68142F3783bDfE13811522", "0x0000000000000000000000000000000000000000", 2) //crvUSDN  Underlying
@@ -32,7 +33,6 @@ module.exports = async (deployer, network, accounts) => {
     await priceModule.addToken("0xA74d4B67b3368E83797a35382AFB776bAAE4F5C8", "0x0000000000000000000000000000000000000000", 3) //crvALUSD
     await priceModule.addToken("0x5fA5B62c8AF877CB37031e0a3B2f34A78e3C56A6", "0x0000000000000000000000000000000000000000", 3) //crvLUSD
     await priceModule.addToken("0x6Ede7F19df5df6EF23bD5B9CeDb651580Bdf56Ca", "0x0000000000000000000000000000000000000000", 3) //crvBUSD
-
     await deployer.deploy(HexUtils);
     await deployer.deploy(PlatformManagementFee);
     await deployer.deploy(ProfitManagementFee);
@@ -55,7 +55,7 @@ module.exports = async (deployer, network, accounts) => {
         profitManagementFee.address,
         hexUtils.address,
         exchange.address,
-        "0x0000000000000000000000000000000000000000",
+        "0x2913bD0393aBF9E77edf7c39a733Bc16eB71aC62",
         priceModule.address,
         safeUtils.address
     );
@@ -73,6 +73,7 @@ module.exports = async (deployer, network, accounts) => {
     await apContract.addAsset("DAI", "DAI Coin", "0x6B175474E89094C44Da98b954EedeAC495271d0F")
     await apContract.addAsset("USDC", "USD Coin", "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")
     await apContract.addAsset("USDT", "USDT Coin", "0xdac17f958d2ee523a2206206994597c13d831ec7")
+    await apContract.addAsset("BUSD", "BUSD Coin", "0x4fabb145d64652a948d72533023f6e7a623c7c53")
 
 
     //adding Protocols

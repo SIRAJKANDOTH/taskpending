@@ -77,7 +77,7 @@ contract Exchange is VaultStorage {
         address exchange = IExchangeRegistry(
             IAPContract(APContract).exchangeRegistry()
         ).getPair(fromToken, toToken);
-        IERC20(fromToken).approve(exchange, amount);
+        _approveToken(fromToken, exchange, amount);
         uint256 minReturn = calculateSlippage(fromToken, toToken, amount);
 
         uint256 returnedTokenCount = IExchange(exchange).swap(

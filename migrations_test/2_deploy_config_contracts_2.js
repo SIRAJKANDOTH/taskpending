@@ -1,7 +1,7 @@
 const APContract = artifacts.require("./aps/APContract.sol");
 const LivaOneMinter = artifacts.require("./strategies/LivaOneMinter.sol");
 
-let livaOneAddress = "0x651aF6473dE9Bf97e4f489c3351956283A92d94b"
+let livaOneAddress = "0xf34Ec367977Fd459fc42a217Ee9805293d7e65E2"
 module.exports = async (deployer, network, accounts) => {
     const apContract = await APContract.deployed();
     
