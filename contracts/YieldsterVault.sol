@@ -230,13 +230,6 @@ contract YieldsterVault is VaultStorage {
         onlyNormalMode
     {
         _isStrategyManager();
-        require(
-            IAPContract(APContract)._isStrategyEnabled(
-                address(this),
-                _activeVaultStrategy
-            ),
-            "This strategy is not enabled"
-        );
         IAPContract(APContract).setVaultActiveStrategy(_activeVaultStrategy);
         IStrategy(_activeVaultStrategy).registerSafe();
     }
@@ -248,20 +241,7 @@ contract YieldsterVault is VaultStorage {
         onlyNormalMode
     {
         _isStrategyManager();
-        require(
-            IAPContract(APContract)._isStrategyEnabled(
-                address(this),
-                _strategyAddress
-            ),
-            "This strategy is not enabled"
-        );
-        require(
-            IAPContract(APContract).isStrategyActive(
-                address(this),
-                _strategyAddress
-            ),
-            "This strategy is not active right now"
-        );
+        IAPContract(APContract).deactivateVaultStrategy(_strategyAddress);
         if (IERC20(_strategyAddress).balanceOf(address(this)) > 0) {
             (address withdrawalAsset, uint256 withdrawalAmount) = IStrategy(
                 _strategyAddress
@@ -269,7 +249,6 @@ contract YieldsterVault is VaultStorage {
             updateTokenBalance(withdrawalAsset, withdrawalAmount, true);
         }
         IStrategy(_strategyAddress).deRegisterSafe();
-        IAPContract(APContract).deactivateVaultStrategy(_strategyAddress);
     }
 
     /// @dev Function to set smart strategies to vault.

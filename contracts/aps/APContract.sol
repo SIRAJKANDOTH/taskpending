@@ -368,7 +368,7 @@ contract APContract {
             depositStrategy: stockDeposit,
             withdrawStrategy: stockWithdraw,
             created: true,
-            slippage: 500  //5 percent slippage
+            slippage: 500 //5 percent slippage
         });
         vaults[msg.sender] = newVault;
 
@@ -544,6 +544,10 @@ contract APContract {
     function setVaultActiveStrategy(address _strategyAddress) public {
         require(vaults[msg.sender].created, "Vault not present");
         require(strategies[_strategyAddress].created, "Strategy not present");
+        require(
+            _isStrategyEnabled(msg.sender, _strategyAddress),
+            "Strategy not enabled"
+        );
         vaultActiveStrategies[msg.sender].isActiveStrategy[
             _strategyAddress
         ] = true;
