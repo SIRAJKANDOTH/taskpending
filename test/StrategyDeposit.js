@@ -118,8 +118,8 @@ contract("Strategy Deposit", function (accounts) {
 
 
         //approve Tokens to vault
-        await dai.approve(testVault.address, to18("100"), { from: accounts[1] })
         await busd.approve(testVault.address, to18("100"), { from: accounts[1] })
+        await dai.approve(testVault.address, to18("100"), { from: accounts[1] })
         await usdt.approve(testVault.address, to6("100"), { from: accounts[1] })
         await usdc.approve(testVault.address, to6("100"), { from: accounts[1] })
 
@@ -141,9 +141,9 @@ contract("Strategy Deposit", function (accounts) {
         console.log("busd in Vault =", from18((await busd.balanceOf(testVault.address)).toString()))
         console.log("===========================DEPOSIT=============================")
         await testVault.deposit(dai.address, to18("100"), { from: accounts[1] });
+        // await testVault.deposit(usdt.address, to6("100"), { from: accounts[1] });
         await testVault.deposit(busd.address, to18("100"), { from: accounts[1] });
         await testVault.deposit(usdc.address, to6("100"), { from: accounts[1] });
-        // await testVault.deposit(usdt.address, to6("100"), { from: accounts[1] });
         console.log("Vault NAV =", from18(await testVault.getVaultNAV()).toString())
         console.log("Vault Token Value =", from18(await testVault.tokenValueInUSD()).toString())
         console.log("dai in User =", from18(await dai.balanceOf(accounts[1])).toString())
@@ -156,7 +156,7 @@ contract("Strategy Deposit", function (accounts) {
         console.log("busd in Vault =", from18((await busd.balanceOf(testVault.address)).toString()))
         //Withdraw from vault 
         console.log("===========================WITHDRAW=============================")
-        await testVault.withdraw(busd.address, to18("290"), { from: accounts[1] });
+        await testVault.withdraw(usdc.address, to18("290"), { from: accounts[1] });
         console.log("Vault NAV =", from18(await testVault.getVaultNAV()).toString())
         console.log("Vault Token Value =", from18(await testVault.tokenValueInUSD()).toString())
         console.log("dai in User =", from18(await dai.balanceOf(accounts[1])).toString())

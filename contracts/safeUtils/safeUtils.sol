@@ -28,6 +28,7 @@ contract SafeUtils is VaultStorage {
     ) public {
         for (uint256 i = 0; i < _assetList.length; i++) {
             if ((IAPContract(APContract)._isVaultAsset(_assetList[i]))) {
+                addToAssetList(_assetList[i]);
                 uint256 unmintedShare = IERC20(_assetList[i])
                 .balanceOf(address(this))
                 .sub(tokenBalances.getTokenBalance(_assetList[i]));
@@ -44,7 +45,6 @@ contract SafeUtils is VaultStorage {
                     );
                 }
             }
-            addToAssetList(_assetList[i]);
         }
     }
 

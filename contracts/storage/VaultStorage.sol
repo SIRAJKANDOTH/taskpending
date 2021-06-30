@@ -26,7 +26,6 @@ contract VaultStorage is MasterCopy, ERC20, ERC20Detailed, ERC1155Receiver {
     address public owner;
     address public vaultAPSManager;
     address public vaultStrategyManager;
-    string public vaultName;
 
     uint256[] internal whiteListGroups;
     address[] internal assetList;
@@ -62,10 +61,14 @@ contract VaultStorage is MasterCopy, ERC20, ERC20Detailed, ERC1155Receiver {
         }
     }
 
+    /// @dev Function to get the address of active strategy in the vault.
+    function getVaultActiveStrategy() public view returns (address[] memory) {
+        return IAPContract(APContract).getVaultActiveStrategy(address(this));
+    }
+
     /// @dev Function to return the NAV of the Vault.
     function getVaultNAV() public view returns (uint256) {
-        address[] memory strategies = IAPContract(APContract)
-        .getVaultActiveStrategy(address(this));
+        address[] memory strategies = getVaultActiveStrategy();
         uint256 nav = 0;
         for (uint256 i = 0; i < assetList.length; i++) {
             if (tokenBalances.getTokenBalance(assetList[i]) > 0) {
@@ -157,5 +160,28 @@ contract VaultStorage is MasterCopy, ERC20, ERC20Detailed, ERC1155Receiver {
             IERC20(_token).safeApprove(_spender, 0);
             IERC20(_token).safeApprove(_spender, _amount);
         } else IERC20(_token).safeApprove(_spender, _amount);
+    }
+
+    function updateTokenBalance(
+        address tokenAddress,
+        uint256 tokenAmount,
+        bool isAddition
+    ) internal {
+        if (isAddition) {
+            tokenBalances.setTokenBalance(
+                tokenAddress,
+                tokenBalances.getTokenBalance(tokenAddress).add(tokenAmount)
+            );
+        } else {
+            tokenBalances.setTokenBalance(
+                tokenAddress,
+                tokenBalances.getTokenBalance(tokenAddress).sub(tokenAmount)
+            );
+        }
+    }
+
+    function updateBalance(bytes memory data) internal {
+        (address asset, uint256 amount) = abi.decode(data, (address, uint256));
+        if (asset != address(0)) updateTokenBalance(asset, amount, true);
     }
 }
