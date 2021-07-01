@@ -3,8 +3,8 @@ const ERC20 = artifacts.require("IERC20")
 const APContract = artifacts.require("./aps/APContract.sol");
 const ProxyFactory = artifacts.require("./proxies/YieldsterVaultProxyFactory.sol");
 const YieldsterVault = artifacts.require("./YieldsterVault.sol");
-const LivaOne = artifacts.require("./interfaces/IStrategy.sol");
-const LivaOneMinter = artifacts.require("./strategies/LivaOneMinter.sol");
+const LivaOne = artifacts.require("./strategies/LivaOne/LivaOneCrv.sol");
+const LivaOneMinter = artifacts.require("./strategies/LivaOne/LivaOneMinter.sol");
 
 var abi = require('ethereumjs-abi');
 
@@ -27,12 +27,14 @@ contract("Strategy Deposit", function (accounts) {
     let proxyFactory, apContract;
     let yieldsterVaultMasterCopy;
     let livaOne, livaOneMinter;
-    let apContractAddress = "0xDBB0F40e68D7Bd2fa21302Fc7B8759526E9b80F9";
-    let livaOneAddress = "0xf34Ec367977Fd459fc42a217Ee9805293d7e65E2";
-    let yieldsterVaultMasterCopyAddress = "0x13ea725C1AC4409353fBb759C788eCA9303dd27A";
-    let proxyFactoryAddress = "0x285863181cC5a60aC7ba68c9eC378B09D24A78A6";
-    let livaOneMinterAddress = "0xA00Aa68B61FE69B6B53845117abACC6Cfa6858F6"
+    let apContractAddress = "0xbe35a9fA3904904CD17Eb02Ffa926D3f1630787f";
+    let yieldsterVaultMasterCopyAddress = "0x7A6D4e9161217e6A92Dbb27e807AaD288eba73DF";
+    let proxyFactoryAddress = "0x10af66114b0550205dD1dc07D79dbF0b43fBf49b";
+    let livaOneAddress = "0xFAD48789A5afc1933cd884909C78506229df36ed";
+    let livaOneMinterAddress = "0x7c8ED66577153980cA5d62F703194F379C0B7d6d"
+
     beforeEach(async function () {
+
         dai = await ERC20.at("0x6B175474E89094C44Da98b954EedeAC495271d0F")
         usdc = await ERC20.at("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")
         usdt = await ERC20.at("0xdac17f958d2ee523a2206206994597c13d831ec7")
@@ -65,7 +67,6 @@ contract("Strategy Deposit", function (accounts) {
     it("should create a new vault", async () => {
         testVaultData = await yieldsterVaultMasterCopy.contract.methods
             .setup(
-                "Test Vault",
                 "Test",
                 "T",
                 accounts[0],
@@ -114,7 +115,6 @@ contract("Strategy Deposit", function (accounts) {
             ],
             [], []
         )
-        assert.equal(await testVault.vaultName(), "Test Vault", "Names match");
 
 
         //approve Tokens to vault
@@ -141,7 +141,7 @@ contract("Strategy Deposit", function (accounts) {
         console.log("busd in Vault =", from18((await busd.balanceOf(testVault.address)).toString()))
         console.log("===========================DEPOSIT=============================")
         await testVault.deposit(dai.address, to18("100"), { from: accounts[1] });
-        // await testVault.deposit(usdt.address, to6("100"), { from: accounts[1] });
+        await testVault.deposit(usdt.address, to6("100"), { from: accounts[1] });
         await testVault.deposit(busd.address, to18("100"), { from: accounts[1] });
         await testVault.deposit(usdc.address, to6("100"), { from: accounts[1] });
         console.log("Vault NAV =", from18(await testVault.getVaultNAV()).toString())
@@ -156,7 +156,7 @@ contract("Strategy Deposit", function (accounts) {
         console.log("busd in Vault =", from18((await busd.balanceOf(testVault.address)).toString()))
         //Withdraw from vault 
         console.log("===========================WITHDRAW=============================")
-        await testVault.withdraw(usdc.address, to18("290"), { from: accounts[1] });
+        await testVault.withdraw(busd.address, to18("390"), { from: accounts[1] });
         console.log("Vault NAV =", from18(await testVault.getVaultNAV()).toString())
         console.log("Vault Token Value =", from18(await testVault.tokenValueInUSD()).toString())
         console.log("dai in User =", from18(await dai.balanceOf(accounts[1])).toString())
