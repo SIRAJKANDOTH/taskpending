@@ -7,13 +7,25 @@ interface IStrategy {
         bytes calldata
     ) external;
 
-    function withdraw(uint256, address) external returns (address, uint256);
+    function withdraw(uint256, address)
+        external
+        returns (
+            bool,
+            address,
+            uint256
+        );
 
     function balanceOf(address) external view returns (uint256);
 
     function getStrategyNAV() external view returns (uint256);
 
-    function withdrawAllToSafe(address) external returns (address, uint256);
+    function withdrawAllToSafe(address)
+        external
+        returns (
+            bool,
+            address,
+            uint256
+        );
 
     function tokenValueInUSD() external view returns (uint256);
 

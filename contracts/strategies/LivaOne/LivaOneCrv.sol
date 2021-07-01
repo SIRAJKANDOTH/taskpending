@@ -76,7 +76,11 @@ contract LivaOneCrv is ERC20, ERC20Detailed {
 
     /// @dev Function to initialy set new protocol for a subscribed Vault.
     /// @param _protocol Address of the yearn protocol.
-    function setActiveProtocol(address _protocol) public onlyRegisteredVault {
+    function setActiveProtocol(address _protocol)
+        public
+        onlyRegisteredVault
+        returns (bool)
+    {
         require(
             protocols[_protocol],
             "This protocol is not present in the strategy"
@@ -90,6 +94,7 @@ contract LivaOneCrv is ERC20, ERC20Detailed {
             "This protocol is not enabled for this safe"
         );
         vaults[msg.sender].vaultActiveProtocol = _protocol;
+        return false;
     }
 
     /// @dev Function to set slippage settings when performing exchanges.
@@ -470,7 +475,11 @@ contract LivaOneCrv is ERC20, ERC20Detailed {
     function withdraw(uint256 _shares, address _withrawalAsset)
         public
         onlyRegisteredVault
-        returns (address, uint256)
+        returns (
+            bool,
+            address,
+            uint256
+        )
     {
         require(balanceOf(msg.sender) >= _shares, "Not enough shares");
         uint256 strategyTokenValueInUSD = (_shares.mul(getStrategyNAV())).div(
@@ -495,14 +504,14 @@ contract LivaOneCrv is ERC20, ERC20Detailed {
 
         if (_withrawalAsset == address(0) || _withrawalAsset == protocol) {
             IERC20(protocol).safeTransfer(msg.sender, protocolTokensToWithdraw);
-            return (protocol, protocolTokensToWithdraw);
+            return (true, protocol, protocolTokensToWithdraw);
         } else {
             uint256 underlyingAmount = IVault(protocol).withdraw(
                 protocolTokensToWithdraw
             );
             if (_withrawalAsset == underlying) {
                 IERC20(underlying).safeTransfer(msg.sender, underlyingAmount);
-                return (underlying, underlyingAmount);
+                return (true, underlying, underlyingAmount);
             } else {
                 uint256 crv3Tokens = withdrawTo3CrvFromPool(
                     underlying,
@@ -510,7 +519,7 @@ contract LivaOneCrv is ERC20, ERC20Detailed {
                 );
                 if (_withrawalAsset == crv3Token) {
                     IERC20(crv3Token).safeTransfer(msg.sender, crv3Tokens);
-                    return (crv3Token, crv3Tokens);
+                    return (true, crv3Token, crv3Tokens);
                 }
                 uint256 withdrawalTokens = exchangeToken(
                     crv3Token,
@@ -521,7 +530,7 @@ contract LivaOneCrv is ERC20, ERC20Detailed {
                     msg.sender,
                     withdrawalTokens
                 );
-                return (_withrawalAsset, withdrawalTokens);
+                return (true, _withrawalAsset, withdrawalTokens);
             }
         }
     }
@@ -562,10 +571,7 @@ contract LivaOneCrv is ERC20, ERC20Detailed {
 
     /// @dev Function to change the protocol of a subscribed vault.
     /// @param _protocol Address of the new protocol.
-    function _changeProtocol(address _protocol)
-        private
-        returns (address, uint256)
-    {
+    function _changeProtocol(address _protocol) private returns (bool) {
         address currentProtocol = vaults[msg.sender].vaultActiveProtocol;
         uint256 currentProtocolBalance = vaults[msg.sender].protocolBalance[
             currentProtocol
@@ -587,7 +593,7 @@ contract LivaOneCrv is ERC20, ERC20Detailed {
             newUnderlyingAmount
         );
         vaults[msg.sender].protocolBalance[_protocol] += newYVaultTokens;
-        return (address(0), 0);
+        return false;
     }
 
     /// @dev Function to withdraw all shares from strategy.
@@ -595,7 +601,11 @@ contract LivaOneCrv is ERC20, ERC20Detailed {
     function withdrawAllToSafe(address _withdrawalAsset)
         public
         onlyRegisteredVault
-        returns (address, uint256)
+        returns (
+            bool,
+            address,
+            uint256
+        )
     {
         return withdraw(balanceOf(msg.sender), _withdrawalAsset);
     }
@@ -605,7 +615,7 @@ contract LivaOneCrv is ERC20, ERC20Detailed {
     function changeProtocol(address _protocol)
         external
         onlyRegisteredVault
-        returns (address, uint256)
+        returns (bool)
     {
         require(protocols[_protocol], "protocol not present");
         require(

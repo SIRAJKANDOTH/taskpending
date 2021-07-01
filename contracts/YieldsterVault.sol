@@ -38,9 +38,13 @@ contract YieldsterVault is VaultStorage {
                     IStrategy(vaultActiveStrategy[i]).balanceOf(address(this)) >
                     0
                 ) {
-                    (address withdrawToken, uint256 withdrawAmount) = IStrategy(
-                        vaultActiveStrategy[i]
-                    ).withdrawAllToSafe(address(0));
+                    (
+                        ,
+                        address withdrawToken,
+                        uint256 withdrawAmount
+                    ) = IStrategy(vaultActiveStrategy[i]).withdrawAllToSafe(
+                        address(0)
+                    );
                     IERC20(withdrawToken).safeTransfer(
                         IAPContract(APContract).emergencyVault(),
                         withdrawAmount
@@ -209,9 +213,11 @@ contract YieldsterVault is VaultStorage {
             )
         ) {
             if (IERC20(_strategyAddress).balanceOf(address(this)) > 0) {
-                (address withdrawalAsset, uint256 withdrawalAmount) = IStrategy(
-                    _strategyAddress
-                ).withdrawAllToSafe(address(0));
+                (
+                    ,
+                    address withdrawalAsset,
+                    uint256 withdrawalAmount
+                ) = IStrategy(_strategyAddress).withdrawAllToSafe(address(0));
                 updateTokenBalance(withdrawalAsset, withdrawalAmount, true);
             }
             IStrategy(_strategyAddress).deRegisterSafe();
@@ -243,7 +249,7 @@ contract YieldsterVault is VaultStorage {
         _isStrategyManager();
         IAPContract(APContract).deactivateVaultStrategy(_strategyAddress);
         if (IERC20(_strategyAddress).balanceOf(address(this)) > 0) {
-            (address withdrawalAsset, uint256 withdrawalAmount) = IStrategy(
+            (, address withdrawalAsset, uint256 withdrawalAmount) = IStrategy(
                 _strategyAddress
             ).withdrawAllToSafe(address(0));
             updateTokenBalance(withdrawalAsset, withdrawalAmount, true);

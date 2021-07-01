@@ -181,7 +181,13 @@ contract VaultStorage is MasterCopy, ERC20, ERC20Detailed, ERC1155Receiver {
     }
 
     function updateBalance(bytes memory data) internal {
-        (address asset, uint256 amount) = abi.decode(data, (address, uint256));
-        if (asset != address(0)) updateTokenBalance(asset, amount, true);
+        bool assetUpdation = abi.decode(data, (bool));
+        if (assetUpdation) {
+            (, address asset, uint256 amount) = abi.decode(
+                data,
+                (bool, address, uint256)
+            );
+            if (asset != address(0)) updateTokenBalance(asset, amount, true);
+        }
     }
 }

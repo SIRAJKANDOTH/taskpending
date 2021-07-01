@@ -48,7 +48,7 @@ contract StockWithdraw is VaultStorage {
         uint256 shares,
         address tokenPrefered
     ) internal returns (uint256, uint256) {
-        (address returnToken, uint256 returnAmount) = IStrategy(strategy)
+        (,address returnToken, uint256 returnAmount) = IStrategy(strategy)
         .withdraw(shares, tokenPrefered);
         if (returnToken == tokenPrefered) {
             return (returnAmount, 0);
@@ -256,7 +256,7 @@ contract StockWithdraw is VaultStorage {
                 uint256 strategyShares = (_shares.mul(safeStrategyBalance)).div(
                     safeTotalSupply
                 );
-                (address returnToken, uint256 returnAmount) = IStrategy(
+                (, address returnToken, uint256 returnAmount) = IStrategy(
                     strategies[i]
                 ).withdraw(strategyShares, address(0));
                 IERC20(returnToken).safeTransfer(msg.sender, returnAmount);
