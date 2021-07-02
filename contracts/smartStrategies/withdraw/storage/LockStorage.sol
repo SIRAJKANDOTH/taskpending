@@ -42,7 +42,7 @@ contract LockStorage {
         );
     }
 
-    function getWithdrawalList()
+    function getWithdrawalList(address _vaultAddress)
         external
         view
         returns (
@@ -52,9 +52,9 @@ contract LockStorage {
         )
     {
         return (
-            vaultWithdrawalRequests[msg.sender].requestedAddresses,
-            vaultWithdrawalRequests[msg.sender].withdrawalAsset,
-            vaultWithdrawalRequests[msg.sender].amounts
+            vaultWithdrawalRequests[_vaultAddress].requestedAddresses,
+            vaultWithdrawalRequests[_vaultAddress].withdrawalAsset,
+            vaultWithdrawalRequests[_vaultAddress].amounts
         );
     }
 }
