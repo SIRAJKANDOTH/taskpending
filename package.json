@@ -32,7 +32,6 @@
     "deploy": "run(){ truffle deploy --network=$@; }; run",
     "migrate": "run(){ truffle migrate --reset --network=$@; }; run",
     "do": "run(){ truffle exec --network=$@; }; run",
-    "prepare": "yarn truffle compile && yarn tnt iN",
     "preversion": "node scripts/clean_build.js && yarn tnt cB",
     "estimate": "run(){ truffle compile --all $@; truffle run contract-size $@; }; run"
   },
@@ -47,6 +46,7 @@
     "@ethersproject/abi": "^5.0.11",
     "@openzeppelin/contracts": "^2.5.1",
     "@truffle/hdwallet-provider": "^1.2.6",
+    "@openzeppelin/truffle-upgrades": "^1.6.1",
     "dotenv": "^8.0.0",
     "openzeppelin-solidity": "^2.0.0",
     "shelljs": "^0.8.3",

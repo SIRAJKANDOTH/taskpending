@@ -122,16 +122,15 @@ contract YieldsterVault is VaultStorage {
         string calldata _tokenName,
         string calldata _symbol,
         address _vaultAPSManager,
-        // address _vaultStrategyManager, //uncomment this line in production
-        address _APContract,
+        address _vaultStrategyManager, //uncomment this line in production
         address _owner,
         uint256[] calldata _whiteListGroups
     ) external {
         require(!vaultSetupCompleted, "Vault is already setup");
         vaultSetupCompleted = true;
         vaultAPSManager = _vaultAPSManager;
-        vaultStrategyManager = _vaultAPSManager;
-        APContract = _APContract; //hardcode APContract address here before deploy to mainnet
+        vaultStrategyManager = _vaultStrategyManager;
+        APContract = 0xB24Ff34F5AE7F8Dde93A197FB406c1E78EEC0B25; //hardcode APContract address here before deploy to mainnet
         owner = _owner;
         whiteListGroups = _whiteListGroups;
         setupToken(_tokenName, _symbol);
@@ -353,20 +352,20 @@ contract YieldsterVault is VaultStorage {
         revertDelegate(result);
     }
 
-    // /// @dev Function to Withdraw shares from the Vault.
-    // /// @param _shares Amount of Vault token shares.
-    // function withdraw(uint256 _shares) external onlyNormalMode {
-    //     _isWhiteListed();
-    //     require(
-    //         balanceOf(msg.sender) >= _shares,
-    //         "You don't have enough shares"
-    //     );
-    //     managementFeeCleanUp();
-    //     (bool result, ) = IAPContract(APContract)
-    //     .getWithdrawStrategy()
-    //     .delegatecall(abi.encodeWithSignature("withdraw(uint256)", _shares));
-    //     revertDelegate(result);
-    // }
+    /// @dev Function to Withdraw shares from the Vault.
+    /// @param _shares Amount of Vault token shares.
+    function withdraw(uint256 _shares) external onlyNormalMode {
+        _isWhiteListed();
+        require(
+            balanceOf(msg.sender) >= _shares,
+            "You don't have enough shares"
+        );
+        managementFeeCleanUp();
+        (bool result, ) = IAPContract(APContract)
+        .getWithdrawStrategy()
+        .delegatecall(abi.encodeWithSignature("withdraw(uint256)", _shares));
+        revertDelegate(result);
+    }
 
     /// @dev Function to deposit vault assets to strategy
     /// @param _assets list of asset address to deposit
