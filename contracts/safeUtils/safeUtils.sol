@@ -56,4 +56,14 @@ contract SafeUtils is VaultStorage {
             tokenBalances.setTokenBalance(_assetList[i], _amount[i]);
         }
     }
+
+    function managementFeeCleanUp() public {
+        address[] memory managementFeeStrategies = IAPContract(APContract)
+        .getVaultManagementFee();
+        for (uint256 i = 0; i < managementFeeStrategies.length; i++) {
+            managementFeeStrategies[i].delegatecall(
+                abi.encodeWithSignature("executeSafeCleanUp()")
+            );
+        }
+    }
 }

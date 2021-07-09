@@ -1,8 +1,10 @@
 const HDWalletProvider = require("@truffle/hdwallet-provider");
 require("dotenv").config();
 const package = require("./package");
-const Web3 = require("web3")
-const webSocketProvider = new Web3.providers.WebsocketProvider(process.env.INFURA_TOKEN_WSS);
+const Web3 = require("web3");
+const webSocketProvider = new Web3.providers.WebsocketProvider(
+  process.env.INFURA_TOKEN_WSS
+);
 const mnemonic = process.env.MNEMONIC;
 const token = process.env.INFURA_TOKEN;
 let privateKeys = [process.env.PRIVATE_KEY];
@@ -31,10 +33,10 @@ module.exports = {
         return new HDWalletProvider(privateKeys, webSocketProvider);
       },
       network_id: "1",
-      gasPrice: 6000000000, // 6 Gwei
+      gasPrice: 20000000000, // 6 Gwei
       networkCheckTimeout: 1000000000,
       gas: 1622442,
-    }
+    },
   },
   plugins: ["truffle-contract-size"],
   compilers: {
