@@ -104,10 +104,7 @@ contract YieldsterVault is VaultStorage {
     }
 
     function _isStrategyManager() private view {
-        require(
-            msg.sender == vaultStrategyManager || msg.sender == owner,
-            "unauthorized"
-        );
+        require(msg.sender == vaultStrategyManager, "unauthorized");
     }
 
     // / @dev Setup function sets initial storage of contract.
@@ -139,7 +136,7 @@ contract YieldsterVault is VaultStorage {
 
     /// @dev Function that is called once after vault creation to Register the Vault with APS.
     function registerVaultWithAPS() external onlyNormalMode {
-        require(msg.sender == owner, "Only owner can perform this operation");
+        require(msg.sender == owner, "unauthorized");
         require(!vaultRegistrationCompleted, "Vault is already registered");
         vaultRegistrationCompleted = true;
         IAPContract(APContract).addVault(
@@ -165,10 +162,7 @@ contract YieldsterVault is VaultStorage {
         address[] calldata _disabledDepositAsset,
         address[] calldata _disabledWithdrawalAsset
     ) external onlyNormalMode {
-        require(
-            msg.sender == vaultAPSManager || msg.sender == owner,
-            "unauthorized"
-        );
+        require(msg.sender == vaultAPSManager, "unauthorized");
         IAPContract(APContract).setVaultAssets(
             _enabledDepositAsset,
             _enabledWithdrawalAsset,
@@ -311,6 +305,7 @@ contract YieldsterVault is VaultStorage {
             IAPContract(APContract).isDepositAsset(_tokenAddress),
             "Not an approved deposit asset"
         );
+        managementFeeCleanUp();
         (bool result, ) = IAPContract(APContract)
         .getDepositStrategy()
         .delegatecall(
@@ -375,6 +370,7 @@ contract YieldsterVault is VaultStorage {
         uint256[] calldata _amount,
         bytes calldata data
     ) external onlyNormalMode {
+        managementFeeCleanUp();
         address strategy = IAPContract(APContract).getStrategyFromMinter(
             msg.sender
         );
@@ -400,6 +396,7 @@ contract YieldsterVault is VaultStorage {
         uint256,
         bytes calldata data
     ) external onlyNormalMode returns (bytes4) {
+        managementFeeCleanUp();
         IHexUtils hexUtils = IHexUtils(IAPContract(APContract).stringUtils());
         if (id == 0) {
             require(
