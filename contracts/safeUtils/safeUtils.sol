@@ -68,7 +68,7 @@ contract SafeUtils is VaultStorage {
                 (gasCostUSD.mul(1e18)).div(gasTokenUSD)
             );
             require(
-                gasTokenCount >= tokenBalances.getTokenBalance(gasToken[i]),
+                gasTokenCount <= tokenBalances.getTokenBalance(gasToken[i]),
                 "Not enough gas token"
             );
             tokenBalances.setTokenBalance(

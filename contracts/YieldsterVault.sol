@@ -119,15 +119,17 @@ contract YieldsterVault is VaultStorage {
         string calldata _tokenName,
         string calldata _symbol,
         address _vaultAPSManager,
-        address _vaultStrategyManager, //uncomment this line in production
+        address _APContract,
+        // address _vaultStrategyManager, //uncomment this line in production
         address _owner,
         uint256[] calldata _whiteListGroups
     ) external {
         require(!vaultSetupCompleted, "Vault is already setup");
         vaultSetupCompleted = true;
         vaultAPSManager = _vaultAPSManager;
-        vaultStrategyManager = _vaultStrategyManager;
-        APContract = 0xB24Ff34F5AE7F8Dde93A197FB406c1E78EEC0B25; //hardcode APContract address here before deploy to mainnet
+        vaultStrategyManager = _vaultAPSManager;
+        // APContract = 0xB24Ff34F5AE7F8Dde93A197FB406c1E78EEC0B25; //hardcode APContract address here before deploy to mainnet
+        APContract = _APContract;
         owner = _owner;
         whiteListGroups = _whiteListGroups;
         setupToken(_tokenName, _symbol);
