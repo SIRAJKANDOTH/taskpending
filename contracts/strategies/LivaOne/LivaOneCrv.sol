@@ -7,15 +7,15 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
-import "./interfaces/IAPContract.sol";
-import "./interfaces/ICrvAddressProvider.sol";
-import "./interfaces/ICrvRegistry.sol";
-import "./interfaces/yearn/IVault.sol";
-import "./interfaces/IExchange.sol";
-import "./interfaces/IHexUtils.sol";
-import "./interfaces/ICrvPool.sol";
-import "./interfaces/ICrv3Pool.sol";
-import "./interfaces/IExchangeRegistry.sol";
+import "../interfaces/IAPContract.sol";
+import "../interfaces/ICrvAddressProvider.sol";
+import "../interfaces/ICrvRegistry.sol";
+import "../interfaces/yearn/IVault.sol";
+import "../interfaces/IExchange.sol";
+import "../interfaces/IHexUtils.sol";
+import "../interfaces/ICrvPool.sol";
+import "../interfaces/ICrv3Pool.sol";
+import "../interfaces/IExchangeRegistry.sol";
 
 contract LivaOneCrv is ERC20, ERC20Detailed {
     using SafeERC20 for IERC20;
