@@ -26,6 +26,7 @@ contract EuroPlus is ERC20, ERC20Detailed {
     uint256 public slippage = 10; //  0.1% slippage
     uint256 public slippageSwap = 50; //  0.5% slippage on swap
     address public protocol;
+    uint256 public protocolBalance;
     mapping(address => bool) poolTokens;
     mapping(address => bool) isRegistered;
 
@@ -282,12 +283,12 @@ contract EuroPlus is ERC20, ERC20Detailed {
         }
 
         uint256 yVTokens = handleDeposit(data);
-
         uint256 _shares;
         if (totalSupply() == 0)
             _shares = IHexUtils(IAPContract(APContract).stringUtils())
                 .toDecimals(protocol, yVTokens);
         else _shares = getMintValue(getDepositNAV(protocol, yVTokens));
+        protocolBalance += yVTokens;
 
         if (_shares > 0) _mint(msg.sender, _shares);
     }
@@ -301,13 +302,10 @@ contract EuroPlus is ERC20, ERC20Detailed {
     /// @dev Function to calculate the NAV of strategy for a subscribed vault | if the msg.sender is
     ///not subscribed vault then overall NAV of the strategy is returned.
     function getStrategyNAV() public view returns (uint256) {
-        if (IERC20(protocol).balanceOf(address(this)) > 0) {
+        if (protocolBalance > 0) {
             uint256 tokenUSD = IAPContract(APContract).getUSDPrice(protocol);
             uint256 balance = IHexUtils(IAPContract(APContract).stringUtils())
-                .toDecimals(
-                    protocol,
-                    IERC20(protocol).balanceOf(address(this))
-                );
+                .toDecimals(protocol, protocolBalance);
             return (balance.mul(tokenUSD)).div(1e18);
         } else return 0;
     }
@@ -362,8 +360,8 @@ contract EuroPlus is ERC20, ERC20Detailed {
         uint256 protocolTokensToWithdraw = IHexUtils(
             IAPContract(APContract).stringUtils()
         ).fromDecimals(protocol, protocolTokenCount);
-
         _burn(msg.sender, _shares);
+        protocolBalance -= protocolTokensToWithdraw;
 
         if (_withrawalAsset == address(0) || _withrawalAsset == protocol) {
             IERC20(protocol).safeTransfer(msg.sender, protocolTokensToWithdraw);

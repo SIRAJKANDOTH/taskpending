@@ -85,8 +85,8 @@ contract("Strategy Deposit", function (accounts) {
 
         console.log("Set Vault Assets")
         await testVault.setVaultAssets(
-            [eurs.address, sEurs.address],
-            [eurs.address, sEurs.address],
+            [eurs.address, sEurs.address, crvEURS.address, uCrvEursToken.address],
+            [eurs.address, sEurs.address, crvEURS.address, uCrvEursToken.address],
             [],
             [],
         );
@@ -156,7 +156,10 @@ contract("Strategy Deposit", function (accounts) {
         //Withdraw from Strategy
         console.log("====================STRATEGY WITHDRAW===================================")
         console.log("eurs in Vault", from2((await eurs.balanceOf(testVault.address)).toString()))
-        let withdrawInstruction = abi.simpleEncode("withdraw(uint256,address)", to18("50"), eurs.address).toString('hex');
+        console.log("sEurs in Vault", from18((await sEurs.balanceOf(testVault.address)).toString()))
+        console.log("crvEURS in Vault", from18((await crvEURS.balanceOf(testVault.address)).toString()))
+        console.log("uCrvEursToken in Vault", from18((await uCrvEursToken.balanceOf(testVault.address)).toString()))
+        let withdrawInstruction = abi.simpleEncode("withdraw(uint256,address)", to18("50"), crvEURS.address).toString('hex');
         console.log("Instruction \n", withdrawInstruction)
         await euroPlusMinter.mintStrategy(testVault.address, withdrawInstruction)
         console.log("euroPlus NAV after strategy withdraw", from18((await euroPlus.getStrategyNAV()).toString()))
@@ -164,7 +167,9 @@ contract("Strategy Deposit", function (accounts) {
         console.log("euroPlus token vault balance after strategy withdraw", from18((await euroPlus.balanceOf(testVault.address)).toString()))
         console.log("euroPlus crvEURS tokens after strategy withdraw", from18((await crvEURS.balanceOf(euroPlusAddress)).toString()))
         console.log("eurs in Vault", from2((await eurs.balanceOf(testVault.address)).toString()))
-
+        console.log("sEurs in Vault", from18((await sEurs.balanceOf(testVault.address)).toString()))
+        console.log("crvEURS in Vault", from18((await crvEURS.balanceOf(testVault.address)).toString()))
+        console.log("uCrvEursToken in Vault", from18((await uCrvEursToken.balanceOf(testVault.address)).toString()))
         // //Withdraw from vault 
         // console.log("===========================WITHDRAW=============================")
         // await testVault.withdraw(eurs.address, to18("100"), { from: accounts[1] });
