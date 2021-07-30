@@ -284,7 +284,9 @@ contract EuroPlus is ERC20, ERC20Detailed {
         uint256 yVTokens = handleDeposit(data);
 
         uint256 _shares;
-        if (totalSupply() == 0) _shares = yVTokens;
+        if (totalSupply() == 0)
+            _shares = IHexUtils(IAPContract(APContract).stringUtils())
+                .toDecimals(protocol, yVTokens);
         else _shares = getMintValue(getDepositNAV(protocol, yVTokens));
 
         if (_shares > 0) _mint(msg.sender, _shares);

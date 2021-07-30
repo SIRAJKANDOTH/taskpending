@@ -136,61 +136,34 @@ contract("Strategy Deposit", function (accounts) {
         // console.log("sEurs in User =", from18((await sEurs.balanceOf(accounts[1])).toString()))
         // console.log("sEurs in Vault =", from18((await sEurs.balanceOf(testVault.address)).toString()))
         // crvEURS
-        //Vault protocol
-        // console.log("Vault active protocol", (await euroPlus.getActiveProtocol(testVault.address)).toString())
-        // console.log("activating protocol ", crvEURS.address)
-
-        // let setProtocolInstruction = abi.simpleEncode("setActiveProtocol(address)", crvEURS.address).toString('hex');
-        // console.log("Instruction \n", setProtocolInstruction)
-        // await euroPlusMinter.mintStrategy(testVault.address, setProtocolInstruction)
-        // console.log("Vault active protocol after", (await euroPlus.getActiveProtocol(testVault.address)).toString())
-
 
         //Deposit into strategy
-        // console.log("euroPlus NAV =", from18((await euroPlus.getStrategyNAV({ from: testVault.address })).toString()))
-        // console.log("euroPlus token value =", from18((await euroPlus.tokenValueInUSD({ from: testVault.address })).toString()))
-        // console.log("euroPlus token vault balance =", from18((await euroPlus.balanceOf(testVault.address)).toString()))
-        // console.log("===================STRATEGY DEPOSIT=====================")
-        // let earnInstruction =
-        //     web3.eth.abi.encodeParameters(['address[3]', 'uint256[3]', 'uint256', 'address[]', 'address[]'], [["0x6B175474E89094C44Da98b954EedeAC495271d0F", "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", "0xdac17f958d2ee523a2206206994597c13d831ec7"], [`${to18("5000")}`, `${to6("0")}`, `${to6("0")}`], "0", [], []]);
+        console.log("euroPlus NAV =", from18((await euroPlus.getStrategyNAV()).toString()))
+        console.log("euroPlus token value =", from18((await euroPlus.tokenValueInUSD()).toString()))
+        console.log("euroPlus token vault balance =", from18((await euroPlus.balanceOf(testVault.address)).toString()))
+        console.log("===================STRATEGY DEPOSIT=====================")
+        let earnInstruction =
+            web3.eth.abi.encodeParameters(['address[2]', 'uint256[2]', 'uint256', 'address[]', 'address[]'], [["0xdB25f211AB05b1c97D595516F45794528a807ad8", "0xD71eCFF9342A5Ced620049e616c5035F1dB98620"], [`${to2("100")}`, `${to18("0")}`], "0", [], []]);
 
-        // await euroPlusMinter.earn(testVault.address, [eurs.address, usdc.address, usdt.address], [to18("100"), to6("100"), to6("100")], earnInstruction)
-        // console.log("euroPlus NAV =", from18((await euroPlus.getStrategyNAV({ from: testVault.address })).toString()))
-        // console.log("euroPlus token value =", from18((await euroPlus.tokenValueInUSD({ from: testVault.address })).toString()))
-        // console.log("euroPlus token vault balance =", from18((await euroPlus.balanceOf(testVault.address)).toString()))
-        // console.log("euroPlus crvEURS tokens  =", from18((await crvEURS.balanceOf(euroPlusAddress)).toString()))
-        // console.log("euroPlus crvUSDN tokens  =", from18((await crvUSDN.balanceOf(euroPlusAddress)).toString()))
-        // console.log("Vault NAV =", from18(await testVault.getVaultNAV()).toString())
-        // console.log("Vault Token Value =", from18(await testVault.tokenValueInUSD()).toString())
-
-        // //Change Protocol
-        // console.log("==================CHANGE PROTOCOL====================")
-        // console.log("Vault active protocol", (await euroPlus.getActiveProtocol(testVault.address)).toString())
-        // let changeProtocolInstruction = abi.simpleEncode("changeProtocol(address)", crvUSDN.address).toString('hex');
-        // await euroPlusMinter.mintStrategy(testVault.address, changeProtocolInstruction)
-        // console.log("Vault active protocol after protocol change", (await euroPlus.getActiveProtocol(testVault.address)).toString())
-        // console.log("euroPlus NAV after protocol change", from18((await euroPlus.getStrategyNAV({ from: testVault.address })).toString()))
-        // console.log("euroPlus token value after protocol change", from18((await euroPlus.tokenValueInUSD({ from: testVault.address })).toString()))
-        // console.log("euroPlus token vault balance after protocol change", from18((await euroPlus.balanceOf(testVault.address)).toString()))
-        // console.log("euroPlus crvEURS tokens after protocol change", from18((await crvEURS.balanceOf(euroPlusAddress)).toString()))
-        // console.log("euroPlus crvUSDN tokens after protocol change", from18((await crvUSDN.balanceOf(euroPlusAddress)).toString()))
-        // console.log("Vault NAV", from18(await testVault.getVaultNAV()).toString())
-        // console.log("Vault Token Value", from18(await testVault.tokenValueInUSD()).toString())
-
+        await euroPlusMinter.earn(testVault.address, [eurs.address], [to2("100")], earnInstruction)
+        console.log("euroPlus NAV =", from18((await euroPlus.getStrategyNAV()).toString()))
+        console.log("euroPlus token value =", from18((await euroPlus.tokenValueInUSD()).toString()))
+        console.log("euroPlus token vault balance =", from18((await euroPlus.balanceOf(testVault.address)).toString()))
+        console.log("euroPlus crvEURS tokens  =", from18((await crvEURS.balanceOf(euroPlusAddress)).toString()))
+        console.log("Vault NAV =", from18(await testVault.getVaultNAV()).toString())
+        console.log("Vault Token Value =", from18(await testVault.tokenValueInUSD()).toString())
 
         //Withdraw from Strategy
-        // console.log("====================STRATEGY WITHDRAW===================================")
-        // console.log("usdc in Vault", (await usdc.balanceOf(testVault.address)).toString())
-        // let withdrawInstruction = abi.simpleEncode("withdraw(uint256,address)", to18("100"), usdc.address).toString('hex');
-        // console.log("Instruction \n", withdrawInstruction)
-        // await euroPlusMinter.mintStrategy(testVault.address, withdrawInstruction)
-        // console.log("euroPlus NAV after strategy withdraw", from18((await euroPlus.getStrategyNAV()).toString()))
-        // console.log("euroPlus token value after strategy withdraw", from18((await euroPlus.tokenValueInUSD()).toString()))
-        // console.log("euroPlus token vault balance after strategy withdraw", from18((await euroPlus.balanceOf(testVault.address)).toString()))
-        // console.log("euroPlus crvEURS tokens after strategy withdraw", from18((await crvEURS.balanceOf(euroPlusAddress)).toString()))
-        // console.log("euroPlus crvUSDN tokens after strategy withdraw", from18((await crvUSDN.balanceOf(euroPlusAddress)).toString()))
-        // console.log("usdc in Vault after strategy withdraw", from6((await usdc.balanceOf(testVault.address)).toString()))
-
+        console.log("====================STRATEGY WITHDRAW===================================")
+        console.log("eurs in Vault", from2((await eurs.balanceOf(testVault.address)).toString()))
+        let withdrawInstruction = abi.simpleEncode("withdraw(uint256,address)", to18("50"), eurs.address).toString('hex');
+        console.log("Instruction \n", withdrawInstruction)
+        await euroPlusMinter.mintStrategy(testVault.address, withdrawInstruction)
+        console.log("euroPlus NAV after strategy withdraw", from18((await euroPlus.getStrategyNAV()).toString()))
+        console.log("euroPlus token value after strategy withdraw", from18((await euroPlus.tokenValueInUSD()).toString()))
+        console.log("euroPlus token vault balance after strategy withdraw", from18((await euroPlus.balanceOf(testVault.address)).toString()))
+        console.log("euroPlus crvEURS tokens after strategy withdraw", from18((await crvEURS.balanceOf(euroPlusAddress)).toString()))
+        console.log("eurs in Vault", from2((await eurs.balanceOf(testVault.address)).toString()))
 
         // //Withdraw from vault 
         // console.log("===========================WITHDRAW=============================")
