@@ -34,6 +34,8 @@ module.exports = async (deployer, network, accounts) => {
     await apContract.addAsset("BUSD", "BUSD Coin", "0x4fabb145d64652a948d72533023f6e7a623c7c53")
     await apContract.addAsset("EURS", "EURS Coin", "0xdB25f211AB05b1c97D595516F45794528a807ad8")
     await apContract.addAsset("sEURS", "sEURS Coin", "0xD71eCFF9342A5Ced620049e616c5035F1dB98620")
+    await apContract.addAsset("uCrvEURS", "uCrvEURS Coin", "0x194eBd173F6cDacE046C53eACcE9B953F28411d1")
+    await apContract.addAsset("crvEURS", "crvEURS Coin", "0x25212Df29073FfFA7A67399AcEfC2dd75a831A1A")
 
 
     //adding Protocols
