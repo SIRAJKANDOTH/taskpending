@@ -3,6 +3,8 @@ const LivaOne = artifacts.require("./strategies/LivaOne/LivaOneCrv.sol");
 const LivaOneMinter = artifacts.require("./strategies/LivaOne/LivaOneMinter.sol");
 const EuroPlus = artifacts.require("./strategies/EuroPlus/EuroPlus.sol");
 const EuroPlusMinter = artifacts.require("./strategies/EuroPlus/EuroPlusMinter.sol");
+const SingleAsset3Crv = artifacts.require("./strategies/SingleAsset3Crv/SingleAsset3Crv.sol");
+const SingleAsset3CrvMinter = artifacts.require("./strategies/SingleAsset3Crv/SingleAsset3CrvMinter.sol");
 
 module.exports = async (deployer, network, accounts) => {
     const apContract = await APContract.deployed();
@@ -39,26 +41,52 @@ module.exports = async (deployer, network, accounts) => {
     // );
 
     //Deploy EuroPlus
-    await deployer.deploy(EuroPlus, apContract.address,
-        "0x25212Df29073FfFA7A67399AcEfC2dd75a831A1A",
-        [
-            "0xdB25f211AB05b1c97D595516F45794528a807ad8",
-            "0xD71eCFF9342A5Ced620049e616c5035F1dB98620",
-        ]
+    // await deployer.deploy(EuroPlus, apContract.address,
+    //     "0x25212Df29073FfFA7A67399AcEfC2dd75a831A1A",
+    //     [
+    //         "0xdB25f211AB05b1c97D595516F45794528a807ad8",
+    //         "0xD71eCFF9342A5Ced620049e616c5035F1dB98620",
+    //     ]
+    // );
+
+    // const euroPlus = await EuroPlus.deployed()
+    // await deployer.deploy(EuroPlusMinter, apContract.address, euroPlus.address)
+
+    // const euroPlusMinter = await EuroPlusMinter.deployed()
+
+    // await apContract.addStrategy(
+    //     "Euro Plus",
+    //     euroPlus.address,
+    //     [
+    //         "0x25212Df29073FfFA7A67399AcEfC2dd75a831A1A",
+    //     ],
+    //     euroPlusMinter.address,
+    //     accounts[0],
+    //     accounts[0],
+    //     "0"
+    // );
+
+    //Deploy Singe Asset 3Crv
+    await deployer.deploy(SingleAsset3Crv,
+        "BUSD",
+        "BUSD Strategy",
+        apContractAddress,
+        "0x6Ede7F19df5df6EF23bD5B9CeDb651580Bdf56Ca",
+        "0x4fabb145d64652a948d72533023f6e7a623c7c53"
     );
 
-    const euroPlus = await EuroPlus.deployed()
-    await deployer.deploy(EuroPlusMinter, apContract.address, euroPlus.address)
+    const singleAsset3Crv = await SingleAsset3Crv.deployed()
+    await deployer.deploy(SingleAsset3CrvMinter, apContract.address, singleAsset3Crv.address)
 
-    const euroPlusMinter = await EuroPlusMinter.deployed()
+    const singleAsset3CrvMinter = await SingleAsset3CrvMinter.deployed()
 
     await apContract.addStrategy(
         "Euro Plus",
-        euroPlus.address,
+        singleAsset3Crv.address,
         [
-            "0x25212Df29073FfFA7A67399AcEfC2dd75a831A1A",
+            "0x6Ede7F19df5df6EF23bD5B9CeDb651580Bdf56Ca",
         ],
-        euroPlusMinter.address,
+        singleAsset3CrvMinter.address,
         accounts[0],
         accounts[0],
         "0"
