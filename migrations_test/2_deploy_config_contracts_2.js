@@ -70,7 +70,7 @@ module.exports = async (deployer, network, accounts) => {
     await deployer.deploy(SingleAsset3Crv,
         "BUSD",
         "BUSD Strategy",
-        apContractAddress,
+        apContract.address,
         "0x6Ede7F19df5df6EF23bD5B9CeDb651580Bdf56Ca",
         "0x4fabb145d64652a948d72533023f6e7a623c7c53"
     );

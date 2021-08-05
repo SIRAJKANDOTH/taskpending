@@ -377,7 +377,7 @@ contract SingleAsset3Crv is ERC20, ERC20Detailed {
         uint256 yVTokens = handleDeposit(data);
 
         uint256 _shares;
-        if (balanceOf(msg.sender) == 0) _shares = yVTokens;
+        if (totalSupply() == 0) _shares = yVTokens;
         else _shares = getMintValue(getDepositNAV(protocol, yVTokens));
         protocolBalance += yVTokens;
 
@@ -437,7 +437,7 @@ contract SingleAsset3Crv is ERC20, ERC20Detailed {
     {
         require(balanceOf(msg.sender) >= _shares, "Not enough shares");
         uint256 strategyTokenValueInUSD = (_shares.mul(getStrategyNAV())).div(
-            balanceOf(msg.sender)
+            totalSupply()
         );
         address underlying = IVault(protocol).token();
         uint256 protocolTokenUSD = IAPContract(APContract).getUSDPrice(
