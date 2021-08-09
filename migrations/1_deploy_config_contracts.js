@@ -36,6 +36,9 @@ module.exports = async (deployer, network, accounts) => {
     await apContract.addAsset("sEURS", "sEURS Coin", "0xD71eCFF9342A5Ced620049e616c5035F1dB98620")
     await apContract.addAsset("uCrvEURS", "uCrvEURS Coin", "0x194eBd173F6cDacE046C53eACcE9B953F28411d1")
     await apContract.addAsset("crvEURS", "crvEURS Coin", "0x25212Df29073FfFA7A67399AcEfC2dd75a831A1A")
+    await apContract.addAsset("USDK", "USDK Coin", "0x1c48f86ae57291f7686349f12601910bd8d470bb")
+    await apContract.addAsset("uCrvUSDK", "uCrvUSDK Coin", "0x97E2768e8E73511cA874545DC5Ff8067eB19B787")
+    await apContract.addAsset("crvUSDK", "crvUSDK Coin", "0x3D27705c64213A5DcD9D26880c1BcFa72d5b6B0E")
     await apContract.addAsset("crv3", "crv3 Coin", "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490")
     await apContract.addAsset("uCrvBUSD", "uCrvBUSD Coin", "0x4807862aa8b2bf68830e4c8dc86d0e9a998e085a")
     await apContract.addAsset("crvBUSD", "crvBUSD Coin", "0x6Ede7F19df5df6EF23bD5B9CeDb651580Bdf56Ca")
@@ -72,6 +75,11 @@ module.exports = async (deployer, network, accounts) => {
         "yearn Curve.fi crvEURS",
         "crvEURS",
         "0x25212Df29073FfFA7A67399AcEfC2dd75a831A1A"
+    );
+    await apContract.addProtocol(
+        "yearn Curve.fi crvUSDK",
+        "crvUSDK",
+        "0x3D27705c64213A5DcD9D26880c1BcFa72d5b6B0E"
     );
 
     //Adding Stock withdraw and deposit to APContract

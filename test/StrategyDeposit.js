@@ -27,11 +27,6 @@ contract("Strategy Deposit", function (accounts) {
     let proxyFactory, apContract;
     let yieldsterVaultMasterCopy;
     let livaOne, livaOneMinter;
-    let apContractAddress = "0xA524CCBc6Ea0b1F2E177C87410359E30b04BFf68";
-    let proxyFactoryAddress = "0xa797fE53862E7e4E63504dc94b7258156cbBb981";
-    let livaOneAddress = "0x7b15e1Ef2542650F67891Cf9ebAF51696e0F8bc1";
-    let livaOneMinterAddress = "0x5b6F3A66837659C99D822DaCf44E84D6F4C2253f";
-    let yieldsterVaultMasterCopyAddress = "0x4B743caD239fa550EF47bB2601905BBE99d59E4e";
 
     beforeEach(async function () {
 
@@ -56,11 +51,11 @@ contract("Strategy Deposit", function (accounts) {
         // await usdc.transfer(accounts[1], to6("100"))
         // await usdt.transfer(accounts[1], to6("100"))
 
-        apContract = await APContract.at(apContractAddress);
-        livaOne = await LivaOne.at(livaOneAddress)
-        yieldsterVaultMasterCopy = await YieldsterVault.at(yieldsterVaultMasterCopyAddress)
-        proxyFactory = await ProxyFactory.at(proxyFactoryAddress)
-        livaOneMinter = await LivaOneMinter.at(livaOneMinterAddress)
+        apContract = await APContract.deployed();
+        yieldsterVaultMasterCopy = await YieldsterVault.deployed()
+        proxyFactory = await ProxyFactory.deployed()
+        livaOne = await LivaOne.deployed()
+        livaOneMinter = await LivaOneMinter.deployed()
 
     });
 
@@ -70,7 +65,7 @@ contract("Strategy Deposit", function (accounts) {
                 "Test",
                 "T",
                 accounts[0],
-                apContractAddress,
+                apContract.address,
                 accounts[0],
                 []
             )
@@ -105,7 +100,7 @@ contract("Strategy Deposit", function (accounts) {
 
         console.log("set vault strategy and protocol")
         await testVault.setVaultStrategyAndProtocol(
-            livaOneAddress,
+            livaOne.address,
             [
                 crvUSDP.address,
                 crvUSDN.address,
@@ -123,8 +118,8 @@ contract("Strategy Deposit", function (accounts) {
         // await usdt.approve(testVault.address, to6("100"), { from: accounts[1] })
         // await usdc.approve(testVault.address, to6("100"), { from: accounts[1] })
 
-        console.log("Activating vault strategy ", livaOneAddress)
-        await testVault.setVaultActiveStrategy(livaOneAddress)
+        console.log("Activating vault strategy ", livaOne.address)
+        await testVault.setVaultActiveStrategy(livaOne.address)
         console.log("Vault active strategies", (await testVault.getVaultActiveStrategy()))
 
 
@@ -197,8 +192,8 @@ contract("Strategy Deposit", function (accounts) {
         // console.log("livaOne NAV =", from18((await livaOne.getStrategyNAV({ from: testVault.address })).toString()))
         // console.log("livaOne token value =", from18((await livaOne.tokenValueInUSD({ from: testVault.address })).toString()))
         // console.log("livaOne token vault balance =", from18((await livaOne.balanceOf(testVault.address)).toString()))
-        // console.log("livaOne crvALUSD tokens  =", from18((await crvALUSD.balanceOf(livaOneAddress)).toString()))
-        // console.log("livaOne crvUSDN tokens  =", from18((await crvUSDN.balanceOf(livaOneAddress)).toString()))
+        // console.log("livaOne crvALUSD tokens  =", from18((await crvALUSD.balanceOf(livaOne.address)).toString()))
+        // console.log("livaOne crvUSDN tokens  =", from18((await crvUSDN.balanceOf(livaOne.address)).toString()))
         // console.log("Vault NAV =", from18(await testVault.getVaultNAV()).toString())
         // console.log("Vault Token Value =", from18(await testVault.tokenValueInUSD()).toString())
 
@@ -211,8 +206,8 @@ contract("Strategy Deposit", function (accounts) {
         // console.log("livaOne NAV after protocol change", from18((await livaOne.getStrategyNAV({ from: testVault.address })).toString()))
         // console.log("livaOne token value after protocol change", from18((await livaOne.tokenValueInUSD({ from: testVault.address })).toString()))
         // console.log("livaOne token vault balance after protocol change", from18((await livaOne.balanceOf(testVault.address)).toString()))
-        // console.log("livaOne crvALUSD tokens after protocol change", from18((await crvALUSD.balanceOf(livaOneAddress)).toString()))
-        // console.log("livaOne crvUSDN tokens after protocol change", from18((await crvUSDN.balanceOf(livaOneAddress)).toString()))
+        // console.log("livaOne crvALUSD tokens after protocol change", from18((await crvALUSD.balanceOf(livaOne.address)).toString()))
+        // console.log("livaOne crvUSDN tokens after protocol change", from18((await crvUSDN.balanceOf(livaOne.address)).toString()))
         // console.log("Vault NAV", from18(await testVault.getVaultNAV()).toString())
         // console.log("Vault Token Value", from18(await testVault.tokenValueInUSD()).toString())
 
@@ -226,8 +221,8 @@ contract("Strategy Deposit", function (accounts) {
         // console.log("livaOne NAV after strategy withdraw", from18((await livaOne.getStrategyNAV()).toString()))
         // console.log("livaOne token value after strategy withdraw", from18((await livaOne.tokenValueInUSD()).toString()))
         // console.log("livaOne token vault balance after strategy withdraw", from18((await livaOne.balanceOf(testVault.address)).toString()))
-        // console.log("livaOne crvALUSD tokens after strategy withdraw", from18((await crvALUSD.balanceOf(livaOneAddress)).toString()))
-        // console.log("livaOne crvUSDN tokens after strategy withdraw", from18((await crvUSDN.balanceOf(livaOneAddress)).toString()))
+        // console.log("livaOne crvALUSD tokens after strategy withdraw", from18((await crvALUSD.balanceOf(livaOne.address)).toString()))
+        // console.log("livaOne crvUSDN tokens after strategy withdraw", from18((await crvUSDN.balanceOf(livaOne.address)).toString()))
         // console.log("usdc in Vault after strategy withdraw", from6((await usdc.balanceOf(testVault.address)).toString()))
 
 

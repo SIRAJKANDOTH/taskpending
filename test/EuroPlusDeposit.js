@@ -28,11 +28,6 @@ contract("Strategy Deposit", function (accounts) {
     let proxyFactory, apContract;
     let yieldsterVaultMasterCopy;
     let euroPlus, euroPlusMinter;
-    let apContractAddress = "0x79787838b2Df609adf7B614e90dD8A9B207Eae65";
-    let yieldsterVaultMasterCopyAddress = "0xcE7933fDa43564A2d01E8AC10d9D9302170De291";
-    let proxyFactoryAddress = "0x9015E3AAA74CF482A7F66b75Fc036d3a2247Bb9F";
-    let euroPlusAddress = "0x48D754B7C430B14266F51bf6DdD386E55E7b4030";
-    let euroPlusMinterAddress = "0x1Ed37aC882843873Ccf512b0749a1395803344ea";
 
     beforeEach(async function () {
 
@@ -44,11 +39,11 @@ contract("Strategy Deposit", function (accounts) {
         await eurs.transfer(accounts[1], to2("100"))
         // await sEurs.transfer(accounts[1], to18("100"))
 
-        apContract = await APContract.at(apContractAddress);
-        euroPlus = await EuroPlus.at(euroPlusAddress)
-        yieldsterVaultMasterCopy = await YieldsterVault.at(yieldsterVaultMasterCopyAddress)
-        proxyFactory = await ProxyFactory.at(proxyFactoryAddress)
-        euroPlusMinter = await EuroPlusMinter.at(euroPlusMinterAddress)
+        apContract = await APContract.deployed();
+        euroPlus = await EuroPlus.deployed()
+        yieldsterVaultMasterCopy = await YieldsterVault.deployed()
+        proxyFactory = await ProxyFactory.deployed()
+        euroPlusMinter = await EuroPlusMinter.deployed()
 
     });
 
@@ -58,7 +53,7 @@ contract("Strategy Deposit", function (accounts) {
                 "Test",
                 "T",
                 accounts[0],
-                apContractAddress,
+                apContract.address,
                 accounts[0],
                 []
             )
@@ -93,7 +88,7 @@ contract("Strategy Deposit", function (accounts) {
 
         console.log("set vault strategy and protocol")
         await testVault.setVaultStrategyAndProtocol(
-            euroPlusAddress,
+            euroPlus.address,
             [
                 crvEURS.address,
             ],
@@ -105,8 +100,8 @@ contract("Strategy Deposit", function (accounts) {
         await eurs.approve(testVault.address, to2("100"), { from: accounts[1] })
         // await sEurs.approve(testVault.address, to18("100"), { from: accounts[1] })
 
-        console.log("Activating vault strategy ", euroPlusAddress)
-        await testVault.setVaultActiveStrategy(euroPlusAddress)
+        console.log("Activating vault strategy ", euroPlus.address)
+        await testVault.setVaultActiveStrategy(euroPlus.address)
         console.log("Vault active strategies", (await testVault.getVaultActiveStrategy()))
 
 
@@ -149,7 +144,7 @@ contract("Strategy Deposit", function (accounts) {
         console.log("euroPlus NAV =", from18((await euroPlus.getStrategyNAV()).toString()))
         console.log("euroPlus token value =", from18((await euroPlus.tokenValueInUSD()).toString()))
         console.log("euroPlus token vault balance =", from18((await euroPlus.balanceOf(testVault.address)).toString()))
-        console.log("euroPlus crvEURS tokens  =", from18((await crvEURS.balanceOf(euroPlusAddress)).toString()))
+        console.log("euroPlus crvEURS tokens  =", from18((await crvEURS.balanceOf(euroPlus.address)).toString()))
         console.log("Vault NAV =", from18(await testVault.getVaultNAV()).toString())
         console.log("Vault Token Value =", from18(await testVault.tokenValueInUSD()).toString())
 
@@ -165,7 +160,7 @@ contract("Strategy Deposit", function (accounts) {
         console.log("euroPlus NAV after strategy withdraw", from18((await euroPlus.getStrategyNAV()).toString()))
         console.log("euroPlus token value after strategy withdraw", from18((await euroPlus.tokenValueInUSD()).toString()))
         console.log("euroPlus token vault balance after strategy withdraw", from18((await euroPlus.balanceOf(testVault.address)).toString()))
-        console.log("euroPlus crvEURS tokens after strategy withdraw", from18((await crvEURS.balanceOf(euroPlusAddress)).toString()))
+        console.log("euroPlus crvEURS tokens after strategy withdraw", from18((await crvEURS.balanceOf(euroPlus.address)).toString()))
         console.log("eurs in Vault", from2((await eurs.balanceOf(testVault.address)).toString()))
         console.log("sEurs in Vault", from18((await sEurs.balanceOf(testVault.address)).toString()))
         console.log("crvEURS in Vault", from18((await crvEURS.balanceOf(testVault.address)).toString()))

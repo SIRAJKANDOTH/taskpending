@@ -25,7 +25,7 @@ contract SingleAsset3Crv is ERC20, ERC20Detailed {
     address private crv3Token = 0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490;
     address private crvAddressProvider =
         0x0000000022D53366457F9d5E68Ec105046FC4383;
-    uint256 slippage = 10; //  0.1% slippage
+    uint256 slippage = 50; //  0.1% slippage
     uint256 slippageSwap = 50; //  0.5% slippage on swap
 
     address public protocol;

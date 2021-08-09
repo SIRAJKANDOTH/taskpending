@@ -68,11 +68,11 @@ module.exports = async (deployer, network, accounts) => {
 
     //Deploy Singe Asset 3Crv
     await deployer.deploy(SingleAsset3Crv,
-        "BUSD",
-        "BUSD Strategy",
+        "USDN",
+        "USDN Strategy",
         apContract.address,
-        "0x6Ede7F19df5df6EF23bD5B9CeDb651580Bdf56Ca",
-        "0x4fabb145d64652a948d72533023f6e7a623c7c53"
+        "0x3B96d491f067912D18563d56858Ba7d6EC67a6fa",
+        "0x674C6Ad92Fd080e4004b2312b45f796a192D27a0"
     );
 
     const singleAsset3Crv = await SingleAsset3Crv.deployed()
@@ -84,7 +84,7 @@ module.exports = async (deployer, network, accounts) => {
         "Euro Plus",
         singleAsset3Crv.address,
         [
-            "0x6Ede7F19df5df6EF23bD5B9CeDb651580Bdf56Ca",
+            "0x3B96d491f067912D18563d56858Ba7d6EC67a6fa",
         ],
         singleAsset3CrvMinter.address,
         accounts[0],
