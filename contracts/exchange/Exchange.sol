@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.5.0 <0.7.0;
+pragma experimental ABIEncoderV2;
 import "../storage/VaultStorage.sol";
 
 contract Exchange is VaultStorage {
@@ -18,12 +19,12 @@ contract Exchange is VaultStorage {
                 if (
                     (
                         IHexUtils(IAPContract(APContract).stringUtils())
-                        .toDecimals(
-                            assetList[i],
-                            tokenBalances.getTokenBalance(assetList[i])
-                        ).mul(haveTokenUSD)
-                    )
-                    .div(1e18) >= nav
+                            .toDecimals(
+                                assetList[i],
+                                tokenBalances.getTokenBalance(assetList[i])
+                            )
+                            .mul(haveTokenUSD)
+                    ).div(1e18) >= nav
                 ) {
                     uint256 amountToExchange = (nav.mul(1e18)).div(
                         haveTokenUSD
@@ -32,7 +33,7 @@ contract Exchange is VaultStorage {
                         assetList[i],
                         targetToken,
                         IHexUtils(IAPContract(APContract).stringUtils())
-                        .fromDecimals(assetList[i], amountToExchange)
+                            .fromDecimals(assetList[i], amountToExchange)
                     );
                     return returnedTokenCount;
                 }
@@ -55,8 +56,7 @@ contract Exchange is VaultStorage {
 
         uint256 expectedToTokenDecimal = (
             fromTokenAmountDecimals.mul(fromTokenUSD)
-        )
-        .div(toTokenUSD);
+        ).div(toTokenUSD);
         uint256 expectedToToken = IHexUtils(
             IAPContract(APContract).stringUtils()
         ).fromDecimals(toToken, expectedToTokenDecimal);
@@ -104,6 +104,7 @@ contract Exchange is VaultStorage {
         public
         returns (uint256)
     {
+        require(nav > 0, "non zero nav required");
         uint256 exchangedAmount = exchangeSingleToken(targetToken, nav);
         if (exchangedAmount > 0) {
             return exchangedAmount;
@@ -116,17 +117,16 @@ contract Exchange is VaultStorage {
                 if (assetList[i] != targetToken) {
                     if (nav > currentNav) {
                         uint256 haveTokenUSD = IAPContract(APContract)
-                        .getUSDPrice(assetList[i]);
+                            .getUSDPrice(assetList[i]);
                         uint256 haveTokenCount = tokenBalances.getTokenBalance(
                             assetList[i]
                         );
                         uint256 haveTokenNav = (
                             haveTokenUSD.mul(
                                 IHexUtils(IAPContract(APContract).stringUtils())
-                                .toDecimals(assetList[i], haveTokenCount)
+                                    .toDecimals(assetList[i], haveTokenCount)
                             )
-                        )
-                        .div(1e18);
+                        ).div(1e18);
                         if (haveTokenNav <= (nav - currentNav)) {
                             swappedAmount = swap(
                                 assetList[i],
@@ -140,9 +140,9 @@ contract Exchange is VaultStorage {
                             uint256 tokensToExchange = IHexUtils(
                                 IAPContract(APContract).stringUtils()
                             ).fromDecimals(
-                                assetList[i],
-                                (navToExchange.mul(1e18)).div(haveTokenUSD)
-                            );
+                                    assetList[i],
+                                    (navToExchange.mul(1e18)).div(haveTokenUSD)
+                                );
 
                             swappedAmount = swap(
                                 assetList[i],

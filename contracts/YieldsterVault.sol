@@ -349,20 +349,20 @@ contract YieldsterVault is VaultStorage {
         revertDelegate(result);
     }
 
-    /// @dev Function to Withdraw shares from the Vault.
-    /// @param _shares Amount of Vault token shares.
-    function withdraw(uint256 _shares) external onlyNormalMode {
-        _isWhiteListed();
-        require(
-            balanceOf(msg.sender) >= _shares,
-            "You don't have enough shares"
-        );
-        managementFeeCleanUp();
-        (bool result, ) = IAPContract(APContract)
-        .getWithdrawStrategy()
-        .delegatecall(abi.encodeWithSignature("withdraw(uint256)", _shares));
-        revertDelegate(result);
-    }
+    // /// @dev Function to Withdraw shares from the Vault.
+    // /// @param _shares Amount of Vault token shares.
+    // function withdraw(uint256 _shares) external onlyNormalMode {
+    //     _isWhiteListed();
+    //     require(
+    //         balanceOf(msg.sender) >= _shares,
+    //         "You don't have enough shares"
+    //     );
+    //     managementFeeCleanUp();
+    //     (bool result, ) = IAPContract(APContract)
+    //     .getWithdrawStrategy()
+    //     .delegatecall(abi.encodeWithSignature("withdraw(uint256)", _shares));
+    //     revertDelegate(result);
+    // }
 
     /// @dev Function to deposit vault assets to strategy
     /// @param _assets list of asset address to deposit
