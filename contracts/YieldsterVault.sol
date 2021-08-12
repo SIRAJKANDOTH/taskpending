@@ -43,8 +43,8 @@ contract YieldsterVault is VaultStorage {
                         address withdrawToken,
                         uint256 withdrawAmount
                     ) = IStrategy(vaultActiveStrategy[i]).withdrawAllToSafe(
-                        address(0)
-                    );
+                            address(0)
+                        );
                     IERC20(withdrawToken).safeTransfer(
                         IAPContract(APContract).emergencyVault(),
                         withdrawAmount
@@ -65,7 +65,7 @@ contract YieldsterVault is VaultStorage {
         }
     }
 
-    modifier onlyNormalMode {
+    modifier onlyNormalMode() {
         _onlyNormalMode();
         _;
     }
@@ -309,14 +309,14 @@ contract YieldsterVault is VaultStorage {
         );
         managementFeeCleanUp();
         (bool result, ) = IAPContract(APContract)
-        .getDepositStrategy()
-        .delegatecall(
-            abi.encodeWithSignature(
-                "deposit(address,uint256)",
-                _tokenAddress,
-                _amount
-            )
-        );
+            .getDepositStrategy()
+            .delegatecall(
+                abi.encodeWithSignature(
+                    "deposit(address,uint256)",
+                    _tokenAddress,
+                    _amount
+                )
+            );
         revertDelegate(result);
     }
 
@@ -338,14 +338,14 @@ contract YieldsterVault is VaultStorage {
         );
         managementFeeCleanUp();
         (bool result, ) = IAPContract(APContract)
-        .getWithdrawStrategy()
-        .delegatecall(
-            abi.encodeWithSignature(
-                "withdraw(address,uint256)",
-                _tokenAddress,
-                _shares
-            )
-        );
+            .getWithdrawStrategy()
+            .delegatecall(
+                abi.encodeWithSignature(
+                    "withdraw(address,uint256)",
+                    _tokenAddress,
+                    _shares
+                )
+            );
         revertDelegate(result);
     }
 
@@ -399,14 +399,13 @@ contract YieldsterVault is VaultStorage {
         bytes calldata data
     ) external onlyNormalMode returns (bytes4) {
         managementFeeCleanUp();
-        IHexUtils hexUtils = IHexUtils(IAPContract(APContract).stringUtils());
         if (id == 0) {
             require(
                 IAPContract(APContract).safeMinter() == msg.sender,
                 "Only Safe Minter"
             );
             (bool success, ) = IAPContract(APContract).safeUtils().delegatecall(
-                hexUtils.fromHex(data)
+                data
             );
             revertDelegate(success);
         } else if (id == 1) {
@@ -418,8 +417,8 @@ contract YieldsterVault is VaultStorage {
                 "Strategy inactive"
             );
             (bool success, bytes memory returnData) = IAPContract(APContract)
-            .getStrategyFromMinter(msg.sender)
-            .call(hexUtils.fromHex(data));
+                .getStrategyFromMinter(msg.sender)
+                .call(data);
             revertDelegate(success);
             updateBalance(returnData);
         } else if (id == 2) {
@@ -429,8 +428,8 @@ contract YieldsterVault is VaultStorage {
                 "Not Deposit strategy"
             );
             (bool success, ) = IAPContract(APContract)
-            .getStrategyFromMinter(msg.sender)
-            .delegatecall(hexUtils.fromHex(data));
+                .getStrategyFromMinter(msg.sender)
+                .delegatecall(data);
             revertDelegate(success);
         } else if (id == 3) {
             require(
@@ -439,17 +438,22 @@ contract YieldsterVault is VaultStorage {
                 "Not Withdraw strategy"
             );
             (bool success, ) = IAPContract(APContract)
-            .getStrategyFromMinter(msg.sender)
-            .delegatecall(hexUtils.fromHex(data));
+                .getStrategyFromMinter(msg.sender)
+                .delegatecall(data);
             revertDelegate(success);
         }
-        return "";
+        return
+            bytes4(
+                keccak256(
+                    "onERC1155Received(address,address,uint256,uint256,bytes)"
+                )
+            );
     }
 
     /// @dev Function to perform Management fee Calculations in the Vault.
     function managementFeeCleanUp() private {
         address[] memory managementFeeStrategies = IAPContract(APContract)
-        .getVaultManagementFee();
+            .getVaultManagementFee();
         for (uint256 i = 0; i < managementFeeStrategies.length; i++) {
             managementFeeStrategies[i].delegatecall(
                 abi.encodeWithSignature("executeSafeCleanUp()")

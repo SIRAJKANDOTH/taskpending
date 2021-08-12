@@ -15,7 +15,6 @@ module.exports = {
       host: "localhost",
       port: 8545,
       network_id: "999",
-      websockets: true,
       gasPrice: 30000000000, // 8 Gwei
       networkCheckTimeout: 999999,
     },

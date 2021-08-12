@@ -67,19 +67,30 @@ module.exports = async (deployer, network, accounts) => {
     // );
 
     //Deploy Singe Asset 3Crv
-    await deployer.deploy(SingleAsset3Crv,
-        "USDN",
-        "USDN Strategy",
-        apContract.address,
-        "0x3B96d491f067912D18563d56858Ba7d6EC67a6fa",
-        "0x674C6Ad92Fd080e4004b2312b45f796a192D27a0"
-    );
+    // await deployer.deploy(SingleAsset3Crv,
+    //     "USDN",
+    //     "USDN Strategy",
+    //     apContract.address,
+    //     "0x3B96d491f067912D18563d56858Ba7d6EC67a6fa",
+    //     "0x674C6Ad92Fd080e4004b2312b45f796a192D27a0"
+    // );
 
-    const singleAsset3Crv = await SingleAsset3Crv.deployed()
-    await deployer.deploy(SingleAsset3CrvMinter, apContract.address, singleAsset3Crv.address)
+    // const singleAsset3Crv = await SingleAsset3Crv.deployed()
+    // await deployer.deploy(SingleAsset3CrvMinter, apContract.address, singleAsset3Crv.address)
 
-    const singleAsset3CrvMinter = await SingleAsset3CrvMinter.deployed()
+    // const singleAsset3CrvMinter = await SingleAsset3CrvMinter.deployed()
 
+    // await apContract.addStrategy(
+    //     "Euro Plus",
+    //     singleAsset3Crv.address,
+    //     [
+    //         "0x3B96d491f067912D18563d56858Ba7d6EC67a6fa",
+    //     ],
+    //     singleAsset3CrvMinter.address,
+    //     accounts[0],
+    //     accounts[0],
+    //     "0"
+    // );
     await apContract.addStrategy(
         "Euro Plus",
         singleAsset3Crv.address,
