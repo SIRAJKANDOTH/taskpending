@@ -6,8 +6,6 @@ const YieldsterVault = artifacts.require("./YieldsterVault.sol");
 const SingleAsset3Crv = artifacts.require("./strategies/SingleAsset3Crv/SingleAsset3Crv.sol");
 const SingleAsset3CrvMinter = artifacts.require("./strategies/SingleAsset3Crv/SingleAsset3CrvMinter.sol");
 
-var abi = require('ethereumjs-abi');
-
 function to18(n) {
     return web3.utils.toWei(n, "ether");
 }
@@ -56,10 +54,8 @@ contract("Strategy Deposit", function (accounts) {
         await usdt.transfer(accounts[1], to6("100"))
 
         apContract = await APContract.deployed();
-        // singleAsset3Crv = await SingleAsset3Crv.deployed()
-        singleAsset3Crv = await SingleAsset3Crv.at("")
-        // singleAsset3CrvMinter = await SingleAsset3CrvMinter.deployed()
-        singleAsset3CrvMinter = await SingleAsset3CrvMinter.at("")
+        singleAsset3Crv = await SingleAsset3Crv.deployed()
+        singleAsset3CrvMinter = await SingleAsset3CrvMinter.deployed()
         yieldsterVaultMasterCopy = await YieldsterVault.deployed()
         proxyFactory = await ProxyFactory.deployed()
 
@@ -177,9 +173,21 @@ contract("Strategy Deposit", function (accounts) {
         // console.log("usdn in Vault", from18((await usdn.balanceOf(testVault.address)).toString()))
         // console.log("crv3 in Vault", from18((await crv3.balanceOf(testVault.address)).toString()))
         // console.log("uCrvUSDNToken in Vault", from18((await uCrvUSDNToken.balanceOf(testVault.address)).toString()))
-        // let withdrawInstruction = abi.simpleEncode("withdraw(uint256,address)", to18("100"), dai.address).toString('hex');
-        // console.log("Instruction \n", withdrawInstruction)
-        // await singleAsset3CrvMinter.mintStrategy(testVault.address, withdrawInstruction)
+
+        // let withdrawInstructionBytes = web3.eth.abi.encodeFunctionCall({
+        //     name: 'withdraw',
+        //     type: 'function',
+        //     inputs: [{
+        //         type: 'uint256',
+        //         name: '_shares'
+        //     }, {
+        //         type: 'address',
+        //         name: '_withrawalAsset'
+        //     }
+        //     ]
+        // }, [to18("207"), dai.address])
+        // console.log("Instruction \n", withdrawInstructionBytes)
+        // await singleAsset3CrvMinter.mintStrategy(testVault.address, withdrawInstructionBytes)
         // console.log("singleAsset3Crv NAV after strategy withdraw", from18((await singleAsset3Crv.getStrategyNAV()).toString()))
         // console.log("singleAsset3Crv token value after strategy withdraw", from18((await singleAsset3Crv.tokenValueInUSD()).toString()))
         // console.log("singleAsset3Crv token vault balance after strategy withdraw", from18((await singleAsset3Crv.balanceOf(testVault.address)).toString()))
@@ -207,7 +215,7 @@ contract("Strategy Deposit", function (accounts) {
         console.log("crv3 in User ", from18((await crv3.balanceOf(accounts[1])).toString()))
         console.log("crv3 in Vault ", from18((await crv3.balanceOf(testVault.address)).toString()))
         console.log("=================================================================")
-        await testVault.withdraw(usdc.address, to18("220"), { from: accounts[1] });
+        await testVault.withdraw(dai.address, to18("220"), { from: accounts[1] });
         console.log("Vault NAV", from18(await testVault.getVaultNAV()).toString())
         console.log("Vault Token Value", from18(await testVault.tokenValueInUSD()).toString())
         console.log("dai in User ", from18(await dai.balanceOf(accounts[1])).toString())

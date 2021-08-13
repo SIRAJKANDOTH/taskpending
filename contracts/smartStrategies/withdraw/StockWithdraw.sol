@@ -49,6 +49,7 @@ contract StockWithdraw is VaultStorage {
     ) internal returns (uint256, uint256) {
         (, address returnToken, uint256 returnAmount) = IStrategy(strategy)
             .withdraw(shares, tokenPrefered);
+
         tokenBalances.setTokenBalance(
             returnToken,
             tokenBalances.getTokenBalance(returnToken).add(returnAmount)

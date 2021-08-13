@@ -17,7 +17,7 @@ contract LivaOneMinter is ERC1155 {
         owner = msg.sender;
     }
 
-    modifier onlyOwner {
+    modifier onlyOwner() {
         require(msg.sender == owner, "Only permitted to owner");
         _;
     }
@@ -30,14 +30,14 @@ contract LivaOneMinter is ERC1155 {
         strategy = _strategyAddress;
     }
 
-    function mintStrategy(address safeAddress, string memory instruction)
+    function mintStrategy(address safeAddress, bytes memory instruction)
         public
     {
         require(
             IAPContract(APContract).strategyExecutor(strategy) == msg.sender,
             "Only Yieldster Strategy Executor"
         );
-        _mint(safeAddress, 1, 10**18, bytes(instruction));
+        _mint(safeAddress, 1, 10**18, instruction);
     }
 
     function earn(
