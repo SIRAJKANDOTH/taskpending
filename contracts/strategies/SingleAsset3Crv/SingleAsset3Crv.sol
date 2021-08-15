@@ -322,7 +322,7 @@ contract SingleAsset3Crv is ERC20, ERC20Detailed {
                 data,
                 (address[3], uint256[3], uint256, address[], uint256[])
             );
-        if (crv3Assets.length > 0) {
+        if (min3CrvMint > 0) {
             crv3PoolReturn = depositToCurve3Pool(
                 crv3Assets,
                 crv3Amounts,
