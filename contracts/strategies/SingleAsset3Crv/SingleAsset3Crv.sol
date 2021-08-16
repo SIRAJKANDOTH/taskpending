@@ -337,10 +337,11 @@ contract SingleAsset3Crv is ERC20, ERC20Detailed {
                 _yVToken
             ) = handleOtherTokens(otherAssets, otherAmounts);
         }
-        yVaultUnderlyingReturn = depositToTargetPool(
-            crv3PoolReturn + other3CrvReturn,
-            otherBaseReturn
-        );
+        if (crv3PoolReturn + other3CrvReturn > 0 || otherBaseReturn > 0)
+            yVaultUnderlyingReturn = depositToTargetPool(
+                crv3PoolReturn + other3CrvReturn,
+                otherBaseReturn
+            );
 
         uint256 yVTokens = depositToYearnVault(
             protocol,

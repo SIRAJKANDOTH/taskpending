@@ -48,10 +48,11 @@ contract("Strategy Deposit", function (accounts) {
         crvUSDK = await ERC20.at("0x3D27705c64213A5DcD9D26880c1BcFa72d5b6B0E")
         crv3 = await ERC20.at("0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490")
 
-        await dai.transfer(accounts[1], to18("100"))
-        await usdn.transfer(accounts[1], to18("100"))
-        await usdc.transfer(accounts[1], to6("100"))
-        await usdt.transfer(accounts[1], to6("100"))
+        // await dai.transfer(accounts[1], to18("100"))
+        // await usdn.transfer(accounts[1], to18("100"))
+        // await usdc.transfer(accounts[1], to6("100"))
+        // await usdt.transfer(accounts[1], to6("100"))
+        await uCrvUSDNToken.transfer(accounts[1], to18("100"))
 
         apContract = await APContract.deployed();
         singleAsset3Crv = await SingleAsset3Crv.deployed()
@@ -111,10 +112,11 @@ contract("Strategy Deposit", function (accounts) {
 
 
         //approve Tokens to vault
-        await usdn.approve(testVault.address, to18("100"), { from: accounts[1] })
-        await dai.approve(testVault.address, to18("100"), { from: accounts[1] })
-        await usdt.approve(testVault.address, to6("100"), { from: accounts[1] })
-        await usdc.approve(testVault.address, to6("100"), { from: accounts[1] })
+        // await usdn.approve(testVault.address, to18("100"), { from: accounts[1] })
+        // await dai.approve(testVault.address, to18("100"), { from: accounts[1] })
+        // await usdt.approve(testVault.address, to6("100"), { from: accounts[1] })
+        // await usdc.approve(testVault.address, to6("100"), { from: accounts[1] })
+        await uCrvUSDNToken.approve(testVault.address, to18("100"), { from: accounts[1] })
 
         console.log("Activating vault strategy ", singleAsset3Crv.address)
         await testVault.setVaultActiveStrategy(singleAsset3Crv.address)
@@ -124,6 +126,8 @@ contract("Strategy Deposit", function (accounts) {
         // Deposit to vault
         console.log("Vault NAV =", from18(await testVault.getVaultNAV()).toString())
         console.log("Vault Token Value =", from18(await testVault.tokenValueInUSD()).toString())
+        console.log("uCrvUSDNToken in User =", from18(await uCrvUSDNToken.balanceOf(accounts[1])).toString())
+        console.log("uCrvUSDNToken in Vault =", from18((await uCrvUSDNToken.balanceOf(testVault.address)).toString()))
         console.log("dai in User =", from18(await dai.balanceOf(accounts[1])).toString())
         console.log("dai in Vault =", from18((await dai.balanceOf(testVault.address)).toString()))
         console.log("usdc in User =", from6((await usdc.balanceOf(accounts[1])).toString()))
@@ -133,12 +137,15 @@ contract("Strategy Deposit", function (accounts) {
         console.log("usdn in User =", from18((await usdn.balanceOf(accounts[1])).toString()))
         console.log("usdn in Vault =", from18((await usdn.balanceOf(testVault.address)).toString()))
         console.log("===========================DEPOSIT=============================")
-        await testVault.deposit(dai.address, to18("100"), { from: accounts[1] });
-        await testVault.deposit(usdt.address, to6("100"), { from: accounts[1] });
-        await testVault.deposit(usdn.address, to18("100"), { from: accounts[1] });
-        await testVault.deposit(usdc.address, to6("100"), { from: accounts[1] });
+        await testVault.deposit(uCrvUSDNToken.address, to18("100"), { from: accounts[1] });
+        // await testVault.deposit(dai.address, to18("100"), { from: accounts[1] });
+        // await testVault.deposit(usdt.address, to6("100"), { from: accounts[1] });
+        // await testVault.deposit(usdn.address, to18("100"), { from: accounts[1] });
+        // await testVault.deposit(usdc.address, to6("100"), { from: accounts[1] });
         console.log("Vault NAV =", from18(await testVault.getVaultNAV()).toString())
         console.log("Vault Token Value =", from18(await testVault.tokenValueInUSD()).toString())
+        console.log("uCrvUSDNToken in User =", from18(await uCrvUSDNToken.balanceOf(accounts[1])).toString())
+        console.log("uCrvUSDNToken in Vault =", from18((await uCrvUSDNToken.balanceOf(testVault.address)).toString()))
         console.log("dai in User =", from18(await dai.balanceOf(accounts[1])).toString())
         console.log("dai in Vault =", from18((await dai.balanceOf(testVault.address)).toString()))
         console.log("usdc in User =", from6((await usdc.balanceOf(accounts[1])).toString()))
@@ -155,9 +162,9 @@ contract("Strategy Deposit", function (accounts) {
         console.log("singleAsset3Crv crvUSDN tokens  =", from18((await crvUSDN.balanceOf(singleAsset3Crv.address)).toString()))
         console.log("===================STRATEGY DEPOSIT=====================")
         let earnInstruction =
-            web3.eth.abi.encodeParameters(['address[3]', 'uint256[3]', 'uint256', 'address[]', 'uint256[]'], [["0x6B175474E89094C44Da98b954EedeAC495271d0F", "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", "0xdac17f958d2ee523a2206206994597c13d831ec7"], [`${to18("0")}`, `${to6("0")}`, `${to6("0")}`], "0", ["0x674C6Ad92Fd080e4004b2312b45f796a192D27a0"], [`${to18("100")}`]]);
+            web3.eth.abi.encodeParameters(['address[3]', 'uint256[3]', 'uint256', 'address[]', 'uint256[]'], [["0x6B175474E89094C44Da98b954EedeAC495271d0F", "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", "0xdac17f958d2ee523a2206206994597c13d831ec7"], [`${to18("0")}`, `${to6("0")}`, `${to6("0")}`], "0", ["0x4f3E8F405CF5aFC05D68142F3783bDfE13811522"], [`${to18("100")}`]]);
 
-        await singleAsset3CrvMinter.earn(testVault.address, [usdn.address], [to18("100")], earnInstruction)
+        await singleAsset3CrvMinter.earn(testVault.address, [uCrvUSDNToken.address], [to18("100")], earnInstruction)
         console.log("singleAsset3Crv NAV =", from18((await singleAsset3Crv.getStrategyNAV()).toString()))
         console.log("singleAsset3Crv token value =", from18((await singleAsset3Crv.tokenValueInUSD()).toString()))
         console.log("singleAsset3Crv token vault balance =", from18((await singleAsset3Crv.balanceOf(testVault.address)).toString()))

@@ -5,7 +5,7 @@ interface IStrategy {
         address[] calldata,
         uint256[] calldata,
         bytes calldata
-    ) external;
+    ) payable external;
 
     function withdraw(uint256, address)
         external
