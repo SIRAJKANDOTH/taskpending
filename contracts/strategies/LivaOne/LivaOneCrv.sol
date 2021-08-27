@@ -39,12 +39,12 @@ contract LivaOneCrv is ERC20, ERC20Detailed {
 
     mapping(address => Vault) vaults;
 
-    modifier onlyRegisteredVault {
+    modifier onlyRegisteredVault() {
         require(vaults[msg.sender].isRegistered, "Not a registered Safe");
         _;
     }
 
-    modifier onlyOwner {
+    modifier onlyOwner() {
         require(msg.sender == owner, "Only permitted to owner");
         _;
     }
@@ -208,8 +208,7 @@ contract LivaOneCrv is ERC20, ERC20Detailed {
         uint256 underlyingUSD = IAPContract(APContract).getUSDPrice(underlying);
         uint256 expectedUnderlyingDecimal = (
             crv3TokenAmountDecimals.mul(crv3TokenUSD)
-        )
-        .div(underlyingUSD);
+        ).div(underlyingUSD);
         uint256 expectedUnderlying = IHexUtils(
             IAPContract(APContract).stringUtils()
         ).fromDecimals(underlying, expectedUnderlyingDecimal);
@@ -257,8 +256,7 @@ contract LivaOneCrv is ERC20, ERC20Detailed {
 
         uint256 expectedToTokenDecimal = (
             fromTokenAmountDecimals.mul(fromTokenUSD)
-        )
-        .div(toTokenUSD);
+        ).div(toTokenUSD);
         uint256 expectedToToken = IHexUtils(
             IAPContract(APContract).stringUtils()
         ).fromDecimals(toToken, expectedToTokenDecimal);
@@ -298,6 +296,7 @@ contract LivaOneCrv is ERC20, ERC20Detailed {
             if (otherAssets[i] == underlying)
                 underlyingTokens += otherAmounts[i];
             else if (otherAssets[i] == yVault) yVTokens += otherAmounts[i];
+            else if (otherAssets[i] == crv3Token) crv3Tokens += otherAmounts[i];
             else {
                 crv3Tokens += exchangeToken(
                     otherAssets[i],
@@ -316,6 +315,7 @@ contract LivaOneCrv is ERC20, ERC20Detailed {
         uint256 yVaultUnderlyingReturn;
         uint256 otherYVUnderlyingReturn;
         uint256 other3CrvReturn;
+        uint256 yVTokens;
         uint256 _yVToken;
         address yVault = vaults[msg.sender].vaultActiveProtocol;
         (
@@ -325,10 +325,10 @@ contract LivaOneCrv is ERC20, ERC20Detailed {
             address[] memory otherAssets,
             uint256[] memory otherAmounts
         ) = abi.decode(
-            data,
-            (address[3], uint256[3], uint256, address[], uint256[])
-        );
-        if (crv3Assets.length > 0) {
+                data,
+                (address[3], uint256[3], uint256, address[], uint256[])
+            );
+        if (min3CrvMint > 0) {
             crv3PoolReturn = depositToCurve3Pool(
                 crv3Assets,
                 crv3Amounts,
@@ -342,15 +342,16 @@ contract LivaOneCrv is ERC20, ERC20Detailed {
                 _yVToken
             ) = handleOtherTokens(otherAssets, otherAmounts);
         }
+        if (crv3PoolReturn + other3CrvReturn > 0)
+            yVaultUnderlyingReturn = deposit3CrvToTargetPool(
+                crv3PoolReturn + other3CrvReturn
+            );
 
-        yVaultUnderlyingReturn = deposit3CrvToTargetPool(
-            crv3PoolReturn + other3CrvReturn
-        );
-
-        uint256 yVTokens = depositToYearnVault(
-            yVault,
-            yVaultUnderlyingReturn + otherYVUnderlyingReturn
-        );
+        if (yVaultUnderlyingReturn + otherYVUnderlyingReturn > 0)
+            yVTokens = depositToYearnVault(
+                yVault,
+                yVaultUnderlyingReturn + otherYVUnderlyingReturn
+            );
         return _yVToken + yVTokens;
     }
 
@@ -417,10 +418,9 @@ contract LivaOneCrv is ERC20, ERC20Detailed {
                 );
                 strategyNAV = (
                     IHexUtils(IAPContract(APContract).stringUtils())
-                    .toDecimals(protocol, protocolBalance)
-                    .mul(tokenUSD)
-                )
-                .div(1e18);
+                        .toDecimals(protocol, protocolBalance)
+                        .mul(tokenUSD)
+                ).div(1e18);
             }
             return strategyNAV;
         } else {
@@ -432,9 +432,9 @@ contract LivaOneCrv is ERC20, ERC20Detailed {
                     uint256 balance = IHexUtils(
                         IAPContract(APContract).stringUtils()
                     ).toDecimals(
-                        protocolList[i],
-                        IERC20(protocolList[i]).balanceOf(address(this))
-                    );
+                            protocolList[i],
+                            IERC20(protocolList[i]).balanceOf(address(this))
+                        );
                     strategyNAV += balance.mul(tokenUSD);
                 }
             }
@@ -456,8 +456,7 @@ contract LivaOneCrv is ERC20, ERC20Detailed {
                 IHexUtils(IAPContract(APContract).stringUtils())
                     .toDecimals(_tokenAddress, _amount)
                     .mul(tokenUSD)
-            )
-                .div(1e18);
+            ).div(1e18);
     }
 
     /// @dev Function to calculate the token value of strategy for a subscribed Safe, if msg.sender is
@@ -553,8 +552,7 @@ contract LivaOneCrv is ERC20, ERC20Detailed {
 
         uint256 expectedCrv3TokenDecimal = (
             lpTokenAmountDecimals.mul(lpTokenUSD)
-        )
-        .div(crv3TokenUSD);
+        ).div(crv3TokenUSD);
         uint256 expectedCrv3Token = IHexUtils(
             IAPContract(APContract).stringUtils()
         ).fromDecimals(crv3Token, expectedCrv3TokenDecimal);

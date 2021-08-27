@@ -292,6 +292,7 @@ contract SingleAsset3Crv is ERC20, ERC20Detailed {
                 underlyingTokens += otherAmounts[i];
             else if (otherAssets[i] == protocol) yVTokens += otherAmounts[i];
             else if (otherAssets[i] == baseToken) baseTokens += otherAmounts[i];
+            else if (otherAssets[i] == crv3Token) crv3Tokens += otherAmounts[i];
             else {
                 crv3Tokens += exchangeToken(
                     otherAssets[i],
@@ -311,6 +312,7 @@ contract SingleAsset3Crv is ERC20, ERC20Detailed {
         uint256 otherYVUnderlyingReturn;
         uint256 other3CrvReturn;
         uint256 otherBaseReturn;
+        uint256 yVTokens;
         uint256 _yVToken;
         (
             address[3] memory crv3Assets,
@@ -337,16 +339,17 @@ contract SingleAsset3Crv is ERC20, ERC20Detailed {
                 _yVToken
             ) = handleOtherTokens(otherAssets, otherAmounts);
         }
+
         if (crv3PoolReturn + other3CrvReturn > 0 || otherBaseReturn > 0)
             yVaultUnderlyingReturn = depositToTargetPool(
                 crv3PoolReturn + other3CrvReturn,
                 otherBaseReturn
             );
-
-        uint256 yVTokens = depositToYearnVault(
-            protocol,
-            yVaultUnderlyingReturn + otherYVUnderlyingReturn
-        );
+        if (yVaultUnderlyingReturn + otherYVUnderlyingReturn > 0)
+            yVTokens = depositToYearnVault(
+                protocol,
+                yVaultUnderlyingReturn + otherYVUnderlyingReturn
+            );
         return _yVToken + yVTokens;
     }
 

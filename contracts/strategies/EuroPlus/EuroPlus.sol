@@ -225,6 +225,7 @@ contract EuroPlus is ERC20, ERC20Detailed {
     function handleDeposit(bytes memory data) internal returns (uint256) {
         uint256 yVaultUnderlyingReturn;
         uint256 otherYVUnderlyingReturn;
+        uint256 yVTokens;
         uint256 _yVToken;
         (
             address[2] memory poolAssets,
@@ -237,7 +238,7 @@ contract EuroPlus is ERC20, ERC20Detailed {
                 (address[2], uint256[2], uint256, address[], uint256[])
             );
 
-        if (poolAssets.length > 0) {
+        if (minPoolTokens > 0) {
             yVaultUnderlyingReturn = depositToPool(
                 poolAssets,
                 poolAmounts,
@@ -250,11 +251,11 @@ contract EuroPlus is ERC20, ERC20Detailed {
                 otherAmounts
             );
         }
-
-        uint256 yVTokens = depositToYearnVault(
-            protocol,
-            yVaultUnderlyingReturn + otherYVUnderlyingReturn
-        );
+        if (yVaultUnderlyingReturn + otherYVUnderlyingReturn > 0)
+            yVTokens = depositToYearnVault(
+                protocol,
+                yVaultUnderlyingReturn + otherYVUnderlyingReturn
+            );
         return _yVToken + yVTokens;
     }
 
