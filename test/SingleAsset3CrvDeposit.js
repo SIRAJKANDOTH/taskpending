@@ -55,7 +55,7 @@ contract("Strategy Deposit", function (accounts) {
         await usdc.transfer(accounts[1], to6("100"))
         await usdt.transfer(accounts[1], to6("100"))
         // await usdn.transfer(accounts[1], to18("100"))
-        // await uCrvFRAXToken.transfer(accounts[1], to18("100"))
+        // await uCrvUSDNToken.transfer(accounts[1], to18("100"))
 
         apContract = await APContract.deployed();
         singleAsset3Crv = await SingleAsset3Crv.deployed()
@@ -89,8 +89,8 @@ contract("Strategy Deposit", function (accounts) {
         console.log(
             "vault owner",
             await testVault.owner(),
-            "other address",
-            accounts[0]
+            "vault address",
+            testVault.address
         );
 
         console.log("Register Vault with APS")
@@ -98,8 +98,8 @@ contract("Strategy Deposit", function (accounts) {
 
         console.log("Set Vault Assets")
         await testVault.setVaultAssets(
-            [dai.address, usdc.address, usdt.address, frax.address, crv3.address, uCrvFRAXToken.address],
-            [dai.address, usdc.address, usdt.address, frax.address, crv3.address, uCrvFRAXToken.address],
+            [dai.address, usdc.address, usdt.address, usdn.address, busd.address, crv3.address, uCrvFRAXToken.address, crvFRAX.address],
+            [dai.address, usdc.address, usdt.address, usdn.address, busd.address, crv3.address, uCrvFRAXToken.address, crvFRAX.address],
             [],
             [],
         );
@@ -175,69 +175,75 @@ contract("Strategy Deposit", function (accounts) {
         console.log("Vault NAV =", from18(await testVault.getVaultNAV()).toString())
         console.log("Vault Token Value =", from18(await testVault.tokenValueInUSD()).toString())
 
-        //Withdraw from Strategy
-        console.log("====================STRATEGY WITHDRAW===================================")
-        console.log("dai in Vault", from18((await dai.balanceOf(testVault.address)).toString()))
-        console.log("usdc in Vault", from6((await usdc.balanceOf(testVault.address)).toString()))
+        // //Withdraw from Strategy
+        // console.log("====================STRATEGY WITHDRAW===================================")
+        // console.log("dai in Vault", from18((await dai.balanceOf(testVault.address)).toString()))
+        // console.log("usdc in Vault", from6((await usdc.balanceOf(testVault.address)).toString()))
+        // console.log("usdt in Vault", from6((await usdt.balanceOf(testVault.address)).toString()))
+        // console.log("usdn in Vault", from18((await usdn.balanceOf(testVault.address)).toString()))
+        // console.log("crv3 in Vault", from18((await crv3.balanceOf(testVault.address)).toString()))
+        // console.log("uCrvFRAXToken in Vault", from18((await uCrvFRAXToken.balanceOf(testVault.address)).toString()))
+
+        // let withdrawInstructionBytes = web3.eth.abi.encodeFunctionCall({
+        //     name: 'withdraw',
+        //     type: 'function',
+        //     inputs: [{
+        //         type: 'uint256',
+        //         name: '_shares'
+        //     }, {
+        //         type: 'address',
+        //         name: '_withrawalAsset'
+        //     }
+        //     ]
+        // }, [to18("100"), dai.address])
+        // console.log("Instruction \n", withdrawInstructionBytes)
+        // await singleAsset3CrvMinter.mintStrategy(testVault.address, withdrawInstructionBytes)
+        // console.log("singleAsset3Crv NAV after strategy withdraw", from18((await singleAsset3Crv.getStrategyNAV()).toString()))
+        // console.log("singleAsset3Crv token value after strategy withdraw", from18((await singleAsset3Crv.tokenValueInUSD()).toString()))
+        // console.log("singleAsset3Crv token vault balance after strategy withdraw", from18((await singleAsset3Crv.balanceOf(testVault.address)).toString()))
+        // console.log("singleAsset3Crv crvFRAX tokens after strategy withdraw", from18((await crvFRAX.balanceOf(singleAsset3Crv.address)).toString()))
+        // console.log("dai in Vault after strategy withdraw", from18((await dai.balanceOf(testVault.address)).toString()))
+        // console.log("usdc in Vault after strategy withdraw", from6((await usdc.balanceOf(testVault.address)).toString()))
+        // console.log("usdt in Vault after strategy withdraw", from6((await usdt.balanceOf(testVault.address)).toString()))
+        // console.log("usdn in Vault after strategy withdraw", from18((await usdn.balanceOf(testVault.address)).toString()))
+        // console.log("crv3 in Vault after strategy withdraw", from18((await crv3.balanceOf(testVault.address)).toString()))
+        // console.log("uCrvFRAXToken in Vault after strategy withdraw", from18((await uCrvFRAXToken.balanceOf(testVault.address)).toString()))
+
+
+        //Withdraw from vault 
+        console.log("===========================WITHDRAW=============================")
+        console.log("Vault NAV", from18(await testVault.getVaultNAV()).toString())
+        console.log("Vault Token Value", from18(await testVault.tokenValueInUSD()).toString())
+        console.log("dai in User ", from18(await dai.balanceOf(accounts[1])).toString())
+        console.log("dai in Vault ", from18((await dai.balanceOf(testVault.address)).toString()))
+        console.log("usdc in User ", from6((await usdc.balanceOf(accounts[1])).toString()))
+        console.log("usdc in Vault ", from6((await usdc.balanceOf(testVault.address)).toString()))
+        console.log("usdt in User", from6((await usdt.balanceOf(accounts[1])).toString()))
         console.log("usdt in Vault", from6((await usdt.balanceOf(testVault.address)).toString()))
-        console.log("usdn in Vault", from18((await usdn.balanceOf(testVault.address)).toString()))
-        console.log("crv3 in Vault", from18((await crv3.balanceOf(testVault.address)).toString()))
-        console.log("uCrvFRAXToken in Vault", from18((await uCrvFRAXToken.balanceOf(testVault.address)).toString()))
-
-        let withdrawInstructionBytes = web3.eth.abi.encodeFunctionCall({
-            name: 'withdraw',
-            type: 'function',
-            inputs: [{
-                type: 'uint256',
-                name: '_shares'
-            }, {
-                type: 'address',
-                name: '_withrawalAsset'
-            }
-            ]
-        }, [to18("100"), usdt.address])
-        console.log("Instruction \n", withdrawInstructionBytes)
-        await singleAsset3CrvMinter.mintStrategy(testVault.address, withdrawInstructionBytes)
-        console.log("singleAsset3Crv NAV after strategy withdraw", from18((await singleAsset3Crv.getStrategyNAV()).toString()))
-        console.log("singleAsset3Crv token value after strategy withdraw", from18((await singleAsset3Crv.tokenValueInUSD()).toString()))
-        console.log("singleAsset3Crv token vault balance after strategy withdraw", from18((await singleAsset3Crv.balanceOf(testVault.address)).toString()))
-        console.log("singleAsset3Crv crvFRAX tokens after strategy withdraw", from18((await crvFRAX.balanceOf(singleAsset3Crv.address)).toString()))
-        console.log("dai in Vault after strategy withdraw", from18((await dai.balanceOf(testVault.address)).toString()))
-        console.log("usdc in Vault after strategy withdraw", from6((await usdc.balanceOf(testVault.address)).toString()))
-        console.log("usdt in Vault after strategy withdraw", from6((await usdt.balanceOf(testVault.address)).toString()))
-        console.log("usdn in Vault after strategy withdraw", from18((await usdn.balanceOf(testVault.address)).toString()))
-        console.log("crv3 in Vault after strategy withdraw", from18((await crv3.balanceOf(testVault.address)).toString()))
-        console.log("uCrvFRAXToken in Vault after strategy withdraw", from18((await uCrvFRAXToken.balanceOf(testVault.address)).toString()))
-
-
-        // //Withdraw from vault 
-        // console.log("===========================WITHDRAW=============================")
-        // console.log("Vault NAV", from18(await testVault.getVaultNAV()).toString())
-        // console.log("Vault Token Value", from18(await testVault.tokenValueInUSD()).toString())
-        // console.log("dai in User ", from18(await dai.balanceOf(accounts[1])).toString())
-        // console.log("dai in Vault ", from18((await dai.balanceOf(testVault.address)).toString()))
-        // console.log("usdc in User ", from6((await usdc.balanceOf(accounts[1])).toString()))
-        // console.log("usdc in Vault ", from6((await usdc.balanceOf(testVault.address)).toString()))
-        // console.log("usdt in User", from6((await usdt.balanceOf(accounts[1])).toString()))
-        // console.log("usdt in Vault", from6((await usdt.balanceOf(testVault.address)).toString()))
-        // console.log("usdn in User ", from18((await usdn.balanceOf(accounts[1])).toString()))
-        // console.log("usdn in Vault ", from18((await usdn.balanceOf(testVault.address)).toString()))
-        // console.log("crv3 in User ", from18((await crv3.balanceOf(accounts[1])).toString()))
-        // console.log("crv3 in Vault ", from18((await crv3.balanceOf(testVault.address)).toString()))
-        // console.log("=================================================================")
-        // await testVault.withdraw(dai.address, to18("220"), { from: accounts[1] });
-        // console.log("Vault NAV", from18(await testVault.getVaultNAV()).toString())
-        // console.log("Vault Token Value", from18(await testVault.tokenValueInUSD()).toString())
-        // console.log("dai in User ", from18(await dai.balanceOf(accounts[1])).toString())
-        // console.log("dai in Vault ", from18((await dai.balanceOf(testVault.address)).toString()))
-        // console.log("usdc in User ", from6((await usdc.balanceOf(accounts[1])).toString()))
-        // console.log("usdc in Vault ", from6((await usdc.balanceOf(testVault.address)).toString()))
-        // console.log("usdt in User", from6((await usdt.balanceOf(accounts[1])).toString()))
-        // console.log("usdt in Vault", from6((await usdt.balanceOf(testVault.address)).toString()))
-        // console.log("usdn in User ", from18((await usdn.balanceOf(accounts[1])).toString()))
-        // console.log("usdn in Vault ", from18((await usdn.balanceOf(testVault.address)).toString()))
-        // console.log("crv3 in User ", from18((await crv3.balanceOf(accounts[1])).toString()))
-        // console.log("crv3 in Vault ", from18((await crv3.balanceOf(testVault.address)).toString()))
-
+        console.log("usdn in User ", from18((await usdn.balanceOf(accounts[1])).toString()))
+        console.log("usdn in Vault ", from18((await usdn.balanceOf(testVault.address)).toString()))
+        console.log("crv3 in User ", from18((await crv3.balanceOf(accounts[1])).toString()))
+        console.log("crv3 in Vault ", from18((await crv3.balanceOf(testVault.address)).toString()))
+        console.log("crvFRAX in User ", from18((await crvFRAX.balanceOf(accounts[1])).toString()))
+        console.log("crvFRAX in Vault ", from18((await crvFRAX.balanceOf(testVault.address)).toString()))
+        console.log("=================================================================")
+        await testVault.withdraw(uCrvFRAXToken.address, (await testVault.balanceOf(accounts[1])).toString(), { from: accounts[1], gas: 10000000 });
+        // await testVault.withdraw(usdt.address, to18("200"), { from: accounts[1], gas: 10000000 });
+        console.log("Vault NAV", from18(await testVault.getVaultNAV()).toString())
+        console.log("Vault Token Value", from18(await testVault.tokenValueInUSD()).toString())
+        console.log("dai in User ", from18(await dai.balanceOf(accounts[1])).toString())
+        console.log("dai in Vault ", from18((await dai.balanceOf(testVault.address)).toString()))
+        console.log("usdc in User ", from6((await usdc.balanceOf(accounts[1])).toString()))
+        console.log("usdc in Vault ", from6((await usdc.balanceOf(testVault.address)).toString()))
+        console.log("usdt in User", from6((await usdt.balanceOf(accounts[1])).toString()))
+        console.log("usdt in Vault", from6((await usdt.balanceOf(testVault.address)).toString()))
+        console.log("usdn in User ", from18((await usdn.balanceOf(accounts[1])).toString()))
+        console.log("usdn in Vault ", from18((await usdn.balanceOf(testVault.address)).toString()))
+        console.log("crv3 in User ", from18((await crv3.balanceOf(accounts[1])).toString()))
+        console.log("crv3 in Vault ", from18((await crv3.balanceOf(testVault.address)).toString()))
+        console.log("busd in User ", from18((await busd.balanceOf(accounts[1])).toString()))
+        console.log("busd in Vault ", from18((await busd.balanceOf(testVault.address)).toString()))
+        console.log("crvFRAX in User ", from18((await crvFRAX.balanceOf(accounts[1])).toString()))
+        console.log("crvFRAX in Vault ", from18((await crvFRAX.balanceOf(testVault.address)).toString()))
     });
 });
