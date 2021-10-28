@@ -52,45 +52,11 @@ module.exports = async (deployer, network, accounts) => {
 
     //adding Protocols
     console.log("adding protocols")
+
     await apContract.addProtocol(
-        "yearn Curve.fi crvUSDP",
-        "crvUSDP",
-        "0xC4dAf3b5e2A9e93861c3FBDd25f1e943B8D87417"
-    );
-    await apContract.addProtocol(
-        "yearn Curve.fi crvUSDN",
-        "crvUSDN",
-        "0x3B96d491f067912D18563d56858Ba7d6EC67a6fa"
-    );
-    await apContract.addProtocol(
-        "yearn Curve.fi crvALUSD",
-        "crvALUSD",
-        "0xA74d4B67b3368E83797a35382AFB776bAAE4F5C8"
-    );
-    await apContract.addProtocol(
-        "yearn Curve.fi crvLUSD",
-        "crvLUSD",
-        "0x5fA5B62c8AF877CB37031e0a3B2f34A78e3C56A6"
-    );
-    await apContract.addProtocol(
-        "yearn Curve.fi crvBUSD",
-        "crvBUSD",
-        "0x6Ede7F19df5df6EF23bD5B9CeDb651580Bdf56Ca"
-    );
-    await apContract.addProtocol(
-        "yearn Curve.fi crvEURS",
-        "crvEURS",
-        "0x25212Df29073FfFA7A67399AcEfC2dd75a831A1A"
-    );
-    await apContract.addProtocol(
-        "yearn Curve.fi crvUSDK",
-        "crvUSDK",
-        "0x3D27705c64213A5DcD9D26880c1BcFa72d5b6B0E"
-    );
-    await apContract.addProtocol(
-        "yearn Curve.fi crvFRAX",
-        "crvFRAX",
-        "0xB4AdA607B9d6b2c9Ee07A275e9616B84AC560139"
+        "convexDeposit contract",
+        "CONVEX",
+        "0xF403C135812408BFbE8713b5A23a04b3D48AAE31"
     );
 
     //Adding Stock withdraw and deposit to APContract
@@ -111,5 +77,5 @@ module.exports = async (deployer, network, accounts) => {
 
     await apContract.addProxyFactory(proxyFactory.address);
 
-
+    console.log(`APS Address :- ${apContract.address}`)
 };
