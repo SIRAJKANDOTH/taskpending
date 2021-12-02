@@ -132,10 +132,10 @@ contract("Strategy Deposit", function (accounts) {
         console.log("===========================DEPOSIT=============================")
         await testVault.deposit(usdt.address, to6("10000"), { from: accounts[1] });
         await testVault.deposit(usdc.address, to6("10000"), { from: accounts[1] });
-        await testVault.deposit(usdn.address, to18("10000"), { from: accounts[1] });
-        await testVault.deposit(frax.address, to18("10000"), { from: accounts[1] });
-        await testVault.deposit(uCrvUSDNToken.address, to18("10000"), { from: accounts[1] });
-        await testVault.deposit(crv3.address, to18("10000"), { from: accounts[1] });
+        // await testVault.deposit(usdn.address, to18("10000"), { from: accounts[1] });
+        // await testVault.deposit(frax.address, to18("10000"), { from: accounts[1] });
+        // await testVault.deposit(uCrvUSDNToken.address, to18("10000"), { from: accounts[1] });
+        // await testVault.deposit(crv3.address, to18("10000"), { from: accounts[1] });
         //*****************************************************DEPOSIT**ENDS******************************************************* */            
 
 
@@ -255,4 +255,5 @@ contract("Strategy Deposit", function (accounts) {
  let strategy = await ConvexCRV.at("0xEeee1F4CFE0bF372cF0C92F8D7509f97112fCEc7")   
 
  let rewardscontract= await IRewards.at("0x4a2631d090e8b40bBDe245e687BF09e5e534A239")  
+ (await vault.getVaultNAV()).toString() / (10**18)
  */

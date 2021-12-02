@@ -17,4 +17,6 @@ interface IConvex {
     function poolLength() external view returns (uint256);
 
     function poolInfo(uint256) external view returns(address,address,address,address,address,bool);
+    function minter() external view returns(address);
+
 }
