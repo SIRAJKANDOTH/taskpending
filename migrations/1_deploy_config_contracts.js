@@ -4,8 +4,13 @@ const StockWithdraw = artifacts.require("./smartStrategies/deposit/StockWithdraw
 const SafeMinter = artifacts.require("./safeUtils/SafeMinter.sol")
 const YieldsterVault = artifacts.require("./YieldsterVault.sol");
 const ProxyFactory = artifacts.require("./proxies/YieldsterVaultProxyFactory.sol");
+const SafeUtils = artifacts.require("./safeUtils/SafeUtils.sol");
 
 module.exports = async (deployer, network, accounts) => {
+
+    await deployer.deploy(SafeUtils);
+    let safeUtils = await SafeUtils.deployed()
+
     await deployer.deploy(
         APContract,
         "0x20996567dBE5c7B1b4c144bac7EE955a17EB23c6",
@@ -15,7 +20,7 @@ module.exports = async (deployer, network, accounts) => {
         "0x507F9C130d6405Cd001A9073Adef371dD9fA3F72",
         "0x0dAA47FAC1440931A968FA606373Af69EEcd9b83",
         "0xc98435837175795d216547a8edc9e0472604bbda",
-        "0x0E6B1f325dD47420823843ff96942a8a627C79A4"
+        safeUtils.address //"0x0E6B1f325dD47420823843ff96942a8a627C79A4"
     );
 
     const apContract = await APContract.deployed();

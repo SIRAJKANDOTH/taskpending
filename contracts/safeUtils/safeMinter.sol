@@ -14,11 +14,11 @@ contract SafeMinter is ERC1155 {
         executor = _executor;
     }
 
-    function mintStrategy(address safeAddress, string memory instruction)
+    function mintStrategy(address safeAddress, bytes memory instruction)
         public
     {
         require(executor == msg.sender, "Not Authorized");
-        _mint(safeAddress, 0, 10**18, bytes(instruction));
+        _mint(safeAddress, 0, 10**18, instruction);
     }
 
     function setExecutor(address _executor) public {

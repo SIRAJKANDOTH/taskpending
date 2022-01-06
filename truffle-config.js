@@ -2,12 +2,12 @@ const HDWalletProvider = require("@truffle/hdwallet-provider");
 require("dotenv").config();
 const package = require("./package");
 const Web3 = require("web3");
-const webSocketProvider = new Web3.providers.WebsocketProvider(
-  process.env.INFURA_TOKEN_WSS
-);
-const mnemonic = process.env.MNEMONIC;
-const token = process.env.INFURA_TOKEN;
-let privateKeys = [process.env.PRIVATE_KEY];
+const token = process.env.INFURA_TOKEN_WSS;
+// const webSocketProvider = new Web3.providers.WebsocketProvider(token);
+// // // const mnemonic = process.env.MNEMONIC;
+// let privateKeys = [process.env.PRIVATE_KEY_3];
+// let privateKeys = [0];
+
 
 module.exports = {
   networks: {
@@ -15,39 +15,44 @@ module.exports = {
       host: "localhost",
       port: 8545,
       network_id: "999",
-      gasPrice: 30000000000, // 8 Gwei
+      websockets: true,
+      gasPrice: 110000000000, // 110 Gwei 13576784 await web3.eth.getBlock("13000000")
+      // gas: 2907896,
       networkCheckTimeout: 999999,
     },
-    rinkeby: {
-      network_id: "4",
-      provider: () => {
-        return new HDWalletProvider(mnemonic, token);
-      },
-      gasPrice: 75000000000, // 75 Gwei
-      networkCheckTimeout: 10000000,
-      skipDryRun: true,
-    },
-    mainnet: {
-      provider: () => {
-        return new HDWalletProvider(privateKeys, webSocketProvider);
-      },
-      network_id: "1",
-      gasPrice: 20000000000, // 6 Gwei
-      networkCheckTimeout: 1000000000,
-      gas: 1622442,
-    },
+    // rinkeby: {
+    //   network_id: "4",
+    //   provider: () => {
+    //     return new HDWalletProvider(mnemonic, token);
+    //   },
+    //   gasPrice: 75000000000, // 75 Gwei
+    //   networkCheckTimeout: 10000000,
+    //   skipDryRun: true,
+    // },
+    // mainnet: {
+    //   provider: () => {
+    //     return new HDWalletProvider(privateKeys, webSocketProvider);
+    //   },
+    //   network_id: "1",
+    //   gasPrice: 110000000000, // 110 Gwei
+    //   networkCheckTimeout: 1000000000,
+    //   // gas: 551720,
+    //   gas: 2907896,
+    // },
   },
-  plugins: ["truffle-contract-size"],
+
+  // Configure your compilers
   compilers: {
     solc: {
-      version: package.dependencies.solc,
-      settings: {
+      version: "0.5.17", // Fetch exact version from solc-bin (default: truffle's version)
+      // docker: true,        // Use "0.5.1" you've installed locally with docker (default: false)
+      settings: {          // See the solidity docs for advice about optimization and evmVersion
         optimizer: {
           enabled: true,
-          runs: 200,
+          runs: 200
         },
-        evmVersion: "petersburg",
-      },
+        evmVersion: "petersburg"
+      }
     },
   },
   plugins: ["truffle-contract-size"],

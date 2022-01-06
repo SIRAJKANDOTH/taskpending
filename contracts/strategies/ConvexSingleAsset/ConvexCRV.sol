@@ -210,6 +210,21 @@ contract ConvexCRV is ERC20, ERC20Detailed {
         return minReturn;
     }
 
+    function strictExchangeToken(
+        address fromToken,
+        address toToken,
+        uint256 amount
+    ) internal returns (uint256) {
+        uint256 exchangeReturn;
+        IExchangeRegistry exchangeRegistry = IExchangeRegistry(
+            IAPContract(APContract).exchangeRegistry()
+        );
+        address exchange = exchangeRegistry.getPair(fromToken, toToken);
+        require(exchange != address(0), "Exchange pair not present");
+        exchangeReturn = exchangeToken(fromToken, toToken, amount);
+        return exchangeReturn;
+    }
+
     /// @dev Function to exchange from one token to another.
     /// @param fromToken Address of from token.
     /// @param toToken Address of target token.
@@ -224,22 +239,24 @@ contract ConvexCRV is ERC20, ERC20Detailed {
             IAPContract(APContract).exchangeRegistry()
         );
         address exchange = exchangeRegistry.getPair(fromToken, toToken);
-        require(exchange != address(0), "Exchange pair not present");
+        if (exchange == address(0)) {
+            exchangeReturn = uint256(0);
+        } else {
+            uint256 minReturn = calculateSlippage(
+                fromToken,
+                toToken,
+                amount,
+                slippageSwap
+            );
 
-        uint256 minReturn = calculateSlippage(
-            fromToken,
-            toToken,
-            amount,
-            slippageSwap
-        );
-
-        _approveToken(fromToken, exchange, amount);
-        exchangeReturn = IExchange(exchange).swap(
-            fromToken,
-            toToken,
-            amount,
-            minReturn
-        );
+            _approveToken(fromToken, exchange, amount);
+            exchangeReturn = IExchange(exchange).swap(
+                fromToken,
+                toToken,
+                amount,
+                minReturn
+            );
+        }
         return exchangeReturn;
     }
 
@@ -275,7 +292,7 @@ contract ConvexCRV is ERC20, ERC20Detailed {
             else if (otherAssets[i] == boosterDepositToken)
                 cvxTokens += otherAmounts[i]; //cvx deposit tokens
             else {
-                crv3Tokens += exchangeToken(
+                crv3Tokens += strictExchangeToken(
                     otherAssets[i],
                     crv3Token,
                     otherAmounts[i]
@@ -504,13 +521,9 @@ contract ConvexCRV is ERC20, ERC20Detailed {
     {
         //we need to make use of logic from getReward function
         //getReward present in crvReward contract
-        (
-            ,
-            ,
-            ,
-            address crvRewards,
-            ,
-        ) = IConvex(convexDeposit).poolInfo(poolInfoID);
+        (, , , address crvRewards, , ) = IConvex(convexDeposit).poolInfo(
+            poolInfoID
+        );
 
         uint256 crvReward = IRewards(crvRewards).earned(address(this));
         uint256 cvxReward = getCVXRewardValue(crvReward);
@@ -595,19 +608,12 @@ contract ConvexCRV is ERC20, ERC20Detailed {
                 IAPContract(APContract).getStrategyFromMinter(msg.sender),
             "Only Strategy Minter"
         );
-        (
-            address[] memory rewardTokens,
-        ) = calculateReward();
-        (
-            ,
-            ,
-            ,
-            address crvRewards,
-            ,
-            
-        ) = IConvex(convexDeposit).poolInfo(poolInfoID);
+        (address[] memory rewardTokens, ) = calculateReward();
+        (, , , address crvRewards, , ) = IConvex(convexDeposit).poolInfo(
+            poolInfoID
+        );
 
-        bool success = getReward(address(this), crvRewards);
+        bool success = getReward(crvRewards);
         require(success, "No rewards available");
         uint256 crv3TokenAmount = 0;
 
@@ -731,7 +737,7 @@ contract ConvexCRV is ERC20, ERC20Detailed {
                     IERC20(crv3Token).safeTransfer(msg.sender, crv3Tokens);
                     return (true, crv3Token, crv3Tokens);
                 }
-                uint256 withdrawalTokens = exchangeToken(
+                uint256 withdrawalTokens = strictExchangeToken(
                     crv3Token,
                     __withdrawalAsset,
                     crv3Tokens
@@ -829,30 +835,23 @@ contract ConvexCRV is ERC20, ERC20Detailed {
         ).div(1e18);
         uint256 gasTokenCount = IHexUtils(IAPContract(APContract).stringUtils())
             .fromDecimals(underlying, (gasCostUSD.mul(1e18)).div(gasTokenUSD));
-            
-        require(gasTokenCount<getConvexBalance(),'Amount to reimb > total');
+
+        require(gasTokenCount < getConvexBalance(), "Amount to reimb > total");
         bool status = IRewards(baseRewards).withdrawAndUnwrap(
             gasTokenCount,
             false
         );
         require(status, "Error in withdrawUnwrap");
-        protocolBalance-= gasTokenCount;
+        protocolBalance -= gasTokenCount;
 
         IERC20(underlying).safeTransfer(beneficiary, gasTokenCount);
     }
 }
 
 /**
-vault owner 0x5091aF48BEB623b3DA0A53F726db63E13Ff91df9 vault address 0x0Ad1202df38CE0ceF1f4Dc4F19865F591F0F50b4
-Register Vault with APS
-Set Vault Assets
-set vault strategy and boosterDepositToken
-Activating vault strategy  0xDBB0F40e68D7Bd2fa21302Fc7B8759526E9b80F9
-Vault active strategies [ '0xDBB0F40e68D7Bd2fa21302Fc7B8759526E9b80F9' ]
-
-
-let vault = await YieldsterVault.at("0x5acFb987cB222064BfD361026a39D9B249343085")
-let convex = await ConvexCRV.at("0xBA64eD2bcf7E8B053155A967FB270d3BdC2E6326")
+let vault = await YieldsterVault.at("0xCEC4EB6db417C0D9B287cba0Bc34cdfE0d7d861E")
+let convex = await ConvexCRV.at("0xd5147E19723fa46B97977848ff4DA0d3f4bdAbc0")
+let cvxMinter = await ConvexCRVMinter.at("0x45805aD1640D19F8fc509FBDCA77125df0aF8363")
 (await convex.getConvexBalance()).toString()
 
 let convexDeposit = await IConvex.at("0xF403C135812408BFbE8713b5A23a04b3D48AAE31")
@@ -879,9 +878,7 @@ await convexDeposit.deposit('13','1000000000000000000000',true,{from:"0x5091aF48
 
 {from:"0xb2AA4a5DF3641D42e72D7F07a40292794dfD07a0"
 
-
-
-
-
+let crvUSDN = 398.11157387707993; //number of crvUSDN tokens
+let strategyTokenPrice = 1.0439786915823903; //price of 1 strategy token
 
  */

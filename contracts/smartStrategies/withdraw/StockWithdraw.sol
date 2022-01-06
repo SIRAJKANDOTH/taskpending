@@ -132,7 +132,7 @@ contract StockWithdraw is VaultStorage {
         uint256 towardsNeedWithSlippage = (
             tokenBalances.getTokenBalance(_tokenAddress)
         );
-        uint256 haveNavInOtherTokens = getVaultNAVWithoutStrategyToken() -
+        uint256 haveNavInOtherTokens = getVaultNAVWithoutStrategyToken() -  //~10k
             (
                 IHexUtils(IAPContract(APContract).stringUtils())
                     .toDecimals(

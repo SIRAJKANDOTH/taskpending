@@ -23,7 +23,7 @@ module.exports = async (deployer, network, accounts) => {
         "CVX Strategy",
         cvxUSDN.address,
         [
-            "0xB4AdA607B9d6b2c9Ee07A275e9616B84AC560139",
+            "0xF403C135812408BFbE8713b5A23a04b3D48AAE31",
         ],
         convexCRVMinter.address,
         accounts[0],
@@ -35,3 +35,7 @@ module.exports = async (deployer, network, accounts) => {
     console.log(`CVX USDN Minter :- ${convexCRVMinter.address}`);
     
 };
+
+//APS Address :- 0xA84e51760332b6bB08EF275026828DA4fD836a22
+// CVX USDN :- 0x2bd9D4621B302113F73C26c5fa4a5663e33551f3
+// CVX USDN Minter :- 0x48a8F34e51467022be169a9DA5fD8B0c3eAA1B7C

@@ -54,28 +54,15 @@ contract SafeUtils is VaultStorage {
         address[] memory gasToken
     ) public {
         for (uint256 i = 0; i < gasCost.length; i++) {
-            uint256 gasTokenUSD = IAPContract(APContract).getUSDPrice(
-                gasToken[i]
-            );
-            uint256 gasCostUSD = (
-                gasCost[i].mul(IAPContract(APContract).getUSDPrice(address(0)))
-            )
-            .div(1e18);
-            uint256 gasTokenCount = IHexUtils(
-                IAPContract(APContract).stringUtils()
-            ).fromDecimals(
-                gasToken[i],
-                (gasCostUSD.mul(1e18)).div(gasTokenUSD)
-            );
             require(
-                gasTokenCount <= tokenBalances.getTokenBalance(gasToken[i]),
+                gasCost[i] <= tokenBalances.getTokenBalance(gasToken[i]),
                 "Not enough gas token"
             );
             tokenBalances.setTokenBalance(
                 gasToken[i],
-                tokenBalances.getTokenBalance(gasToken[i]).sub(gasTokenCount)
+                tokenBalances.getTokenBalance(gasToken[i]).sub(gasCost[i])
             );
-            IERC20(gasToken[i]).safeTransfer(beneficiary[i], gasTokenCount);
+            IERC20(gasToken[i]).safeTransfer(beneficiary[i], gasCost[i]);
         }
     }
 
