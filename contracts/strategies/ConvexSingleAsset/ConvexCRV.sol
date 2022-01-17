@@ -493,10 +493,17 @@ contract ConvexCRV is ERC20, ERC20Detailed {
         );
 
         if (protocolBalance > 0) {
-            uint256 tokenUSD = IAPContract(APContract).getUSDPrice(crvLPToken); //TODO: get nav of staked assets as well
+            uint256 tokenUSD = IAPContract(APContract).getUSDPrice(crvLPToken); //TODO: get nav of staked assets as well. 
+                                                                                //cvxCRV  (IF cvxCRV not in price module, take the price of crv token), CVX 
             uint256 balance = IHexUtils(IAPContract(APContract).stringUtils())
                 .toDecimals(crvLPToken, protocolBalance);
             return (balance.mul(tokenUSD)).div(1e18);
+            /**
+            1) get balanceOf cvxCRV and CVX of this strategy.
+            2) Normalize the returned balance using hex utils (using the same method as shown above)
+            3) get usd price of cvxCRV and CVX
+            4) now, get the total prices of both the tokens and add it to the strategy nav.
+             */
         } else return 0;
     }
 
@@ -676,7 +683,7 @@ contract ConvexCRV is ERC20, ERC20Detailed {
         uint256 crv3TokenAmount = IERC20(crv3Token).balanceOf(address(this));
 
         if (crv3TokenAmount > 0) {
-            //convert 3crv to lp tokenAmount //TODO:- add to protocol balance
+            //convert 3crv to lp tokenAmount //TODO:- add to protocol balance. Refer how deposit function works.
             uint256 CVXUnderlyingReturn = depositToTargetPool( //asset 3crv token
                 crv3TokenAmount,
                 0
