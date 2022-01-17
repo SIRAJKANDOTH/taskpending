@@ -1,16 +1,16 @@
 pragma solidity ^0.5.0;
 
 interface IRewards{
-    function balanceOf(address _account) external view returns(uint256);
     function withdraw(uint256 _amount, bool _claim) external returns(bool);
     function withdrawAll(bool _claim) external;
     function withdrawAndUnwrap(uint256 _amount, bool _claim) external returns(bool);
     function stake(uint256 _amount) external returns(bool);
     function stakeFor(address _account,uint256 _amount) external returns(bool);
     function earned(address) external view returns (uint256);
-    function extraRewardsLength() external view returns (uint256); //already external function
-    function extraRewards(uint256) external view returns (address); //contract address of extra rewards
-    function rewardToken() external view returns (address);
-    function getReward(address, bool) external returns (bool);
-
+    function extraRewardsLength() external view returns (uint256);  //already external function
+    function extraRewards(uint256) external view returns(address);  //contract address of extra rewards 
+    function rewardToken() external view returns(address);
+    function getReward(address,bool) external returns (bool);
+    function balanceOf(address) external view returns (uint256);
+    function getReward(bool) external;
 }

@@ -20,6 +20,8 @@ import "../interfaces/ICrv3Pool.sol";
 import "../interfaces/IAPContract.sol";
 import "../interfaces/IHexUtils.sol";
 import "./interfaces/convex/ITokenMinter.sol";
+import "./interfaces/convex/IStake.sol";
+import "./interfaces/convex/IcrvDeposit.sol";
 
 contract ConvexCRV is ERC20, ERC20Detailed {
     using SafeERC20 for IERC20;
@@ -41,6 +43,14 @@ contract ConvexCRV is ERC20, ERC20Detailed {
 
     address public crv = 0xD533a949740bb3306d119CC777fa900bA034cd52;
     address public cvx = 0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B;
+    address private cvxcrv = 0x62B9c7356A2Dc64a1969e19C23e4f579F9810Aa7;
+
+    address private convexRewardContract =
+        0xCF50b810E57Ac33B91dCF525C6ddd9881B139332;
+    address private cvxcrvRewardContract =
+        0x3Fe65692bfCD0e6CF84cB1E7d24108E434A7587e;
+    address private crvDepositContract =
+        0x8014595F2AB54cD7c604B00E9fb932176fDc86Ae;
 
     modifier onlyRegisteredVault() {
         require(isRegistered[msg.sender], "Not a registered Safe");
@@ -483,7 +493,7 @@ contract ConvexCRV is ERC20, ERC20Detailed {
         );
 
         if (protocolBalance > 0) {
-            uint256 tokenUSD = IAPContract(APContract).getUSDPrice(crvLPToken); //TODO: CHECK AND CONFIRM
+            uint256 tokenUSD = IAPContract(APContract).getUSDPrice(crvLPToken); //TODO: get nav of staked assets as well
             uint256 balance = IHexUtils(IAPContract(APContract).stringUtils())
                 .toDecimals(crvLPToken, protocolBalance);
             return (balance.mul(tokenUSD)).div(1e18);
@@ -507,28 +517,38 @@ contract ConvexCRV is ERC20, ERC20Detailed {
             ).div(1e18);
     }
 
-    /// @dev Function to calculate the token value of strategy for a subscribed Safe, if msg.sender is
     function tokenValueInUSD() public view returns (uint256) {
         if (getStrategyNAV() == 0 || totalSupply() == 0) return 0;
         else return (getStrategyNAV().mul(1e18)).div(totalSupply());
     }
 
-    /// @dev Function to calculate the strategy tokens to be minted for given nav.
+    //calculate reward of convex reward pool
     function calculateReward()
         public
         view
         returns (address[] memory, uint256[] memory)
     {
-        //we need to make use of logic from getReward function
-        //getReward present in crvReward contract
-        (, , , address crvRewards, , ) = IConvex(convexDeposit).poolInfo(
-            poolInfoID
+        address[] memory extraRewards = new address[](1);
+        uint256[] memory extraRewardsValue = new uint256[](1);
+        extraRewardsValue[0] = IRewards(convexRewardContract).earned(
+            address(this)
         );
+        extraRewards[0] = cvx;
 
-        uint256 crvReward = IRewards(crvRewards).earned(address(this));
-        uint256 cvxReward = getCVXRewardValue(crvReward);
+        return (extraRewards, extraRewardsValue);
+    }
 
-        uint256 extraRewardLength = IRewards(crvRewards).extraRewardsLength();
+    //calculate reward of base pool and cvxcrv pool
+    function calculateReward(address rewardContract)
+        public
+        view
+        returns (address[] memory, uint256[] memory)
+    {
+        uint256 crvReward = IRewards(rewardContract).earned(address(this));
+        uint256 cvxReward = getRewardValue(crvReward);
+
+        uint256 extraRewardLength = IRewards(rewardContract)
+            .extraRewardsLength();
         address[] memory extraRewards = new address[](extraRewardLength + 2);
         uint256[] memory extraRewardsValue = new uint256[](
             extraRewardLength + 2
@@ -540,13 +560,13 @@ contract ConvexCRV is ERC20, ERC20Detailed {
         extraRewards[1] = cvx;
 
         if (extraRewardLength > 0) {
-            // address user = value;
+            address user = address(this);
             for (uint256 i = 0; i < extraRewardLength; i++) {
                 extraRewardsValue[i + 2] = IRewards(
-                    IRewards(crvRewards).extraRewards(i)
-                ).earned(address(this));
+                    IRewards(rewardContract).extraRewards(i)
+                ).earned(user);
                 extraRewards[i + 2] = IRewards(
-                    IRewards(crvRewards).extraRewards(i)
+                    IRewards(rewardContract).extraRewards(i)
                 ).rewardToken();
             }
         }
@@ -554,8 +574,9 @@ contract ConvexCRV is ERC20, ERC20Detailed {
         return (extraRewards, extraRewardsValue);
     }
 
-    function getCVXRewardValue(uint256 rewardEarned)
-        public
+    // function to get amount of cvx minted
+    function getRewardValue(uint256 rewardEarned)
+        internal
         view
         returns (uint256)
     {
@@ -589,59 +610,108 @@ contract ConvexCRV is ERC20, ERC20Detailed {
         }
     }
 
-    function getReward() public onlyOwner returns (bool) {
-        (, , , address crvRewards, , ) = IConvex(convexDeposit).poolInfo(
-            poolInfoID
-        );
-        bool success = getReward(crvRewards);
-        return success;
+    //function to convert crv to cvxCRV
+    function getcvxCRV() public {
+        uint256 crvAmount = IERC20(crv).balanceOf(address(this));
+        _approveToken(crv, crvDepositContract, crvAmount);
+        IcrvDeposit(crvDepositContract).depositAll(false, address(0));
     }
 
-    function getReward(address crvRewards) internal returns (bool) {
-        bool success = IRewards(crvRewards).getReward(address(this), true);
-        return success;
+    //function to stake token to corresponding reard contract
+    function stakeAll(address token, address stakeRewardContract) internal {
+        uint256 tokenAmount = IERC20(token).balanceOf(address(this));
+        _approveToken(token, stakeRewardContract, tokenAmount);
+        IStake(stakeRewardContract).stakeAll();
     }
-    
+
+    //function to stake cvx into cvx Reward contract
+    function stakeCVX() public {
+        stakeAll(cvx, convexRewardContract);
+    }
+
+    //function to stake cvxCRV into cvxCRV Reward contract
+    function stakecvxCRV() public {
+        stakeAll(cvxcrv, cvxcrvRewardContract);
+    }
+
+    //function to harvest from every contracts
     function harvest() public {
-        require(
-            address(this) ==
-                IAPContract(APContract).getStrategyFromMinter(msg.sender),
-            "Only Strategy Minter"
-        );
-        (address[] memory rewardTokens, ) = calculateReward();
+        getRewardFromBasePool();
+        getRewardFromConvexReward();
+        getRewardFromcvxCRVReward();
+    }
+
+    //function to stake all rewards
+    function stake() public {
         (, , , address crvRewards, , ) = IConvex(convexDeposit).poolInfo(
             poolInfoID
         );
 
-        bool success = getReward(crvRewards);
-        require(success, "No rewards available");
-        uint256 crv3TokenAmount = 0;
-
-        if (rewardTokens.length > 0) {
-            for (uint256 i = 0; i < rewardTokens.length; i++) {
-                uint256 extraRewardAmount = IERC20(rewardTokens[i]).balanceOf(
+        //convert crv to cvxcrv
+        if (IERC20(crv).balanceOf(address(this)) > 0) getcvxCRV();
+        // stake cvxcrv
+        if (IERC20(cvxcrv).balanceOf(address(this)) > 0) stakecvxCRV();
+        //stake cvx
+        if (IERC20(cvx).balanceOf(address(this)) > 0) stakeCVX();
+        // convert extra rewards into 3crv
+        uint256 extraRewardLength = IRewards(crvRewards).extraRewardsLength();
+        if (extraRewardLength > 0) {
+            for (uint256 i = 0; i < extraRewardLength; i++) {
+                address token = IRewards(IRewards(crvRewards).extraRewards(i))
+                    .rewardToken();
+                uint256 extraRewardAmount = IERC20(token).balanceOf(
                     address(this)
                 );
-                if (extraRewardAmount > 0)
-                    crv3TokenAmount += exchangeToken(
-                        rewardTokens[i],
+                if (extraRewardAmount > 0) {
+                    uint256 exchanged = exchangeToken(
+                        token,
                         crv3Token,
                         extraRewardAmount
                     );
+                }
             }
         }
 
-        uint256 CVXUnderlyingTokens = 0;
+        uint256 CVXUnderlyingTokens;
+        uint256 crv3TokenAmount = IERC20(crv3Token).balanceOf(address(this));
 
         if (crv3TokenAmount > 0) {
+            //convert 3crv to lp tokenAmount //TODO:- add to protocol balance
             uint256 CVXUnderlyingReturn = depositToTargetPool( //asset 3crv token
                 crv3TokenAmount,
                 0
             );
+
+            //deposit to base pool
             CVXUnderlyingTokens = depositToCVX(CVXUnderlyingReturn);
         }
+    }
 
-        protocolBalance += CVXUnderlyingTokens;
+    //function to get reward from convex reward contract----cvxcrv reward token
+    function getRewardFromConvexReward() public {
+        IRewards(convexRewardContract).getReward(false);
+    }
+
+    //function to get reward from  cvxcrv reward contract --crv,3crv,cvx
+    function getRewardFromcvxCRVReward() public returns (bool) {
+        return getReward(address(this), cvxcrvRewardContract);
+    }
+
+    //function to get reward from base pool
+    function getRewardFromBasePool() public returns (bool) {
+        (, , , address crvRewards, , ) = IConvex(convexDeposit).poolInfo(
+            poolInfoID
+        );
+        return getReward(address(this), crvRewards);
+    }
+
+    //function to get reward from corresponding reward contract
+    function getReward(address user, address rewardContract)
+        internal
+        returns (bool)
+    {
+        bool success = IRewards(rewardContract).getReward(user, true);
+        return success;
     }
 
     /// @dev Function to withdraw strategy shares.
