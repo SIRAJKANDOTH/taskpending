@@ -16,8 +16,7 @@ module.exports = {
       port: 8545,
       network_id: "999",
       websockets: true,
-      gasPrice: 110000000000, // 110 Gwei 13576784 await web3.eth.getBlock("13000000")
-      // gas: 2907896,
+      gasPrice: 100 *(10**9),
       networkCheckTimeout: 999999,
     },
     // rinkeby: {
