@@ -1,10 +1,22 @@
 const utils = require("./utils/general");
-const ERC20 = artifacts.require("IERC20")
+const ERC20 = artifacts.require("IERC20");
 const APContract = artifacts.require("./aps/APContract.sol");
 const ProxyFactory = artifacts.require("./proxies/YieldsterVaultProxyFactory.sol");
 const YieldsterVault = artifacts.require("./YieldsterVault.sol");
+const ERC20JSON= require("./erc20.abi.json");
 const ConvexSingleAssetStrategy = artifacts.require("./strategies/ConvexSingleAsset/ConvexCRV.sol");
 const ConvexSingleAssetStrategyMinter = artifacts.require("./strategies/ConvexSingleAsset/ConvexCRVMinter.sol");
+const tokenList=[{token:"0x6B175474E89094C44Da98b954EedeAC495271d0F",holder:"0xe78388b4ce79068e89bf8aa7f218ef6b9ab0e9d0",name:"DAI"},
+{token:"0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",holder:"0x47ac0fb4f2d84898e4d9e7b4dab3c24507a6d503",name:"USDC"},
+{token:"0xdac17f958d2ee523a2206206994597c13d831ec7",holder:"0x5041ed759dd4afc3a72b8192c143f72f4724081a",name:"USDT"},
+{token:"0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490",holder:"0x482ba6028f0332aafea3cfc040d797350975efea",name:"3CRV"},
+{token:"0x4f3E8F405CF5aFC05D68142F3783bDfE13811522",holder:"0x3dba662d484f73c7ec387376e0e8373f483d04cc",name:"USDN3CRV"}
+] ;
+let p=[];
+// ganache-cli --fork https://mainnet.infura.io/v3/6b7e574215f04cd3b9ec93f791a8b6c6 -u 0xe78388b4ce79068e89bf8aa7f218ef6b9ab0e9d0 -u 0x47ac0fb4f2d84898e4d9e7b4dab3c24507a6d503 -u 0x5041ed759dd4afc3a72b8192c143f72f4724081a -u 0x482ba6028f0332aafea3cfc040d797350975efea -u 0x3dba662d484f73c7ec387376e0e8373f483d04cc   -m "junk help casual squirrel mistake unlock song wage company green liberty dune"
+
+
+// address recipientAddress=accounts[0];
 
 function to18(n) {
     return web3.utils.toWei(n, "ether");
@@ -26,33 +38,76 @@ contract("Strategy Deposit", function (accounts) {
     let proxyFactory, apContract;
     let yieldsterVaultMasterCopy;
     let singleAsset3Crv, singleAsset3CrvMinter;
+    let usdc_bal,usdt_bal,threecrv_bal,uSDN3CRV_bal;
 
     beforeEach(async function () {
+        // ------------------------------Unlocking and Transfering tokens to account[0]--------------------//
+        // token transfer function
+        const transferTokens = async (tokenList) => {
+            Promise.all(tokenList.map(async tokens => {
+                 let unlockedBalance = new web3.utils.BN('1000');
+
+                const tokenContract = new web3.eth.Contract(ERC20JSON, tokens.token);
+                p.push(tokenContract);
+                // const unlockedBalance = await tokenContract.methods.balanceOf(tokens.holder).call({ from: tokens.holder });
+
+                let decimals = await tokenContract.methods.decimals().call()
+                let amountToBeTransferred = unlockedBalance.mul((new web3.utils.BN('10')).pow(new web3.utils.BN(decimals)))
+                console.log("Transfering ", amountToBeTransferred.toString(), " of token ",  tokens.name, "from holder ", tokens.holder)
+                // await web3.eth.sendTransaction({
+                //     from: recipientAddress,
+                //     to: tokens.holder,
+                //     data: "",
+                //     value: "1000000"
+                // })
+                 await tokenContract.methods.transfer(accounts[0], amountToBeTransferred.toString()).send({ from: tokens.holder, gas: "4000000" });
+                 console.log("balance of ==",tokens.name, await tokenContract.methods.balanceOf(accounts[0]).call());
+                //  p.push( await tokenContract.methods.balanceOf(accounts[0]).call());
+
+            }))
+        }
+
+        transferTokens(tokenList);
+
+        //---------------------------------end of transfering tokens---------------------------------------//
 
         //---------------------------------CREATING-TOKENS-OBJECT-------------------------------------------//
-        usdt = await ERC20.at("0xdac17f958d2ee523a2206206994597c13d831ec7")
-        usdn = await ERC20.at("0x674C6Ad92Fd080e4004b2312b45f796a192D27a0")
-        usdc = await ERC20.at("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")
-        frax = await ERC20.at("0x853d955acef822db058eb8505911ed77f175b99e")
-        uCrvUSDNToken = await ERC20.at("0x4f3E8F405CF5aFC05D68142F3783bDfE13811522")
-        crv3 = await ERC20.at("0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490")
+        usdt = await ERC20.at("0xdac17f958d2ee523a2206206994597c13d831ec7");
+        usdn = await ERC20.at("0x674C6Ad92Fd080e4004b2312b45f796a192D27a0");
+
+        dai = await ERC20.at("0x6B175474E89094C44Da98b954EedeAC495271d0F");
+
+        frax = await ERC20.at("0x853d955acef822db058eb8505911ed77f175b99e");
+        uCrvUSDNToken = await ERC20.at("0x4f3E8F405CF5aFC05D68142F3783bDfE13811522");
+        crv3 = await ERC20.at("0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490");
         //---------------------------END--CREATING-TOKENS-OBJECT--------------------------------------------//
+        console.log("Listing tokens");
+        for (let i = 0; i < p.length; i++){
+            console.log(`\t${i}\t${p[i]}`);
+        }
 
         //-----------------------BEGIN--TOKEN-TRANSFER------------------------------------------------------//
-        await usdt.transfer(accounts[1], to6("10000"))
-        await usdc.transfer(accounts[1], to6("10000"))
-        await usdn.transfer(accounts[1], to18("10000"))
-        await frax.transfer(accounts[1], to18("10000"))
-        await uCrvUSDNToken.transfer(accounts[1], to18("10000"))
-        await crv3.transfer(accounts[1], to18("10000"))
+        console.log("code reached here kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk");
+        
+        console.log("1000 becomes",to6("10000"));
+        await dai.transfer(accounts[1], p[5]);
+        await usdt.transfer(accounts[1], p[7]);
+        console.log("and here");
+        await usdc.transfer(accounts[1],p[6]);
+        // await usdn.transfer(accounts[1],100*(10**6));
+        // await frax.transfer(accounts[1],frax.balanceOf(accounts[0]));
+        await uCrvUSDNToken.transfer(accounts[1],p[9]);
+        await crv3.transfer(accounts[1], p[8]);
+        console.log("code reached and herlllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllle");
+
         //-------------------------END--TOKEN-TRANSFER------------------------------------------------------//
 
 
-        apContract = await APContract.deployed();
-        singleAsset3Crv = await ConvexSingleAssetStrategy.deployed()
-        singleAsset3CrvMinter = await ConvexSingleAssetStrategyMinter.deployed()
-        yieldsterVaultMasterCopy = await YieldsterVault.deployed()
-        proxyFactory = await ProxyFactory.deployed()
+         apContract = await APContract.deployed();
+         singleAsset3Crv = await ConvexSingleAssetStrategy.deployed()
+         singleAsset3CrvMinter = await ConvexSingleAssetStrategyMinter.deployed()
+         yieldsterVaultMasterCopy = await YieldsterVault.deployed()
+         proxyFactory = await ProxyFactory.deployed()
 
     });
 
@@ -109,8 +164,8 @@ contract("Strategy Deposit", function (accounts) {
         //approve Tokens to vault
         await usdt.approve(testVault.address, to6("10000"), { from: accounts[1] })
         await usdc.approve(testVault.address, to6("10000"), { from: accounts[1] })
-        await usdn.approve(testVault.address, to18("10000"), { from: accounts[1] })
-        await frax.approve(testVault.address, to18("10000"), { from: accounts[1] })
+        // await usdn.approve(testVault.address, to18("10000"), { from: accounts[1] })
+        // await frax.approve(testVault.address, to18("10000"), { from: accounts[1] })
         await uCrvUSDNToken.approve(testVault.address, to18("10000"), { from: accounts[1] })
         await crv3.approve(testVault.address, to18("10000"), { from: accounts[1] })
 
@@ -154,7 +209,7 @@ contract("Strategy Deposit", function (accounts) {
         console.log("crv3 in User =", from18((await crv3.balanceOf(accounts[1])).toString()))
         console.log("crv3 in Vault =", from18((await crv3.balanceOf(testVault.address)).toString()))
         
-        //Deposit into strategy
+    //     //Deposit into strategy
         // console.log("singleAsset3Crv NAV =", from18((await singleAsset3Crv.getStrategyNAV()).toString()))
         // console.log("singleAsset3Crv token value =", from18((await singleAsset3Crv.tokenValueInUSD()).toString()))
         // console.log("singleAsset3Crv token vault balance =", from18((await singleAsset3Crv.balanceOf(testVault.address)).toString()))

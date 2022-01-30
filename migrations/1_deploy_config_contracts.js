@@ -49,7 +49,7 @@ module.exports = async (deployer, network, accounts) => {
     await apContract.addAsset("uCrvBUSD", "uCrvBUSD Coin", "0x4807862aa8b2bf68830e4c8dc86d0e9a998e085a")
     await apContract.addAsset("uCrvFRAX", "uCrvFRAX Coin", "0xd632f22692FaC7611d2AA1C0D552930D43CAEd3B")
     await apContract.addAsset("crvEURS", "crvEURS Coin", "0x25212Df29073FfFA7A67399AcEfC2dd75a831A1A")
-    await apContract.addAsset("crvUSDK", "crvUSDK Coin", "0x3D27705c64213A5DcD9D26880c1BcFa72d5b6B0E")
+    // await apContract.addAsset("crvUSDK", "crvUSDK Coin", "0x3D27705c64213A5DcD9D26880c1BcFa72d5b6B0E")
     await apContract.addAsset("crvUSDN", "crvUSDN Coin", "0x3B96d491f067912D18563d56858Ba7d6EC67a6fa")
     await apContract.addAsset("crvBUSD", "crvBUSD Coin", "0x6Ede7F19df5df6EF23bD5B9CeDb651580Bdf56Ca")
     await apContract.addAsset("crvFRAX", "crvFRAX Coin", "0xB4AdA607B9d6b2c9Ee07A275e9616B84AC560139")

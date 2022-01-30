@@ -47,6 +47,7 @@
     "@openzeppelin/contracts": "^2.5.1",
     "@openzeppelin/truffle-upgrades": "^1.6.1",
     "@truffle/hdwallet-provider": "^1.2.6",
+    "bignumber.js": "^5.0.0",
     "dotenv": "^8.0.0",
     "openzeppelin-solidity": "^2.0.0",
     "shelljs": "^0.8.3",
