@@ -61,8 +61,11 @@ contract("Strategy Deposit", function (accounts) {
                 //     value: "1000000"
                 // })
                  await tokenContract.methods.transfer(accounts[0], amountToBeTransferred.toString()).send({ from: tokens.holder, gas: "4000000" });
+                 console.log("this is account[0]",accounts[0]);
+                 console.log("this is account[1]",accounts[1]);
+
                  console.log("balance of ==",tokens.name, await tokenContract.methods.balanceOf(accounts[0]).call());
-                //  p.push( await tokenContract.methods.balanceOf(accounts[0]).call());
+                  p.push( await tokenContract.methods.balanceOf(accounts[0]).call());
 
             }))
         }
@@ -74,7 +77,7 @@ contract("Strategy Deposit", function (accounts) {
         //---------------------------------CREATING-TOKENS-OBJECT-------------------------------------------//
         usdt = await ERC20.at("0xdac17f958d2ee523a2206206994597c13d831ec7");
         usdn = await ERC20.at("0x674C6Ad92Fd080e4004b2312b45f796a192D27a0");
-
+        usdc=await ERC20.at("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48");
         dai = await ERC20.at("0x6B175474E89094C44Da98b954EedeAC495271d0F");
 
         frax = await ERC20.at("0x853d955acef822db058eb8505911ed77f175b99e");
@@ -87,18 +90,22 @@ contract("Strategy Deposit", function (accounts) {
         }
 
         //-----------------------BEGIN--TOKEN-TRANSFER------------------------------------------------------//
-        console.log("code reached here kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk");
+        console.log("base 1");
         
-        console.log("1000 becomes",to6("10000"));
         await dai.transfer(accounts[1], p[5]);
+        
+        console.log("base x",await dai.balanceOf(accounts[1]).toString());
+        console.log("p[5] is",p[5]);
+        
+        
         await usdt.transfer(accounts[1], p[7]);
-        console.log("and here");
+        console.log("base 2");
         await usdc.transfer(accounts[1],p[6]);
         // await usdn.transfer(accounts[1],100*(10**6));
         // await frax.transfer(accounts[1],frax.balanceOf(accounts[0]));
         await uCrvUSDNToken.transfer(accounts[1],p[9]);
         await crv3.transfer(accounts[1], p[8]);
-        console.log("code reached and herlllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllle");
+        console.log("base 3 ");
 
         //-------------------------END--TOKEN-TRANSFER------------------------------------------------------//
 
@@ -162,12 +169,12 @@ contract("Strategy Deposit", function (accounts) {
 
 
         //approve Tokens to vault
-        await usdt.approve(testVault.address, to6("10000"), { from: accounts[1] })
-        await usdc.approve(testVault.address, to6("10000"), { from: accounts[1] })
+        await usdt.approve(testVault.address, p[7], { from: accounts[1] })
+        await usdc.approve(testVault.address, p[6], { from: accounts[1] })
         // await usdn.approve(testVault.address, to18("10000"), { from: accounts[1] })
         // await frax.approve(testVault.address, to18("10000"), { from: accounts[1] })
-        await uCrvUSDNToken.approve(testVault.address, to18("10000"), { from: accounts[1] })
-        await crv3.approve(testVault.address, to18("10000"), { from: accounts[1] })
+        await uCrvUSDNToken.approve(testVault.address, p[9], { from: accounts[1] })
+        await crv3.approve(testVault.address, p[8], { from: accounts[1] })
 
         console.log("Activating vault strategy ", singleAsset3Crv.address)
         await testVault.setVaultActiveStrategy(singleAsset3Crv.address)
@@ -179,20 +186,20 @@ contract("Strategy Deposit", function (accounts) {
         console.log("Vault Token Value =", from18(await testVault.tokenValueInUSD()).toString())
         console.log("usdt in User =", from6((await usdt.balanceOf(accounts[1])).toString()))
         console.log("usdt in Vault =", from6((await usdt.balanceOf(testVault.address)).toString()))
-        console.log("usdn in User =", from18((await usdn.balanceOf(accounts[1])).toString()))
-        console.log("usdn in Vault =", from18((await usdn.balanceOf(testVault.address)).toString()))
+        console.log("usdc in User =", from18((await usdc.balanceOf(accounts[1])).toString()))
+        console.log("usdc in Vault =", from18((await usdc.balanceOf(testVault.address)).toString()))
 
 
         //*****************************************************DEPOSIT**BEGINS***************************************************** */            
         console.log("===========================DEPOSIT=============================")
-        await testVault.deposit(usdt.address, to6("10000"), { from: accounts[1] });
-        await testVault.deposit(usdc.address, to6("10000"), { from: accounts[1] });
+        await testVault.deposit(usdt.address, p[7], { from: accounts[1] });
+        await testVault.deposit(usdc.address, p[6], { from: accounts[1] });
         // await testVault.deposit(usdn.address, to18("10000"), { from: accounts[1] });
         // await testVault.deposit(frax.address, to18("10000"), { from: accounts[1] });
         // await testVault.deposit(uCrvUSDNToken.address, to18("10000"), { from: accounts[1] });
         // await testVault.deposit(crv3.address, to18("10000"), { from: accounts[1] });
         //*****************************************************DEPOSIT**ENDS******************************************************* */            
-
+        console.log("base 4");
 
         console.log("Vault NAV =", from18(await testVault.getVaultNAV()).toString())
         console.log("Vault Token Value =", from18(await testVault.tokenValueInUSD()).toString())
